@@ -6,5 +6,6 @@ Depends: R (>= 3.4.3),
 	AMOR (>= 0.0-15)
 Date: 2018-03-06
 Author: Sur Herrera Paredes
-Maintainer: Sur Herrera Paredes
+Maintainer: Sur Herrera Paredes <sur00mx@gmail.com>
 License: GPL-3
+RoxygenNote: 6.0.1
