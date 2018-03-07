@@ -2,5 +2,6 @@
 
 export(calculate_prevalence)
 export(format_input)
+export(format_input_hmqcp)
 export(phylotype2rdp)
 importFrom(reshape2,melt)

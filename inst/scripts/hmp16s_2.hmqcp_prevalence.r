@@ -1,31 +1,52 @@
 library(HMAR)
 
-# Mapping file is the same everywhere
-Map <- read.table(file = "~/micropopgen/data/hmp_16S/HMQCP/v13_map_uniquebyPSN.txt.bz2",
-                  sep = "\t", header = TRUE, comment.char = "", row.names = 1)
-row.names(Map) <- paste("X", row.names(Map), sep = "")
-head(Map)
+# List input files
+files <- data.frame(Name = c("hmqcp.v13.otu",
+                             "hmqcp.v35.otu"),
+                    counts = c("~/micropopgen/data/hmp_16S/HMQCP/otu_table_psn_v13.txt.gz",
+                               "~/micropopgen/data/hmp_16S/HMQCP/otu_table_psn_v35.txt.gz"),
+                    map = c("~/micropopgen/data/hmp_16S/HMQCP/v13_map_uniquebyPSN.txt.bz2",
+                            "~/micropopgen/data/hmp_16S/HMQCP/v35_map_uniquebyPSN.txt.bz2"),
+                    stringsAsFactors = FALSE)
+files
 
-Tab <- read.am(file = "~/micropopgen/data/hmp_16S/HMQCP/otu_table_psn_v13.txt.gz",
-               format = 'qiime', taxonomy = "Consensus.Lineage")
-# head(Tab)
-Tab$Tab[1:5,1:5]
-head(Tab$Map)
-head(Tab$Tax)
 
-to_remove <- setdiff(samples(Tab), row.names(Map))
-Tab <- remove_samples(Tab, samples = to_remove, droplevels = TRUE)
 
-Map[ setdiff(samples(Tab), row.names(Map)), ]
+i <- 1
+Dat <- format_input_hmqcp(name = files$Name[i],
+                          counts_file = files$counts[i],
+                          map_file = files$map[i],
+                          collapse_level = 6)
 
-Dat <- create_dataset(Tab = Tab$Tab, Map = Map[ samples(Tab), ], Tax = Tab$Tax )
-Dat <- subset(Dat, HMPbodysubsite %in% c("Buccal_mucosa", "Supragingival_plaque", "Tongue_dorsum", "Stool"),
-              drop = TRUE, clean = TRUE)
-Dat
-
+# Calculate prevalence and change names to homgenize with HMMCP
 prev <- calculate_prevalence(Dat = Dat, thres = 1, group = "HMPbodysubsite")
-head(prev)
+levels(prev$Group) <- c("Buccal mucosa", "Stool", "Supragingival plaque", "Tongue dorsum")
+# head(prev)
 
 # Sort
 prev <- prev[ order(prev$Group, prev$Proportion , decreasing = TRUE), ]
 prev$Taxon <- factor(prev$Taxon, unique(prev$Taxon))
+
+# Plot
+p1 <- ggplot(prev, aes(x = Taxon, y = Proportion, group = Group, col = Group )) +
+  facet_wrap(~ Group, ncol = 1) +
+  geom_line() +
+  theme(axis.text.x = element_blank()) +
+  theme_blackbox
+p1
+
+
+filename <- paste(files$Name[i], ".prevalence_by_site.svg", sep = "")
+cat(filename, "\n")
+ggsave(filename, p1, width = 4, height = 8)
+
+filename <- paste(files$Name[i], ".topprev.txt", sep = "")
+cat(filename, "\n")
+write.table(subset(prev, Proportion >= 0.75), file = filename,
+            sep = "\t", quote = FALSE, col.names = TRUE, row.names = FALSE)
+
+filename <- paste(files$Name[i], ".fullprev.txt", sep = "")
+cat(filename, "\n")
+write.table(prev, file = filename,
+            sep = "\t", quote = FALSE, col.names = TRUE, row.names = FALSE)
+

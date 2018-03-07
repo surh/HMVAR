@@ -8,6 +8,8 @@
 #' 
 #' @author Sur Herrera Paredes
 #' 
+#' @aliases format_input_hmmcp
+#' 
 #' @export
 format_input <- function(name, counts_file, taxonomy_file, Map = Map,
                          collapse_level = NULL){
@@ -50,6 +52,52 @@ format_input <- function(name, counts_file, taxonomy_file, Map = Map,
     Dat <- collapse_by_taxonomy(Dat = Dat, Group = NULL,
                                 level = collapse_level, sepchar = ";", FUN = sum)
   }
+  
+  return(Dat)
+}
+
+#' Read HMQCP input
+#' 
+#' Reads QIIME outputs from HMP files of HMQCP dataset.
+#' and produces a genus level dataset for the fgour body sites
+#' of interest.
+#' 
+#' @param name
+#' @param counts_file
+#' @param map_file
+#' @param collapse_level
+#' 
+#' @author Sur Herrera Paredes
+#' 
+#' @export
+format_input_hmqcp <- function(name, counts_file, map_file, collapse_level = 6){
+  # Mapping file
+  Map <- read.table(file = map_file,
+                    sep = "\t", header = TRUE, comment.char = "", row.names = 1)
+  row.names(Map) <- paste("X", row.names(Map), sep = "")
+  # head(Map)
+  
+  # Counts and taxonom
+  Tab <- read.am(file = counts_file,
+                 format = 'qiime', taxonomy = "Consensus.Lineage")
+  
+  # Combine into one Dataset
+  to_remove <- setdiff(samples(Tab), row.names(Map))
+  Tab <- remove_samples(Tab, samples = to_remove, droplevels = TRUE)
+  
+  ## Check 
+  if(length(setdiff(samples(Tab), row.names(Map))) > 0 )
+    stop("ERROR1", call. = TRUE)
+  
+  Dat <- create_dataset(Tab = Tab$Tab, Map = Map[ samples(Tab), ], Tax = Tab$Tax )
+  Dat <- subset(Dat, HMPbodysubsite %in% c("Buccal_mucosa", "Supragingival_plaque",
+                                           "Tongue_dorsum", "Stool"),
+                drop = TRUE, clean = TRUE)
+  # Dat
+  
+  Dat <- collapse_by_taxonomy(Dat = Dat, Group = NULL, level = collapse_level,
+                              FUN = sum, sepchar = ";")
+  
   
   return(Dat)
 }
