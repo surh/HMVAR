@@ -7,6 +7,8 @@
 #' @return A character vector
 #' 
 #' @author Sur Herrera Paredes
+#' 
+#' @export
 phylotype2rdp <- function(x, split.char = ';'){
   for(i in 1:length(x)){
     x[i] <- gsub(pattern = "\\(\\d+\\)", replacement = "", x = x[i], perl = TRUE)
@@ -15,6 +17,9 @@ phylotype2rdp <- function(x, split.char = ';'){
   return(x)
 }
 
+#' Phylotype to RDP version 2
+#' 
+#' Slow version
 phylotype2rdp2 <- function(x, split.char = ';'){
   sapply(strsplit(x, split = split.char), function(x){
     

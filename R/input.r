@@ -8,6 +8,7 @@
 #' 
 #' @author Sur Herrera Paredes
 #' 
+#' @export
 format_input <- function(name, counts_file, taxonomy_file, Map = Map,
                          collapse_level = NULL){
   # name <- files$Name[1]
