@@ -1,0 +1,10 @@
+Package: HMAR
+Type: Package
+Title: Human Microbiome Analysis in R
+Version: 0.0-1
+Depends: R (>= 3.4.3),
+	AMOR (>= 0.0-15)
+Date: 2018-03-06
+Author: Sur Herrera Paredes
+Maintainer: Sur Herrera Paredes
+License: GPL-3
