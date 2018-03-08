@@ -11,6 +11,8 @@
 #' @author Sur Herrera Paredes
 #' 
 #' @importFrom reshape2 melt
+#' 
+#' @export
 calculate_prevalence <- function(Dat, thres = 1, group = NULL){
   if(class(Dat) != "Dataset")
     stop("ERROR: A Dataset object must be passed", call. = TRUE )
