@@ -41,7 +41,7 @@ for(i in 1:length(files)){
 
 # Count average rank
 head(Prev)
-Prev <- subset(Prev, !(Taxon %in% c("unclassified;unclassified", ";")))
+Prev <- subset(Prev, !(Taxon %in% c("unclassified;unclassified", ";", ";unclassified")))
 
 # Check that each fam;genus appears only once per group
 counts <- aggregate(Rank ~ Taxon + Group + Method, data = Prev,FUN = length )
@@ -53,12 +53,23 @@ counts <- aggregate(Rank ~ Taxon + Group, data = Prev,FUN = length )
 head(counts)
 ranks <- aggregate(Rank ~ Taxon + Group, data = Prev, FUN = sum )
 head(ranks)
+prop <- aggregate(Proportion ~ Taxon + Group, data = Prev, FUN = median )
+head(prop)
 
 # Combine and keep only detected by all methods
 dat <- ranks
 dat$Count <- counts$Rank
+dat$Proportion <- prop$Proportion
 head(dat)
 dat <- subset(dat, Count == 4)
 head(dat)
 dat <- dat[ order(dat$Group, dat$Rank, decreasing = FALSE), ]
-subset(dat, Rank < 40)
+subset(dat, Rank < 60)
+
+
+subset(dat, Taxon == "Pseudomonadaceae;Pseudomonas")
+subset(dat, Taxon == "Staphylococcaceae;Staphylococcus")
+subset(dat, Taxon == "Bacillaceae;Bacillus")
+
+
+subset(dat, Proportion > 0.75)
