@@ -6,8 +6,8 @@ Freq <- read.table("~/micropopgen/data/test_data/midas/merged.snps/Veillonella_p
 Depth <- read.table("~/micropopgen/data/test_data/midas/merged.snps/Veillonella_parvula_57794/snps_depth.txt",
                     header = TRUE, row.names = 1)
 
-Freq[1:5, 1:5]
-Depth[1:5, 1:5]
+# Freq[1:5, 1:5]
+# Depth[1:5, 1:5]
 
 Info <- read.table("~/micropopgen/data/test_data/midas/merged.snps/Veillonella_parvula_57794/snps_info.txt",
                    header = TRUE, sep = "\t")
@@ -22,9 +22,9 @@ Map <- Map[ colnames(Freq), ]
 Dat <- create_dataset(Freq, Map, Info)
 Dat2 <- create_dataset(Depth, Map, Info)
 Dat.pca <- PCA(Dat)
-p1 <- plotgg(Dat.pca, col = "Group")
-p1
-ggsave("Veillonella_parvula_57794.snps_pca.svg", p1, width = 5, height = 5)
+# p1 <- plotgg(Dat.pca, col = "Group")
+# p1
+# ggsave("Veillonella_parvula_57794.snps_pca.svg", p1, width = 5, height = 5)
 
 Res <- NULL
 for(gene in levels(Info$gene_id)){
