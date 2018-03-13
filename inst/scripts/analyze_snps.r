@@ -51,33 +51,43 @@ for(dir in dirs){
     Freq.s <- remove_samples(Freq.s, samples = setdiff(samples(Freq.s), samples(Depth.s)))
     Freq.s <- remove_taxons(Freq.s, taxons = setdiff(taxa(Freq.s), taxa(Depth.s)))
     
-    # PCA
-    Dat.pca <- PCA(Freq.s)
-    p1 <- plotgg(Dat.pca, col = "Group")
-    # p1
-    filename <- paste(basename(dir),
-                      "_",
-                      gsub(pattern = " ", replacement = ".",
-                           paste(combinations[,1], collapse = "_")),
-                      "_snps.pca.svg", sep = "")
-    ggsave(filename, p1, width = 5, height = 5)
-    
-    m1 <- lm(PC1 ~ Group, data = p1$data)
-    m1 <- summary(m1)
-    m2 <- lm(PC2 ~ Group, data = p1$data)
-    m2 <- summary(m2)
-    m3 <- lm(PC3 ~ Group, data = p1$data)
-    m3 <- summary(m3)
-    
-    
-    res <- data.frame(Genome = basename(dir),
-                      Group1 = sites[1],
-                      Group2 = sites[2],
-                      n1 = table(Freq.s$Map$Group)[sites[1]],
-                      n2 = table(Freq.s$Map$Group)[sites[2]],
-                      PC1.pval = m1$coefficients[2,4],
-                      PC2.pval = m2$coefficients[2,4],
-                      PC3.pval = m3$coefficients[2,4])
+    if(all(table(Freq.s$Map$Group) > 2)){
+      # PCA
+      Dat.pca <- PCA(Freq.s)
+      p1 <- plotgg(Dat.pca, col = "Group")
+      # p1
+      filename <- paste(basename(dir),
+                        "_",
+                        gsub(pattern = " ", replacement = ".",
+                             paste(combinations[,1], collapse = "_")),
+                        "_snps.pca.svg", sep = "")
+      ggsave(filename, p1, width = 5, height = 5)
+      
+      m1 <- lm(PC1 ~ Group, data = p1$data)
+      m1 <- summary(m1)
+      m2 <- lm(PC2 ~ Group, data = p1$data)
+      m2 <- summary(m2)
+      m3 <- lm(PC3 ~ Group, data = p1$data)
+      m3 <- summary(m3)
+      
+      res <- data.frame(Genome = basename(dir),
+                        Group1 = sites[1],
+                        Group2 = sites[2],
+                        n1 = table(Freq.s$Map$Group)[sites[1]],
+                        n2 = table(Freq.s$Map$Group)[sites[2]],
+                        PC1.pval = m1$coefficients[2,4],
+                        PC2.pval = m2$coefficients[2,4],
+                        PC3.pval = m3$coefficients[2,4])
+    }else{
+      res <- data.frame(Genome = basename(dir),
+                        Group1 = sites[1],
+                        Group2 = sites[2],
+                        n1 = table(Freq.s$Map$Group)[sites[1]],
+                        n2 = table(Freq.s$Map$Group)[sites[2]],
+                        PC1.pval = NA,
+                        PC2.pval = NA,
+                        PC3.pval = NA)
+    }
     Res <- rbind(Res, res)
   }
 }
