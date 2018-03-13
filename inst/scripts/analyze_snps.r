@@ -4,6 +4,9 @@ library(AMOR)
 indir <- "~/micropopgen/data/test_data/midas/merged.snps/"
 map_file <- "~/micropopgen/data/test_data/midas/map.txt"
 
+indir <- opts[1]
+map_file <- opts[2]
+
 # get midas merge output dirs
 dirs <- list.dirs(indir, recursive = FALSE)
 dirs
@@ -41,9 +44,9 @@ for(dir in dirs){
     sites <- combinations[,i]
     
     # Select comparison
-    Freq.s <- subset(Freq, Group %in% c("Supragingival plaque", "Buccal mucosa"),
+    Freq.s <- subset(Freq, Group %in% sites,
                    drop = TRUE)
-    Depth.s <- subset(Depth, Group %in% c("Supragingival plaque", "Buccal mucosa"),
+    Depth.s <- subset(Depth, Group %in% sites,
                     drop = TRUE)
     
     # Clean
@@ -77,7 +80,8 @@ for(dir in dirs){
                         n2 = table(Freq.s$Map$Group)[sites[2]],
                         PC1.pval = m1$coefficients[2,4],
                         PC2.pval = m2$coefficients[2,4],
-                        PC3.pval = m3$coefficients[2,4])
+                        PC3.pval = m3$coefficients[2,4],
+                        row.names = NULL)
     }else{
       res <- data.frame(Genome = basename(dir),
                         Group1 = sites[1],
@@ -86,15 +90,14 @@ for(dir in dirs){
                         n2 = table(Freq.s$Map$Group)[sites[2]],
                         PC1.pval = NA,
                         PC2.pval = NA,
-                        PC3.pval = NA)
+                        PC3.pval = NA,
+                        row.names = NULL)
     }
     Res <- rbind(Res, res)
   }
 }
-
-
-
-
+write.table(Res, file = "differentiated_strains.txt", sep = "\t",
+            col.names = TRUE, row.names = FALSE, quote = FALSE)
 
 # Res <- NULL
 # for(gene in levels(Info$gene_id)){
