@@ -1,4 +1,5 @@
 library(AMOR)
+# setwd("~/micropopgen/exp/2018/today4/")
 
 indir <- "~/micropopgen/data/test_data/midas/merged.snps/"
 map_file <- "~/micropopgen/data/test_data/midas/map.txt"
@@ -9,7 +10,8 @@ dirs
 
 Res <- NULL
 for(dir in dirs){
-  dir <- dirs[2]
+  # dir <- dirs[2]
+  
   snp_freq_file <- paste(dir, "snps_freq.txt", sep = "/")
   snp_depth_file <- paste(dir, "snps_depth.txt", sep = "/")
   snp_info_file <- paste(dir, "snps_info.txt", sep = "/")
@@ -61,6 +63,22 @@ for(dir in dirs){
     ggsave(filename, p1, width = 5, height = 5)
     
     m1 <- lm(PC1 ~ Group, data = p1$data)
+    m1 <- summary(m1)
+    m2 <- lm(PC2 ~ Group, data = p1$data)
+    m2 <- summary(m2)
+    m3 <- lm(PC3 ~ Group, data = p1$data)
+    m3 <- summary(m3)
+    
+    
+    res <- data.frame(Genome = basename(dir),
+                      Group1 = sites[1],
+                      Group2 = sites[2],
+                      n1 = table(Freq.s$Map$Group)[sites[1]],
+                      n2 = table(Freq.s$Map$Group)[sites[2]],
+                      PC1.pval = m1$coefficients[2,4],
+                      PC2.pval = m2$coefficients[2,4],
+                      PC3.pval = m3$coefficients[2,4])
+    Res <- rbind(Res, res)
   }
 }
 
