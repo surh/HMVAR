@@ -11,8 +11,11 @@ map_file <- "~/micropopgen/data/test_data/midas/map.txt"
 dirs <- list.dirs(indir, recursive = FALSE)
 dirs
 
+window_size <- 10000
+step_size <- 10000
+
 for(dir in dirs){
-  # dir <- dirs[2]
+  dir <- dirs[2]
   
   snp_freq_file <- paste(dir, "snps_freq.txt", sep = "/")
   snp_depth_file <- paste(dir, "snps_depth.txt", sep = "/")
@@ -56,7 +59,7 @@ for(dir in dirs){
         # contig <- levels(Freq.s$Tax$ref_id)[1]
         
         contig_end <- max(Freq.s$Tax$ref_pos[ Freq.s$Tax$ref_id == contig ])
-        windows <- seq(from = 1, to = contig_end, by = 100)
+        windows <- seq(from = 1, to = contig_end, by = step_size)
         for(w in windows){
           # w <- windows[1]
           
@@ -64,12 +67,12 @@ for(dir in dirs){
                                   as.character(subset(Freq.s$Tax, 
                                                       !(ref_id == contig &
                                                           ref_pos >= w &
-                                                          ref_pos < w + 1000))$site_id))
+                                                          ref_pos < w + window_size))$site_id))
           Depth.c <- remove_taxons(Depth.s,
                                   as.character(subset(Depth.s$Tax, 
                                                       !(ref_id == contig &
                                                           ref_pos >= w &
-                                                          ref_pos < w + 1000))$site_id))
+                                                          ref_pos < w + window_size))$site_id))
           
           # Clean
           Depth.c <- clean(Depth.c)
@@ -93,7 +96,7 @@ for(dir in dirs){
             res <- data.frame(genome = basename(dir),
                               contig = contig,
                               start = w,
-                              end = min(w + 1000, contig_end),
+                              end = min(w + window_size, contig_end),
                               g1 = sites[1],
                               g2 = sites[2],
                               n1 = table(Freq.c$Map$Group)[sites[1]],
@@ -107,7 +110,7 @@ for(dir in dirs){
             res <- data.frame(genome = basename(dir),
                               contig = contig,
                               start = w,
-                              end = min(w + 1000, contig_end),
+                              end = min(w + window_size, contig_end),
                               g1 = sites[1],
                               g2 = sites[2],
                               n1 = table(Freq.c$Map$Group)[sites[1]],

@@ -63,7 +63,7 @@ for(dir in dirs){
         filename <- paste(basename(dir),
                           "_",
                           gsub(pattern = " ", replacement = ".",
-                               paste(combinations[,1], collapse = "_")),
+                               paste(combinations[,i], collapse = "_")),
                           "_snps.pca.svg", sep = "")
         ggsave(filename, p1, width = 5, height = 5)
         
