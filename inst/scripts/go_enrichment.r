@@ -1,12 +1,12 @@
 Sys.time()
 
-file <- "~/micropopgen/exp/2018/today/signifincant_mktest"
+# file <- "~/micropopgen/exp/2018/today/signifincant_mktest"
+file <- "signifincant_mktest"
 Tab <- read.table(file, header = TRUE, sep = "\t")
 head(Tab)
 
 go.dir <- "/home/sur/micropopgen/data/genomes/midas_db_v1.2/GO.annotations/"
-go.dir <- "/home/sur/micropopgen/exp/2018/today/GO.annotations/"
-
+# go.dir <- "/home/sur/micropopgen/exp/2018/today/GO.annotations/"
 
 comparisons <- levels(interaction(Tab$A, Tab$B, sep = "_", drop = TRUE))
 
@@ -21,7 +21,7 @@ for(c in comparisons){
   
   ANNOTS <- NULL
   for(s in specs){
-    s <- specs[1]
+    # s <- specs[1]
     cat("\t", s, "\n")
     
     go_file <- paste(go.dir, "/", s, ".GO.txt", sep = "")
@@ -55,3 +55,5 @@ for(c in comparisons){
     RES <- rbind(RES, res)
   }
 }
+write.table(RES, "GO_enrichment_by_comparsions.txt", sep = "\t", quote = FALSE,
+            col.names = TRUE, row.names = FALSE)
