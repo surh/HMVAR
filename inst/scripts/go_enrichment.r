@@ -12,7 +12,7 @@ comparisons <- levels(interaction(Tab$A, Tab$B, sep = "_", drop = TRUE))
 
 RES <- NULL
 for(c in comparisons){
-  c <- comparisons[1]
+  # c <- comparisons[1]
   cat(c, "\n")
   
   # Get data from comparison
