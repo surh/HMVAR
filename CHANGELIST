@@ -1,3 +1,10 @@
+# 0.0-3
+1. Addded script to test strains for overall SNP
+differentiation between aevery pair of comparisons.
+2. Added script and functions for genome wide neutrality index
+calculations.
+3. Functions and script for checking and plotting p-value distribution
+
 # 0.0-2
 1. Inputing HMQC data
 2. Prevalence of HMQC data
