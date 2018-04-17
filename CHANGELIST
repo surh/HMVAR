@@ -1,3 +1,6 @@
+# 0.0-4
+1. Added ggtree import
+
 # 0.0-3
 1. Addded script to test strains for overall SNP
 differentiation between aevery pair of comparisons.
