@@ -39,7 +39,7 @@ for(i in 1:nrow(Tab)){
   
   
 }
-write.table(Tab, "GO_enrichment_by_comparsions_processed.txt")
+write.table(Tab, "GO_enrichment_by_comparsions_processed.txt", col.names = TRUE, quote = FALSE, row.names = FALSE, sep = "\t")
 
 
 
@@ -78,7 +78,7 @@ for(i in 1:nrow(Tab)){
   
   
 }
-write.table(Tab, "GO_enrichment_by_comparisons_and_species_processed.txt")
+write.table(Tab, "GO_enrichment_by_comparisons_and_species_processed.txt", col.names = TRUE, quote = FALSE, row.names = FALSE, sep = "\t")
 
 
 
