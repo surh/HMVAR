@@ -1,5 +1,8 @@
 # 0.0-4
 1. Added ggtree import
+2. Changed name to HMVAR
+3. Inititiated moving to tidyverse
+4. Updated genome_wide_ni
 
 # 0.0-3
 1. Addded script to test strains for overall SNP

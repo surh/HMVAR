@@ -1,6 +1,6 @@
-Package: HMAR
+Package: HVMAR
 Type: Package
-Title: Human Microbiome Analysis in R
+Title: Human Microbiome Variant Analysis in R
 Version: 0.0-3
 Depends: R (>= 3.4.3),
 	AMOR (>= 0.0-15)
@@ -10,8 +10,9 @@ Imports:
 	GO.db (>= 3.4.1),
 	ggtree (>= 1.8.2),
 	reshape2 (>= 1.4.3)
+	tidyverse (>= 1.2.1)
+	argparser (>= 0.4)
 Date: 2018-03-07
-Author: Sur Herrera Paredes
-Maintainer: Sur Herrera Paredes <sur00mx@gmail.com>
+Authors@R: c(person("Sur", "Herrera Paredes", role = c("aut", "cre"), email = "surh@stanford.edu"))
 License: GPL-3
 RoxygenNote: 6.0.1

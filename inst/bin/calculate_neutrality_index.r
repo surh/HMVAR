@@ -1,4 +1,4 @@
-library(HMAR)
+library(HMVAR)
 # library(ggplot2)
 # library(qvalue)
 
