@@ -4,6 +4,7 @@
 3. Inititiated moving to tidyverse
 4. Updated genome_wide_ni
 5. Fising documentation issues
+6. calculate_neutrality_index.r has been updated.
 
 # 0.0-3
 1. Addded script to test strains for overall SNP
