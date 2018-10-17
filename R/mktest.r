@@ -30,7 +30,7 @@ get_mk_results_files <- function(d, pattern = "^mk_results"){
 #' of Storey and Tibshirani to estimate the proportion
 #' of True Negatives (Pi0) in the data
 #' 
-#' @para file file name
+#' @param file file name
 #' @param which either 'all' or the name of the test to
 #' be analyzed
 #' @param plot whether to return a histogram of the p-values

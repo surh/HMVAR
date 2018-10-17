@@ -9,10 +9,11 @@ Imports:
 	qvalue (>= 2.8.0),
 	GO.db (>= 3.4.1),
 	ggtree (>= 1.8.2),
-	reshape2 (>= 1.4.3)
-	tidyverse (>= 1.2.1)
+	reshape2 (>= 1.4.3),
+	tidyverse (>= 1.2.1),
 	argparser (>= 0.4)
 Date: 2018-03-07
 Authors@R: c(person("Sur", "Herrera Paredes", role = c("aut", "cre"), email = "surh@stanford.edu"))
 License: GPL-3
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.0
+Encoding: UTF-8

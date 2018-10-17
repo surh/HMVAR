@@ -7,7 +7,13 @@
 format_input_hmqcp(name, counts_file, map_file, collapse_level = 6)
 }
 \arguments{
-\item{collapse_level}{}
+\item{name}{name}
+
+\item{counts_file}{counts file}
+
+\item{map_file}{map file}
+
+\item{collapse_level}{collapse level}
 }
 \description{
 Reads QIIME outputs from HMP files of HMQCP dataset.

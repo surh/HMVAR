@@ -3,6 +3,7 @@
 2. Changed name to HMVAR
 3. Inititiated moving to tidyverse
 4. Updated genome_wide_ni
+5. Fising documentation issues
 
 # 0.0-3
 1. Addded script to test strains for overall SNP
