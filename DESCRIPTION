@@ -12,6 +12,8 @@ Imports:
 	reshape2 (>= 1.4.3),
 	tidyverse (>= 1.2.1),
 	argparser (>= 0.4)
+Recomends:
+  svglite
 Date: 2018-03-07
 Authors@R: c(person("Sur", "Herrera Paredes", role = c("aut", "cre"), email = "surh@stanford.edu"))
 License: GPL-3
