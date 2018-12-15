@@ -109,28 +109,17 @@ check_pvalues <- function(estimates, pvals, plot = TRUE){
 ############# MIDAS MKTEST ###################
 # Code for obtaining MKtest from midas merge output
 
-#' Read MIDAS abundance file
-#' 
-#' Reads either the snps_depth.txt or snps_freq.txt
-#' file produced by midas_merge.py
+
+
+#' Select samples that are present in mapping file
 #'
-#' @param file File path
+#' @param abun A tibble where the first column is called 'site_id',
+#' @param map 
 #'
-#' @return A tibble
+#' @return
 #' @export
 #'
 #' @examples
-read_midas_abun <- function(file){
-  abun <- readr::read_tsv(file,
-                          na = 'NA', n_max = 10)
-  abun <- readr::read_tsv(file,
-                          na = 'NA',
-                          col_types = paste(c('c',rep('n', ncol(abun) - 1)),
-                                            collapse = ''))
-  
-  return(abun)
-}
-
 select_samples_from_abun <- function(abun, map){
   abun <- abun %>% select(site_id, intersect(map$sample, colnames(abun)) )
   
