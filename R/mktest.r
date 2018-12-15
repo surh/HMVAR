@@ -109,43 +109,71 @@ check_pvalues <- function(estimates, pvals, plot = TRUE){
 ############# MIDAS MKTEST ###################
 # Code for obtaining MKtest from midas merge output
 
-
-
 #' Select samples that are present in mapping file
 #'
-#' @param abun A tibble where the first column is called 'site_id',
-#' @param map 
+#' @param abun A data table where the first column is called 'site_id', and all
+#' the other columns correspond to sample names
+#' @param map A data table where there is a column called 'sample' which
+#' corresponds to the column names of 'abun'.
 #'
-#' @return
+#' @return A data table
 #' @export
 #'
 #' @examples
+#' @importFrom magrittr %>%
+#' @importFrom dplyr select intersect
 select_samples_from_abun <- function(abun, map){
-  abun <- abun %>% select(site_id, intersect(map$sample, colnames(abun)) )
+  abun <- abun %>% dplyr::select(site_id, dplyr::intersect(map$sample, colnames(abun)) )
   
   return(abun)
 }
 
+#' Determine the effect of a coding variant on the aminoacid sequence
+#' 
+#' Takes an table corresponding to the contents of the snp_info.txt
+#' file from midas_merge.py and adds a column indicating whether
+#' the variant is synonymous or non-synonymous
+#'
+#' @param info A data table corresponding to the contents of
+#' the snp_info.txt file produced by midas_merge. It must have columns:
+#' 'site_id', 'major_allele', 'minor_allele' and 'amino_acids'. The aminoacid
+#' column must contain a string of four comma-separated values indicating
+#' the aminoacid encoded for each variant (eg. 'V,L,V,L').
+#' @param nucleotides Named vector indicating the position of each
+#' nucleotide that corresponds to the amino_acids column in info. The
+#' default corresponds to MIDAS v1.3.1 default.
+#'
+#' @return The same data table passed as info with a factor column
+#' 'snp_effect' added.
+#' @export
+#'
+#' @examples
+#' @importFrom dplyr select
+#' @importFrom purrr pmap_chr
+#' @importFrom stringr str_split
+#' @importFrom magrittr %>%
+#' @importFrom tibble add_column
 find_snp_effect <- function(info, nucleotides=c(A = 1, C = 2, G = 3, T = 4)){
-  snp_effect <- info %>% select(site_id, major_allele, minor_allele, amino_acids) %>%
-    pmap_chr(function(site_id, major_allele, minor_allele,
-                      amino_acids, nucleotides){
-      aa = str_split(string = amino_acids,
-                     pattern = ",",
-                     simplify = TRUE)
+  snp_effect <- info %>%
+    dplyr::select(site_id, major_allele, minor_allele, amino_acids) %>%
+    purrr::pmap_chr(function(site_id, major_allele, minor_allele,
+                             amino_acids, nucleotides){
+      aa = stringr::str_split(string = amino_acids,
+                              pattern = ",",
+                              simplify = TRUE)
       if( aa[nucleotides[major_allele]] == aa[nucleotides[minor_allele]] ){
         type <- "synonymous"
       }else{
         type <- "non-synonymous"
       }
-      # return(tibble(site_id = site_id, snp_effect = type))},
       return(type)},
       nucleotides = nucleotides)
-  # info <- info %>% inner_join(snp_effect, by = "site_id")
-  info <- info %>% add_column(snp_effect = factor(snp_effect, levels = c('synonymous',
-                                                                         'non-synonymous')))
   
-  # return(snp_effect)
+  # Add column
+  info <- info %>%
+    tibble::add_column(snp_effect = factor(snp_effect,
+                                           levels = c('synonymous',
+                                                      'non-synonymous')))
   return(info)
 }
 
