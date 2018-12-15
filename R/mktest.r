@@ -153,7 +153,7 @@ select_samples_from_abun <- function(abun, map){
 #' @importFrom stringr str_split
 #' @importFrom magrittr %>%
 #' @importFrom tibble add_column
-find_snp_effect <- function(info, nucleotides=c(A = 1, C = 2, G = 3, T = 4)){
+determine_snp_effect <- function(info, nucleotides=c(A = 1, C = 2, G = 3, T = 4)){
   snp_effect <- info %>%
     dplyr::select(site_id, major_allele, minor_allele, amino_acids) %>%
     purrr::pmap_chr(function(site_id, major_allele, minor_allele,
@@ -177,6 +177,34 @@ find_snp_effect <- function(info, nucleotides=c(A = 1, C = 2, G = 3, T = 4)){
   return(info)
 }
 
+#' Determine whether a variant site is fixed or polymorphic
+#' 
+#' This is an internal utility function
+#' 
+#' Looks at the distribution of alleles at one site and
+#' determines how it distributes with respect to a grouping factor.
+#' If the site perfectly separates both groups it is 'Fixed'
+#' and 'Polymorphic' otherwise.
+#' 
+#' Assumes grouping factor with two levels (NO CHECKS!!)
+#' 
+#' Assumes bi-allelic site indicated by character string (NO CHECKS!!)
+#' 
+#' Assumes only data from one site is give (NO CHECKS!!)
+#' 
+#' USE WITH CARE!!
+#'
+#' @param d A data table that matches each site at each
+#' sample with the group of that sample. Must have column
+#' 'allele' which must have two values only; column 'Group'
+#' which is the grouping factor (can be character) with two
+#' levels.
+#' @param group_thres The minimum number of samples per
+#' group to consider the site.
+#'
+#' @return A character string indicating the type of site
+#'
+#' @examples
 determine_site_dist <- function(d, group_thres = 2){
   groups <- split(d$allele, d$Group)
   if(length(groups) == 1){
@@ -295,7 +323,7 @@ midas_mktest <- function(midas_dir, map_file, genes, depth_thres = 1){
   
   # Calculate MK parameters
   # Calcualate snp effect
-  info <- find_snp_effect(info)
+  info <- determine_snp_effect(info)
   # Calculate snp dist
   info <- calculate_snp_dist(info = info,
                              freq = freq,
