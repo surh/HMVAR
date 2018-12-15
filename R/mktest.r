@@ -110,20 +110,23 @@ check_pvalues <- function(estimates, pvals, plot = TRUE){
 # Code for obtaining MKtest from midas merge output
 
 #' Read MIDAS abundance file
+#' 
+#' Reads either the snps_depth.txt or snps_freq.txt
+#' file produced by midas_merge.py
 #'
-#' @param file 
+#' @param file File path
 #'
-#' @return
+#' @return A tibble
 #' @export
 #'
 #' @examples
-read_abun_file <- function(file){
-  abun <- read_tsv(file,
-                   na = 'NA', n_max = 10)
-  abun <- read_tsv(file,
-                   na = 'NA',
-                   col_types = paste(c('c',rep('n', ncol(abun) - 1)),
-                                     collapse = ''))
+read_midas_abun <- function(file){
+  abun <- readr::read_tsv(file,
+                          na = 'NA', n_max = 10)
+  abun <- readr::read_tsv(file,
+                          na = 'NA',
+                          col_types = paste(c('c',rep('n', ncol(abun) - 1)),
+                                            collapse = ''))
   
   return(abun)
 }
@@ -254,8 +257,8 @@ midas_mktest <- function(midas_dir, map_file, genes, depth_thres = 1){
   map <- read_tsv(map_file)
   info <- read_tsv(paste0(midas_dir, "/snps_info.txt"),col_types = 'ccncccnnnnnccccc',
                    na = 'NA')
-  depth <- read_abun_file(paste0(midas_dir, "/snps_depth.txt"))
-  freq <- read_abun_file(paste0(midas_dir, "/snps_freq.txt"))
+  depth <- read_midas_abun(paste0(midas_dir, "/snps_depth.txt"))
+  freq <- read_midas_abun(paste0(midas_dir, "/snps_freq.txt"))
   
   # Process data
   # Rename map columns
