@@ -104,3 +104,189 @@ check_pvalues <- function(estimates, pvals, plot = TRUE){
   
   return(res)
 }
+
+
+############# MIDAS MKTEST ###################
+# Code for obtaining MKtest from midas merge output
+
+#' Read MIDAS abundance file
+#'
+#' @param file 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+read_abun_file <- function(file){
+  abun <- read_tsv(file,
+                   na = 'NA', n_max = 10)
+  abun <- read_tsv(file,
+                   na = 'NA',
+                   col_types = paste(c('c',rep('n', ncol(abun) - 1)),
+                                     collapse = ''))
+  
+  return(abun)
+}
+
+select_samples_from_abun <- function(abun, map){
+  abun <- abun %>% select(site_id, intersect(map$sample, colnames(abun)) )
+  
+  return(abun)
+}
+
+find_snp_effect <- function(info, nucleotides=c(A = 1, C = 2, G = 3, T = 4)){
+  snp_effect <- info %>% select(site_id, major_allele, minor_allele, amino_acids) %>%
+    pmap_chr(function(site_id, major_allele, minor_allele,
+                      amino_acids, nucleotides){
+      aa = str_split(string = amino_acids,
+                     pattern = ",",
+                     simplify = TRUE)
+      if( aa[nucleotides[major_allele]] == aa[nucleotides[minor_allele]] ){
+        type <- "synonymous"
+      }else{
+        type <- "non-synonymous"
+      }
+      # return(tibble(site_id = site_id, snp_effect = type))},
+      return(type)},
+      nucleotides = nucleotides)
+  # info <- info %>% inner_join(snp_effect, by = "site_id")
+  info <- info %>% add_column(snp_effect = factor(snp_effect, levels = c('synonymous',
+                                                                         'non-synonymous')))
+  
+  # return(snp_effect)
+  return(info)
+}
+
+determine_site_dist <- function(d, group_thres = 2){
+  groups <- split(d$allele, d$Group)
+  if(length(groups) == 1){
+    dist <- NA
+  }else{
+    if(length(groups[[1]]) < group_thres || length(groups[[2]]) < group_thres){
+      dist <- NA
+    }else{
+      g1 <- unique(groups[[1]])
+      g2 <- unique(groups[[2]])
+      
+      if(length(g1) > 1 || length(g2) > 1){
+        dist <- 'Polymorphic'
+      }else if(g1 == g2){
+        dist <- 'Invariant'
+      }else if(g1 != g2){
+        dist <- 'Fixed'
+      }else{
+        dist <- 'What!!!'
+      }
+    }
+  }
+  return(dist)
+}
+
+# determine_site_dist <- function(d){
+#   # dat <- subset(dat, site_id == "703112")
+#   
+#   counts <- ftable(Group ~ allele, d)
+#   # counts
+#   
+#   d1 <- diag(counts)
+#   d2 <- counts[row(counts) - col(counts) != 0]
+#   if(all(d1 > 0) && all(d2 == 0)){
+#     type <- "fixed"
+#   }else if(all(d1 == 0) && all(d2 > 1)){
+#     type <- "fixed"
+#   }else if(any(colSums(counts) == 0)){
+#     type <- NA
+# 
+#   }else{
+#     type <- "polymorphic"
+#   }
+#   # return(type)
+#   return(tibble(site_id = d$site_id[1],
+#                 type = type))
+# }
+# 
+# system.time(determine_site_dist(d))
+# T1 <- NULL
+# T2 <- NULL
+# for(i in 1:100){
+#   t1 <- system.time(fun2(d))
+#   t2 <- system.time(determine_site_dist(d))
+#   
+#   T1 <- rbind(T1, t1)
+#   T2 <- rbind(T2, t2)
+# }
+
+calculate_snp_dist <- function(info, freq, depth, map, depth_thres = 1){
+  # Reformat
+  depth <- depth %>% gather(key = "sample", value = 'depth', -site_id)
+  freq <- freq %>% gather(key = "sample", value = 'freq', -site_id)
+  # meta <- info %>% select(site_id, ref_pos, snp_effect)
+  
+  dat <- depth %>%
+    inner_join(freq, by = c("site_id", "sample")) %>%
+    left_join(map, by = "sample") %>%
+    filter(depth >= depth_thres) %>%
+    mutate(allele = replace(freq, freq < 0.5, 'major')) %>%
+    mutate(allele = replace(allele, freq >= 0.5, 'minor'))
+  
+  site_dist <- dat %>% split(.$site_id) %>% map_chr(determine_site_dist)
+  site_dist <- tibble(site_id = names(site_dist), distribution = factor(site_dist,
+                                                                        levels = c('Fixed', 'Invariant', 'Polymorphic')))
+  info <- info %>% inner_join(site_dist, by = "site_id")
+  
+  return(info)
+}
+
+mkvalues <- function(info, depth_thres = 1){
+  
+  tab <- info %>% 
+    select(snp_effect, distribution) %>%
+    table(exclude = NULL, useNA = 'always')
+  
+  return(tibble(Dn = tab['non-synonymous', 'Fixed'],
+                Ds = tab['synonymous', 'Fixed'],
+                Pn = tab['non-synonymous', 'Polymorphic'],
+                Ps = tab['synonymous', 'Polymorphic']))
+}
+
+midas_mktest <- function(midas_dir, map_file, genes, depth_thres = 1){
+  # Read data
+  map <- read_tsv(map_file)
+  info <- read_tsv(paste0(midas_dir, "/snps_info.txt"),col_types = 'ccncccnnnnnccccc',
+                   na = 'NA')
+  depth <- read_abun_file(paste0(midas_dir, "/snps_depth.txt"))
+  freq <- read_abun_file(paste0(midas_dir, "/snps_freq.txt"))
+  
+  # Process data
+  # Rename map columns
+  map <- map %>% select(sample = ID, Group) 
+  # Clean info
+  info <- info %>% select(-locus_type, -starts_with("count_"))
+  # Clean depth and freq
+  depth <- select_samples_from_abun(depth, map)
+  freq <- select_samples_from_abun(freq, map)
+  # Clean map
+  map <- map %>% filter(sample %in% colnames(depth))
+  
+  # Select gene data
+  info <- info %>% filter(gene_id %in% genes)
+  freq <- freq %>% filter(site_id %in% info$site_id)
+  depth <- depth %>% filter(site_id %in% info$site_id)
+  
+  # Calculate MK parameters
+  # Calcualate snp effect
+  info <- find_snp_effect(info)
+  # Calculate snp dist
+  info <- calculate_snp_dist(info = info,
+                             freq = freq,
+                             depth = depth,
+                             map = map,
+                             depth_thres = depth_thres)
+  Res <- info %>%
+    split(.$gene_id) %>%
+    map_dfr(mkvalues,
+            depth_thres = depth_thres,
+            .id = "gene_id")
+  
+  return(Res)
+}
