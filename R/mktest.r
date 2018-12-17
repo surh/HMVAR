@@ -264,6 +264,18 @@ determine_site_dist <- function(d, group_thres = 2){
 #   T2 <- rbind(T2, t2)
 # }
 
+#' Title
+#'
+#' @param info 
+#' @param freq 
+#' @param depth 
+#' @param map 
+#' @param depth_thres 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 calculate_snp_dist <- function(info, freq, depth, map, depth_thres = 1){
   # Reformat
   depth <- depth %>% gather(key = "sample", value = 'depth', -site_id)
@@ -285,6 +297,15 @@ calculate_snp_dist <- function(info, freq, depth, map, depth_thres = 1){
   return(info)
 }
 
+#' Title
+#'
+#' @param info 
+#' @param depth_thres 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 mkvalues <- function(info, depth_thres = 1){
   
   tab <- info %>% 
@@ -297,6 +318,17 @@ mkvalues <- function(info, depth_thres = 1){
                 Ps = tab['synonymous', 'Polymorphic']))
 }
 
+#' Title
+#'
+#' @param midas_dir 
+#' @param map_file 
+#' @param genes 
+#' @param depth_thres 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 midas_mktest <- function(midas_dir, map_file, genes, depth_thres = 1){
   # Read data
   map <- read_tsv(map_file)
