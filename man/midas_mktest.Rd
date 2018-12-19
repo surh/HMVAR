@@ -30,6 +30,10 @@ The value represents the distance from 0 or 1, for a site to be
 assigned to the major or minor allele respectively. It must be
 a value in [0,1].}
 }
+\value{
+A data table containing the McDonald-Kreitman
+contingency table per gene.
+}
 \description{
 Take output from MIDAS script midas_merge.py
 and perform a McDonald-Kreitman test between

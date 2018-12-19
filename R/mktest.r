@@ -392,10 +392,15 @@ mkvalues <- function(info){
 #' assigned to the major or minor allele respectively. It must be
 #' a value in [0,1].
 #'
-#' @return
+#' @return A data table containing the McDonald-Kreitman
+#' contingency table per gene.
+#' 
 #' @export
+#' 
 #' @importFrom magrittr %>%
 #' @importFrom readr read_tsv
+#' @importFrom dplyr select
+#' @importFrom purrr map_dfr
 midas_mktest <- function(midas_dir, map_file,
                          genes = NULL,
                          depth_thres = 1,
@@ -403,29 +408,33 @@ midas_mktest <- function(midas_dir, map_file,
   # Read and process map
   map <- readr::read_tsv(map_file)
   # Rename map columns
-  map <- map %>% select(sample = ID, Group) 
+  map <- map %>% 
+    dplyr::select(sample = ID, Group) 
   
- 
+  # Read data
+  Dat <- read_midas_data(midas_dir = midas_dir,
+                         map = map,
+                         genes = genes)
   
   # Calculate MK parameters
   # Calcualate snp effect
-  info <- determine_snp_effect(info)
+  Dat$info <- determine_snp_effect(Dat$info)
   # Calculate snp dist
-  info <- determine_snp_dist(info = info,
-                             freq = freq,
-                             depth = depth,
-                             map = map,
-                             depth_thres = depth_thres,
-                             freq_thres = freq_thres)
-  Res <- info %>%
+  Dat$info <- determine_snp_dist(info = Dat$info,
+                                 freq = Dat$freq,
+                                 depth = Dat$depth,
+                                 map = map,
+                                 depth_thres = depth_thres,
+                                 freq_thres = freq_thres)
+  
+  Res <- Dat$info %>%
     split(.$gene_id) %>%
-    map_dfr(mkvalues,
-            depth_thres = depth_thres,
-            .id = "gene_id")
+    purrr::map_dfr(mkvalues,
+                   depth_thres = depth_thres,
+                   .id = "gene_id")
   
   return(Res)
 }
-
 
 #' Read midas snp merge data
 #' 
