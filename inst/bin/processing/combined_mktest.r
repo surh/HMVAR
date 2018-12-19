@@ -98,7 +98,7 @@ mktest <- midas_mktest(midas_dir = args$midas_dir,
                        genes = genes,
                        depth_thres = args$depth_thres,
                        freq_thres = args$freq_thres)
-mktest
+print(mktest)
 
 
 
