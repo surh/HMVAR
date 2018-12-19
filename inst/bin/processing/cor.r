@@ -24,42 +24,37 @@ library(argparser)
 
 
 
-args <- list(vmwa.genes.dir = "hmp.vmwa.pvals.genes/",
-             mkres.dir = "../2018-12-14.hmp_mktest/results/",
-             q.value.thres = 0.01)
+args <- list(vmwa = "/godot/users/sur/exp/fraserv/2018/2018-12-17.plot_genes/hmp.vmwa.pvals.genes/Granulicatella_adiacens_61980_vmwa.genes.txt",
+             mktest = "/godot/users/sur/exp/fraserv/2018/2018-12-14.hmp_mktest/results/Granulicatella_adiacens_61980_mktest.txt",
+             prefix = "Granulicatella_adiacens_61980",
+             stat1 = 'OR',
+             stat2 = 'ratio',
+             outdir = "out/",
+             log10 = TRUE,
+             stat_thres = 2)
 
-# List of files from mktest
-mkres_files <- list.files(args$mkres.dir)
-
-
-
-
-
-
-
-f <- mkres_files[12]
-species <- str_replace(string = f, pattern = "_mktest.txt$", replacement = "")
-vmwa_file <- paste0(species, "_vmwa.genes.txt")
-cat(species, "\n", "\t", f, "\n\t", vmwa_file, "\n")
 
 # Read data
-vmwa <- read_tsv(paste0(args$vmwa.genes.dir, "/", vmwa_file))
-vmwa <- vmwa %>% select(everything(),vmwa.OR = OR, vmwa.p.value = p.value, vmwa.q.value = q.value)
-mkres <- read_tsv(paste0(args$mkres.dir, "/", f))
-mkres <- mkres %>% select(gene_id = gene, everything()) %>% select(-ratio.pval)
+dat1 <- read_tsv(args$vmwa)
+dat1
+dat2 <- read_tsv(args$mktest)
+dat2    
 
-# MK test
-mkpval <- mkres %>%
-  pmap_dbl(.f = function(Dn, Ds, Pn, Ps, ...){
-    mat <- matrix(c(Dn, Ds, Pn, Ps), ncol = 2)
-    res <- fisher.test(mat)
-    return(res$p.value)})
-mkres <- mkres %>% add_column(mk.p.value = mkpval)
+# Match
+dat2 <- dat2 %>%
+  select(gene_id = gene, everything())
+dat <- dat1 %>% inner_join(dat2, by = "gene_id")
+dat
 
-# Join
-Full <- vmwa %>% full_join(mkres, by = "gene_id") %>% select(-ref_id, -start, -end)
-Full <- Full %>%
-  add_column(significant = 1*(Full$vmwa.p.value < 0.01) + 2*(Full$mk.p.value < 0.01)) %>%
+# Filter
+ii <- is.na(dat[,args$stat1,drop = TRUE]) | is.na(dat[,args$stat2,drop = TRUE])
+dat <- dat %>%
+  filter(!ii)
+
+# Check "significance"
+res <- 1*(dat[,args$stat1] > args$stat_thres) + 2*(dat[,args$stat2] > args$stat_thres)
+dat <- dat %>%
+  add_column(significant = as.vector(res)) %>%
   mutate(significant = factor(significant)) %>%
   mutate(significant = recode_factor(significant,
                                      `0` = "none",
@@ -67,10 +62,10 @@ Full <- Full %>%
                                      `2` = "mktest",
                                      `3` = "both"))
 
-p1 <- ggplot(Full, aes(x = vmwa.OR, y = ratio)) +
+p1 <- ggplot(dat, aes_string(x = args$stat1, y = args$stat2)) +
   geom_point(aes(col = significant)) +
-  scale_y_log10() +
-  scale_x_log10() +
+  # scale_y_log10() +
+  # scale_x_log10() +
   AMOR::theme_blackbox()
 p1
 
