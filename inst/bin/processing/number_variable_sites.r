@@ -1,56 +1,65 @@
+#!/usr/bin/env Rscript
+
+# (C) Copyright 2018 Sur Herrera Paredes
+# 
+# This file is part of HMVAR.
+# 
+# HMVAR is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# HMVAR is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with HMVAR.  If not, see <http://www.gnu.org/licenses/>.
+
 library(HMVAR)
 library(tidyverse)
-setwd("/godot/users/sur/exp/fraserv/2018/today3/")
+library(argparser)
+
+# setwd("/godot/users/sur/exp/fraserv/2018/today3/")
 
 # Parameters
-midas_dir <- "../2018-12-14.hmp_mktest/genomes/Granulicatella_adiacens_61980/"
-depth_thres <- 1
-map_file <- "../2018-12-14.hmp_mktest/hmp_SPvsTD_map.txt"
+args <- list(midas_dir = "/godot/users/sur/exp/fraserv/2018/2018-12-14.hmp_mktest/genomes/Granulicatella_adiacens_61980/",
+             depth_thres = 1,
+             map_file = "/godot/users/sur/exp/fraserv/2018/2018-12-14.hmp_mktest/hmp_SPvsTD_map.txt",
+             genes = NULL,
+             depth_thres = 1,
+             freq_thres = 0.5)
+
+# midas_dir <- "../2018-12-14.hmp_mktest/genomes/Granulicatella_adiacens_61980/"
+# depth_thres <- 1
+# map_file <- "../2018-12-14.hmp_mktest/hmp_SPvsTD_map.txt"
 # genes <- "638301.3.peg.283"
 
+map <- read_tsv(args$map_file)
+map <- map %>%
+  select(sample = ID,
+         everything())
 
-########## This is part of a function in HMVAR #############
-########## Should make the function more modular ###########
-# Read data
-map <- read_tsv(map_file)
-info <- read_tsv(paste0(midas_dir, "/snps_info.txt"),col_types = 'ccncccnnnnnccccc',
-                 na = 'NA')
-depth <- read_midas_abun(paste0(midas_dir, "/snps_depth.txt"))
-freq <- read_midas_abun(paste0(midas_dir, "/snps_freq.txt"))
+Dat <- read_midas_data(midas_dir = args$midas_dir,
+                       map = map,
+                       genes = args$genes)
 
-# Process data
-# Rename map columns
-map <- map %>% select(sample = ID, Group) 
-# Clean info
-info <- info %>% select(-locus_type, -starts_with("count_"))
-# Clean depth and freq
-depth <- select_samples_from_abun(depth, map)
-freq <- select_samples_from_abun(freq, map)
-# Clean map
-map <- map %>% filter(sample %in% colnames(depth))
-
-# Select gene data
-# info <- info %>% filter(gene_id %in% genes)
-info <- info %>% filter(!is.na(gene_id))
-freq <- freq %>% filter(site_id %in% info$site_id)
-depth <- depth %>% filter(site_id %in% info$site_id)
-
-# Calculate MK parameters
 # Calcualate snp effect
-info <- determine_snp_effect(info)
+Dat$info <- determine_snp_effect(Dat$info)
 # Calculate snp dist
-info <- calculate_snp_dist(info = info,
-                           freq = freq,
-                           depth = depth,
-                           map = map,
-                           depth_thres = depth_thres)
-###########################################################
+Dat$info <- determine_snp_dist(info = Dat$info,
+                               freq = Dat$freq,
+                               depth = Dat$depth,
+                               map = map,
+                               depth_thres = args$depth_thres,
+                               freq_thres = args$freq_thres)
 
 
 # Match freqs and depth
-depth <- depth %>% gather(key = "sample", value = 'depth', -site_id)
-freq <- freq %>% gather(key = "sample", value = 'freq', -site_id)
-meta <- info %>% select(site_id, ref_id, ref_pos, snp_effect, distribution)
+depth <- Dat$depth %>% gather(key = "sample", value = 'depth', -site_id)
+freq <- Dat$freq %>% gather(key = "sample", value = 'freq', -site_id)
+meta <- Dat$info %>% select(site_id, ref_id, ref_pos, snp_effect, distribution)
 
 dat <- depth %>%
   inner_join(freq, by = c("site_id", "sample")) %>%
