@@ -7,6 +7,7 @@
 6. calculate_neutrality_index.r has been updated.
 7. Added pval_qqplot functions and documentation.
 8. Recoment svglite package
+9. Added functions for mktest from MIDAS output
 
 # 0.0-3
 1. Addded script to test strains for overall SNP

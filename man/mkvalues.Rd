@@ -2,15 +2,22 @@
 % Please edit documentation in R/mktest.r
 \name{mkvalues}
 \alias{mkvalues}
-\title{Title}
+\title{Entries in McDonald-Kreitman table.}
 \usage{
-mkvalues(info, depth_thres = 1)
+mkvalues(info)
 }
 \arguments{
-\item{info}{}
-
-\item{depth_thres}{}
+\item{info}{A data table corresponding to the
+MIDAS snps_info.txt output file. Must have been
+processed with \link{determine_snp_effect} and
+\link{determine_snp_dist}, and so it must contain
+columns 'snp_effect' and 'distribution'}
+}
+\value{
+A tibble with one column with the count
+of each substitution type.
 }
 \description{
-Title
+Calculates the four entries (Dn, Ds, Pn, Ps)
+in the McDonald-Kreitman contingency table.
 }

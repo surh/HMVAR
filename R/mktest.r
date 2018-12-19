@@ -117,9 +117,7 @@ check_pvalues <- function(estimates, pvals, plot = TRUE){
 #' corresponds to the column names of 'abun'.
 #'
 #' @return A data table
-#' @export
 #'
-#' @examples
 #' @importFrom magrittr %>%
 #' @importFrom dplyr select intersect
 select_samples_from_abun <- function(abun, map){
@@ -147,7 +145,6 @@ select_samples_from_abun <- function(abun, map){
 #' 'snp_effect' added.
 #' @export
 #'
-#' @examples
 #' @importFrom dplyr select
 #' @importFrom purrr pmap_chr
 #' @importFrom stringr str_split
@@ -202,10 +199,9 @@ determine_snp_effect <- function(info, nucleotides=c(A = 1, C = 2, G = 3, T = 4)
 #' @param group_thres The minimum number of samples per
 #' group to consider the site.
 #'
-#' @return A character string indicating the type of site
-#'
-#' @examples
-determine_site_dist <- function(d, group_thres = 2){
+#' @return A character string indicating the type of site:
+#' 'Fixed', 'Polymorphic', 'Invariant' or NA.
+get_site_dist <- function(d, group_thres = 2){
   groups <- split(d$allele, d$Group)
   if(length(groups) == 1){
     dist <- NA
@@ -230,6 +226,8 @@ determine_site_dist <- function(d, group_thres = 2){
   return(dist)
 }
 
+
+# Alternative function to determine site distribution
 # determine_site_dist <- function(d){
 #   # dat <- subset(dat, site_id == "703112")
 #   
@@ -264,52 +262,103 @@ determine_site_dist <- function(d, group_thres = 2){
 #   T2 <- rbind(T2, t2)
 # }
 
-#' Title
+#' SNP distribution between sites
+#' 
+#' Determines how snps distribute between sites. Requires
+#' output from midas_merge.py and a mapping file mapping 
+#' samples to sites.
+#' 
+#' Only samples in both the map and the depth and freq tables
+#' are considered. Everything else is removed (inner_join)
 #'
-#' @param info 
-#' @param freq 
-#' @param depth 
-#' @param map 
-#' @param depth_thres 
+#' @param info Data table corresponding to the 'snps_info.txt'
+#' file from MIDAS. Must have columns 'site_id' and 'sample'
+#' @param freq A data table corresponding to the 'snps_freq.txt'
+#' file from MIDAS. Must have a 'site_id' column, and one more
+#' column per sample. Each row is the frequency of the minor
+#' allele for the corresponding site in the corresponding sample.
+#' @param depth A data table corresponding to the 'snps_depth.txt'
+#' file from MIDAS. Must have a 'site_id' column, and one more
+#' column per sample. Each row is the sequencing depth for the
+#' corresponding site in the corresponding sample.
+#' @param map A data table associating samples with groups (sites).
+#' must have columns 'sample' and 'Group'.
+#' @param depth_thres Minimum number of reads (depth) at a site at
+#' a sample to be considered.
+#' @param freq_thres Frequency cuttoff for minor vs major allele.
+#' The value represents the distance from 0 or 1, for a site to be
+#' assigned to the major or minor allele respectively. It must be
+#' a value in [0,1].
 #'
-#' @return
+#' @return A data table which is the same and info bnut with
+#' a 'distribution' column indicating the allele distribution
+#' between sites in the  given samples.
 #' @export
-#'
-#' @examples
-calculate_snp_dist <- function(info, freq, depth, map, depth_thres = 1){
+#' 
+#' @importFrom tidyr gather
+#' @importFrom magrittr %>%
+#' @importFrom dplyr inner_join left_join filter mutate
+#' @importFrom purrr map_chr
+#' @importFrom tibble tibble
+determine_snp_dist <- function(info, freq, depth, map,
+                               depth_thres = 1,
+                               freq_thres = 0.5){
+  
+  # Process freq_thres
+  if(freq_thres < 0 || freq_thres > 1)
+    stop("ERROR: freq_thres must have values in [0, 1]", call. = TRUE)
+  
+  freq_thres <- min(freq_thres, 1 - freq_thres)
+  
+  
   # Reformat
-  depth <- depth %>% gather(key = "sample", value = 'depth', -site_id)
-  freq <- freq %>% gather(key = "sample", value = 'freq', -site_id)
+  depth <- depth %>% tidyr::gather(key = "sample", value = 'depth', -site_id)
+  freq <- freq %>% tidyr::gather(key = "sample", value = 'freq', -site_id)
   # meta <- info %>% select(site_id, ref_pos, snp_effect)
   
+  # Last lines can be re-written for speed!!
   dat <- depth %>%
-    inner_join(freq, by = c("site_id", "sample")) %>%
-    left_join(map, by = "sample") %>%
-    filter(depth >= depth_thres) %>%
-    mutate(allele = replace(freq, freq < 0.5, 'major')) %>%
-    mutate(allele = replace(allele, freq >= 0.5, 'minor'))
+    dplyr::inner_join(freq, by = c("site_id", "sample")) %>%
+    dplyr::left_join(map, by = "sample") %>%
+    dplyr::filter(depth >= depth_thres) %>%
+    dplyr::mutate(allele = replace(freq, freq < freq_thres, 'major')) %>%
+    dplyr::mutate(allele = replace(allele, freq >= (1 - freq_thres), 'minor')) %>%
+    dplyr::mutate(allele = replace(allele, (freq >= freq_thres) | (freq < (1 - freq_thres)), NA)) %>%
+    dplyr::filter(!is.na(allele))
   
-  site_dist <- dat %>% split(.$site_id) %>% map_chr(determine_site_dist)
-  site_dist <- tibble(site_id = names(site_dist), distribution = factor(site_dist,
-                                                                        levels = c('Fixed', 'Invariant', 'Polymorphic')))
-  info <- info %>% inner_join(site_dist, by = "site_id")
+  site_dist <- dat %>%
+    split(.$site_id) %>%
+    purrr::map_chr(get_site_dist)
+  site_dist <- tibble::tibble(site_id = names(site_dist),
+                              distribution = factor(site_dist,
+                                                    levels = c('Fixed', 'Invariant', 'Polymorphic')))
+  info <- info %>%
+    dplyr::inner_join(site_dist, by = "site_id")
   
   return(info)
 }
 
-#' Title
+#' Entries in McDonald-Kreitman table.
+#' 
+#' Calculates the four entries (Dn, Ds, Pn, Ps)
+#' in the McDonald-Kreitman contingency table.
 #'
-#' @param info 
-#' @param depth_thres 
+#' @param info A data table corresponding to the
+#' MIDAS snps_info.txt output file. Must have been
+#' processed with \link{determine_snp_effect} and
+#' \link{determine_snp_dist}, and so it must contain
+#' columns 'snp_effect' and 'distribution'
 #'
-#' @return
-#' @export
-#'
-#' @examples
-mkvalues <- function(info, depth_thres = 1){
+#' @return A tibble with one column with the count
+#' of each substitution type.
+#' @export 
+#' 
+#' @importFrom dplyr select
+#' @importFrom magrittr %>%
+mkvalues <- function(info){
   
   tab <- info %>% 
-    select(snp_effect, distribution) %>%
+    dplyr::select(snp_effect, distribution) %>%
     table(exclude = NULL, useNA = 'always')
   
   return(tibble(Dn = tab['non-synonymous', 'Fixed'],
@@ -318,55 +367,70 @@ mkvalues <- function(info, depth_thres = 1){
                 Ps = tab['synonymous', 'Polymorphic']))
 }
 
-#' Title
+#' Perform McDonald-Kreitman test on MIDAS SNPs
+#' 
+#' Take output from MIDAS script midas_merge.py
+#' and perform a McDonald-Kreitman test between
+#' two groups.
 #'
-#' @param midas_dir 
-#' @param map_file 
-#' @param genes 
-#' @param depth_thres 
+#' @param midas_dir Directory where the output from
+#' midas_merge.py is located. It must include files:
+#' 'snps_info.txt', 'snps_depth.txt' and 'snps_freq.txt'.
+#' @param map_file A mapping file associating samples
+#' in the MIDAS otput to groups. It must have an 'ID'
+#' and a 'Group' column.
+#' @param genes The list of genes that are to be tested.
+#' Must correspond to entries in the 'genes_id' column
+#' of the 'snps_info.txt' file. If NULL, all genes will
+#' be tested.
+#' @param depth_thres The minimum number of reads at
+#' a position in a given sample for that position in that
+#' sample to be included.
+#' @param freq_thres Frequency cuttoff for minor vs major allele.
+#' The value represents the distance from 0 or 1, for a site to be
+#' assigned to the major or minor allele respectively. It must be
+#' a value in [0,1].
 #'
-#' @return
+#' @return A data table containing the McDonald-Kreitman
+#' contingency table per gene.
+#' 
 #' @export
-#'
-#' @examples
-midas_mktest <- function(midas_dir, map_file, genes, depth_thres = 1){
-  # Read data
-  map <- read_tsv(map_file)
-  info <- read_tsv(paste0(midas_dir, "/snps_info.txt"),col_types = 'ccncccnnnnnccccc',
-                   na = 'NA')
-  depth <- read_midas_abun(paste0(midas_dir, "/snps_depth.txt"))
-  freq <- read_midas_abun(paste0(midas_dir, "/snps_freq.txt"))
-  
-  # Process data
+#' 
+#' @importFrom magrittr %>%
+#' @importFrom readr read_tsv
+#' @importFrom dplyr select
+#' @importFrom purrr map_dfr
+midas_mktest <- function(midas_dir, map_file,
+                         genes = NULL,
+                         depth_thres = 1,
+                         freq_thres = 0.5){
+  # Read and process map
+  map <- readr::read_tsv(map_file)
   # Rename map columns
-  map <- map %>% select(sample = ID, Group) 
-  # Clean info
-  info <- info %>% select(-locus_type, -starts_with("count_"))
-  # Clean depth and freq
-  depth <- select_samples_from_abun(depth, map)
-  freq <- select_samples_from_abun(freq, map)
-  # Clean map
-  map <- map %>% filter(sample %in% colnames(depth))
+  map <- map %>% 
+    dplyr::select(sample = ID, Group) 
   
-  # Select gene data
-  info <- info %>% filter(gene_id %in% genes)
-  freq <- freq %>% filter(site_id %in% info$site_id)
-  depth <- depth %>% filter(site_id %in% info$site_id)
+  # Read data
+  Dat <- read_midas_data(midas_dir = midas_dir,
+                         map = map,
+                         genes = genes)
   
   # Calculate MK parameters
   # Calcualate snp effect
-  info <- determine_snp_effect(info)
+  Dat$info <- determine_snp_effect(Dat$info)
   # Calculate snp dist
-  info <- calculate_snp_dist(info = info,
-                             freq = freq,
-                             depth = depth,
-                             map = map,
-                             depth_thres = depth_thres)
-  Res <- info %>%
+  Dat$info <- determine_snp_dist(info = Dat$info,
+                                 freq = Dat$freq,
+                                 depth = Dat$depth,
+                                 map = map,
+                                 depth_thres = depth_thres,
+                                 freq_thres = freq_thres)
+  
+  Res <- Dat$info %>%
     split(.$gene_id) %>%
-    map_dfr(mkvalues,
-            depth_thres = depth_thres,
-            .id = "gene_id")
+    purrr::map_dfr(mkvalues,
+                   depth_thres = depth_thres,
+                   .id = "gene_id")
   
   return(Res)
 }
