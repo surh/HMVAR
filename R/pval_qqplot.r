@@ -13,13 +13,12 @@
 #' @param ... Extra parameters for plot
 #'
 #' @return A base plot
+#' 
 #' @export
 #' 
 #' @references 
 #' \url{http://GettingGeneticsDone.blogspot.com/}
 #' \url{http://gettinggeneticsdone.blogspot.com/p/copyright.html}
-#' 
-#' @examples
 pval_qqplot <- function(pvector, main=NULL, ...) {
   
   # removing zeroes before log-transformation
