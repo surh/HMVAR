@@ -1,46 +1,60 @@
-library(HMAR)
-# library(ggplot2)
-# library(qvalue)
+#!/usr/bin/env Rscript
+library(HMVAR)
+library(argparser)
+library(tidyverse)
 
-# This must be run with stitch_file.r
-# setwd("~/micropopgen/exp/2018/today3/")
-# devtools::document("~/micropopgen/src/HMAR/")
-
-dir <- opts[1]
-outfile <- opts[2]
-pattern <- opts[3]
-
-# dir <- "~/micropopgen/exp/2018/today3/mktest/"
-# outfile <- "results.txt"
-# pattern <- NA
-
-if(is.na(outfile))
-  stop("ERROR: must provide outfile name")
-
-if(is.na(pattern))
-  pattern <- "^mk_results"
-
-cat("dir:", dir, "\n")
-cat("outfile:", outfile, "\n")
-cat("pattern:", pattern, "\n")
-
-species_dirs <- list.dirs(dir, recursive = FALSE)
-
-Res <- NULL
-for(d in species_dirs){
-  species <- basename(d)
-  cat(species, "\n")
+process_arguments <- function(){
+  p <- argparser::arg_parser(paste0("Calculates genome-wide neutrality index from ",
+                                    "Anchurus MKtest.py results"))
   
-  files <- get_mk_results_files(d, pattern)
+  # Positional arguments
+  p <- argparser::add_argument(p, "input", help = paste0("Results from MKtest.py. ",
+                                                         "must have Dn, Ds, Pn, and Ps columns, ",
+                                                         "as well as one gene per line. Must ",
+                                                         "correspond to a single genome file, or a ",
+                                                         "directory of one file per genome."),
+                               type = "character")
   
-  if(length(files) > 0){
-    stats <- sapply(files, calculate_genome_wide_ni)
+  # Optional arguments
+  p <- argparser::add_argument(p, "--outfile", help = "File with results",
+                               default = "genomewide_ni.txt", type = "character")
+  p <- argparser::add_argument(p, "--type", help = "Type of input (file or dir).",
+                               default = "file", type = "character")
+  
+  # Read arguments
+  args <- argparser::parse_args(p)
+  
+  if(!(args$type %in% c("file", "dir"))){
+    stop("ERROR: type must be either file or dir.", call. = TRUE)
+  }
+  
+  return(args)
+}
+
+# Get arguments
+args <- process_arguments()
+print(args)
+
+if(args$type == 'file'){
+  Res <- genome_wide_ni(args$input)
+  Res <- tibble(File = basename(args$input),
+                NI = Res[1],
+                alpha = Res[2])
+}else if (args$type == "dir"){
+  file_list <- list.files(args$input)
+  Res <- NULL
+  for(f in file_list){
+    species <- basename(f)
+    cat(species, "\n")
     
-    res <- data.frame(Species = species, NI = stats[1,], alpha = stats[2,], row.names = NULL)
+    res <- genome_wide_ni(paste0(args$input, "/", f))
+    res <- tibble(File = species,
+                  NI = res[1],
+                  alpha = res[2])
     Res <- rbind(Res, res)
-  }else{
-    cat("\t", species, " had no result files.\n")
   }
 }
-head(Res[ order(Res$NI, decreasing = FALSE), ], 20)
-write.table(Res, outfile, sep = "\t", col.names = TRUE, row.names = FALSE, quote = FALSE)
+
+# Write output
+Res %>% arrange(desc(NI))
+write_tsv(Res, args$outfile)

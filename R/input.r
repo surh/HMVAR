@@ -62,10 +62,10 @@ format_input <- function(name, counts_file, taxonomy_file, Map = Map,
 #' and produces a genus level dataset for the fgour body sites
 #' of interest.
 #' 
-#' @param name
-#' @param counts_file
-#' @param map_file
-#' @param collapse_level
+#' @param name name
+#' @param counts_file counts file
+#' @param map_file map file
+#' @param collapse_level collapse level
 #' 
 #' @author Sur Herrera Paredes
 #' 

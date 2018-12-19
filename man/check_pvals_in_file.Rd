@@ -7,6 +7,8 @@
 check_pvals_in_file(file, which, plot = TRUE)
 }
 \arguments{
+\item{file}{file name}
+
 \item{which}{either 'all' or the name of the test to
 be analyzed}
 

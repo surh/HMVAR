@@ -1,0 +1,2 @@
+File	NI	alpha
+Prevotella_stercorea_58308_mktest.txt	0.9257864513986663	0.07421354860133367
