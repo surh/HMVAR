@@ -286,6 +286,10 @@ get_site_dist <- function(d, group_thres = 2){
 #' must have columns 'sample' and 'Group'.
 #' @param depth_thres Minimum number of reads (depth) at a site at
 #' a sample to be considered.
+#' @param freq_thres Frequency cuttoff for minor vs major allele.
+#' The value represents the distance from 0 or 1, for a site to be
+#' assigned to the major or minor allele respectively. It must be
+#' a value in [0,1].
 #'
 #' @return A data table which is the same and info bnut with
 #' a 'distribution' column indicating the allele distribution
@@ -298,18 +302,30 @@ get_site_dist <- function(d, group_thres = 2){
 #' @importFrom purrr map_chr
 #' @importFrom tibble tibble
 determine_snp_dist <- function(info, freq, depth, map,
-                               depth_thres = 1){
+                               depth_thres = 1,
+                               freq_thres = 0.5){
+  
+  # Process freq_thres
+  if(freq_thres < 0 || freq_thres > 1)
+    stop("ERROR: freq_thres must have values in [0, 1]", call. = TRUE)
+  
+  freq_thres <- min(freq_thres, 1 - freq_thres)
+  
+  
   # Reformat
   depth <- depth %>% tidyr::gather(key = "sample", value = 'depth', -site_id)
   freq <- freq %>% tidyr::gather(key = "sample", value = 'freq', -site_id)
   # meta <- info %>% select(site_id, ref_pos, snp_effect)
   
+  # Last lines can be re-written for speed!!
   dat <- depth %>%
     dplyr::inner_join(freq, by = c("site_id", "sample")) %>%
     dplyr::left_join(map, by = "sample") %>%
     dplyr::filter(depth >= depth_thres) %>%
-    dplyr::mutate(allele = replace(freq, freq < 0.5, 'major')) %>%
-    dplyr::mutate(allele = replace(allele, freq >= 0.5, 'minor'))
+    dplyr::mutate(allele = replace(freq, freq < freq_thres, 'major')) %>%
+    dplyr::mutate(allele = replace(allele, freq >= (1 - freq_thres), 'minor')) %>%
+    dplyr::mutate(allele = replace(allele, (freq >= freq_thres) | (freq < (1 - freq_thres)), NA)) %>%
+    dplyr::filter(!is.na(allele))
   
   site_dist <- dat %>%
     split(.$site_id) %>%
@@ -323,7 +339,10 @@ determine_snp_dist <- function(info, freq, depth, map,
   return(info)
 }
 
-#' Title
+#' Entries in McDonald-Kreitman table.
+#' 
+#' Calculates the four entries (Dn, Ds, Pn, Ps)
+#' in the McDonald-Kreitman contingency table.
 #'
 #' @param info 
 #' @param depth_thres 
