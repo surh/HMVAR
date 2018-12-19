@@ -323,7 +323,7 @@ determine_snp_dist <- function(info, freq, depth, map,
     dplyr::filter(depth >= depth_thres) %>%
     dplyr::mutate(allele = replace(freq, freq < freq_thres, 'major')) %>%
     dplyr::mutate(allele = replace(allele, freq >= (1 - freq_thres), 'minor')) %>%
-    dplyr::mutate(allele = replace(allele, (freq >= freq_thres) | (freq < (1 - freq_thres)), NA)) %>%
+    dplyr::mutate(allele = replace(allele, (freq >= freq_thres) & (freq < (1 - freq_thres)), NA)) %>%
     dplyr::filter(!is.na(allele))
   
   site_dist <- dat %>%
