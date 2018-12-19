@@ -2,19 +2,36 @@
 % Please edit documentation in R/mktest.r
 \name{midas_mktest}
 \alias{midas_mktest}
-\title{Title}
+\title{Perform McDonald-Kreitman test on MIDAS SNPs}
 \usage{
-midas_mktest(midas_dir, map_file, genes, depth_thres = 1)
+midas_mktest(midas_dir, map_file, genes = NULL, depth_thres = 1,
+  freq_thres = 0.5)
 }
 \arguments{
-\item{midas_dir}{}
+\item{midas_dir}{Directory where the output from
+midas_merge.py is located. It must include files:
+'snps_info.txt', 'snps_depth.txt' and 'snps_freq.txt'.}
 
-\item{map_file}{}
+\item{map_file}{A mapping file associating samples
+in the MIDAS otput to groups. It must have an 'ID'
+and a 'Group' column.}
 
-\item{genes}{}
+\item{genes}{The list of genes that are to be tested.
+Must correspond to entries in the 'genes_id' column
+of the 'snps_info.txt' file. If NULL, all genes will
+be tested.}
 
-\item{depth_thres}{}
+\item{depth_thres}{The minimum number of reads at
+a position in a given sample for that position in that
+sample to be included.}
+
+\item{freq_thres}{Frequency cuttoff for minor vs major allele.
+The value represents the distance from 0 or 1, for a site to be
+assigned to the major or minor allele respectively. It must be
+a value in [0,1].}
 }
 \description{
-Title
+Take output from MIDAS script midas_merge.py
+and perform a McDonald-Kreitman test between
+two groups.
 }

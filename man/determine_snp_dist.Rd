@@ -4,7 +4,8 @@
 \alias{determine_snp_dist}
 \title{SNP distribution between sites}
 \usage{
-determine_snp_dist(info, freq, depth, map, depth_thres = 1)
+determine_snp_dist(info, freq, depth, map, depth_thres = 1,
+  freq_thres = 0.5)
 }
 \arguments{
 \item{info}{Data table corresponding to the 'snps_info.txt'
@@ -25,6 +26,11 @@ must have columns 'sample' and 'Group'.}
 
 \item{depth_thres}{Minimum number of reads (depth) at a site at
 a sample to be considered.}
+
+\item{freq_thres}{Frequency cuttoff for minor vs major allele.
+The value represents the distance from 0 or 1, for a site to be
+assigned to the major or minor allele respectively. It must be
+a value in [0,1].}
 }
 \value{
 A data table which is the same and info bnut with
