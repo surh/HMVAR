@@ -54,6 +54,11 @@ process_arguments <- function(){
                                   "genes will be tested."),
                     default = NULL,
                     type = "character")
+  p <- add_argument(p, '--merge',
+                    help = paste0("If passed, all the McDonald-Kreitman values ",
+                                  "will be combined into one. Useful to test if ",
+                                  "a set of genes are under adaptive evolution."),
+                    flag = TRUE)
   p <- add_argument(p, "--depth_thres",
                     help = paste0("Minumum number of reads at a given site ",
                                   "at a given sample, for that site in that ",
@@ -70,6 +75,10 @@ process_arguments <- function(){
                                   "It must be a value in [0,1]."),
                     default = 0.5,
                     type = "double")
+  p <- add_argument(p, '--test',
+                    help = paste0("If passed, the Fisher's exact test will be performed ",
+                                  "on the McDonald-Kreitman contingency table."),
+                    flag = TRUE)
   
   # Read arguments
   args <- parse_args(p)
@@ -86,6 +95,7 @@ process_arguments <- function(){
 }
 #################################################
 
+# Set up
 args <- process_arguments()
 if(is.na(args$genes)){
   genes <- NULL
@@ -94,19 +104,42 @@ if(is.na(args$genes)){
   genes <- genes$X1
 }
 
+# MK contingency tables
+cat("Calculating contingency tables...\n")
 mktest <- midas_mktest(midas_dir = args$midas_dir,
                        map_file = args$map_file,
                        genes = genes,
                        depth_thres = args$depth_thres,
                        freq_thres = args$freq_thres)
+
+# Merge
+if(args$merge){
+  cat("Merging...\n")
+  mktest <- mktest %>% summarise(gene_id = 'merged.set',
+                                 Dn = sum(Dn),
+                                 Ds = sum(Ds),
+                                 Pn = sum(Pn),
+                                 Ps = sum(Ps))
+}
+
+# Test
+if(args$test){
+  cat("Testing...\n")
+  mktest <- mktest %>%
+    pmap_dfr(function(gene_id, Dn, Ds, Pn, Ps){
+      mat <- matrix(c(Dn,Ds,Pn,Ps), ncol = 2)
+      test <- fisher.test(mat)
+      return(tibble(gene_id = gene_id,
+                    Dn = Dn,
+                    Ds = Ds,
+                    Pn = Pn,
+                    Ps = Ps,
+                    OR = test$estimate,
+                    p.value = test$p.value))
+    })
+}
+
+# Write output
+cat("Writing output...\n")
 mktest %>% print(n = 20)
 write_tsv(mktest, args$outfile)
-
-
-
-
-
-
-# vmwa <- read_tsv("/godot/users/sur/exp/fraserv/2018/2018-12-17.plot_genes/hmp.vmwa.pvals.genes/Granulicatella_adiacens_61980_vmwa.genes.txt")
-# vmwa <- vmwa %>% filter(gene_id %in% genes)
-# vmwa %>% arrange(q.value)
