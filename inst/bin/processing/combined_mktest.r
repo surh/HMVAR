@@ -41,6 +41,10 @@ process_arguments <- function(){
                     type = "character")
   
   # Optional arguments
+  p <- add_argument(p, "--outfile",
+                    help = paste0("Name of file to write output"),
+                    default = "mktest.txt",
+                    type = "character")
   p <- add_argument(p, "--genes",
                     help = paste0("File with list of gene IDs to test. ",
                                   "It must contain one gene id per line, ",
@@ -83,22 +87,20 @@ process_arguments <- function(){
 #################################################
 
 args <- process_arguments()
-genes <- read_tsv(args$genes, col_names = FALSE, col_types = 'c')
-genes <- genes[,1]
-
-# # Parameters
-# midas_dir <- "/godot/shared_data/metagenomes/hmp/midas/merge/2018-02-07.merge.snps.d.5/Granulicatella_adiacens_61980/"
-# depth_thres <- 1
-# map_file <- "/godot/users/sur/exp/fraserv/2018/2018-12-14.hmp_mktest/hmp_SPvsTD_map.txt"
-# freq_thres <- 0.5
-
+if(is.na(args$genes)){
+  genes <- NULL
+}else{
+  genes <- read_tsv(args$genes, col_names = FALSE, col_types = 'c')
+  genes <- genes$X1
+}
 
 mktest <- midas_mktest(midas_dir = args$midas_dir,
                        map_file = args$map_file,
                        genes = genes,
                        depth_thres = args$depth_thres,
                        freq_thres = args$freq_thres)
-print(mktest)
+mktest %>% print(n = 20)
+write_tsv(mktest, args$outfile)
 
 
 
