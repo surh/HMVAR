@@ -117,7 +117,6 @@ check_pvalues <- function(estimates, pvals, plot = TRUE){
 #' corresponds to the column names of 'abun'.
 #'
 #' @return A data table
-#' @export
 #'
 #' @examples
 #' @importFrom magrittr %>%
@@ -147,7 +146,6 @@ select_samples_from_abun <- function(abun, map){
 #' 'snp_effect' added.
 #' @export
 #'
-#' @examples
 #' @importFrom dplyr select
 #' @importFrom purrr pmap_chr
 #' @importFrom stringr str_split
@@ -202,10 +200,9 @@ determine_snp_effect <- function(info, nucleotides=c(A = 1, C = 2, G = 3, T = 4)
 #' @param group_thres The minimum number of samples per
 #' group to consider the site.
 #'
-#' @return A character string indicating the type of site
-#'
-#' @examples
-determine_site_dist <- function(d, group_thres = 2){
+#' @return A character string indicating the type of site:
+#' 'Fixed', 'Polymorphic', 'Invariant' or NA.
+get_site_dist <- function(d, group_thres = 2){
   groups <- split(d$allele, d$Group)
   if(length(groups) == 1){
     dist <- NA
@@ -230,6 +227,8 @@ determine_site_dist <- function(d, group_thres = 2){
   return(dist)
 }
 
+
+# Alternative function to determine site distribution
 # determine_site_dist <- function(d){
 #   # dat <- subset(dat, site_id == "703112")
 #   
@@ -264,35 +263,62 @@ determine_site_dist <- function(d, group_thres = 2){
 #   T2 <- rbind(T2, t2)
 # }
 
-#' Title
+#' SNP distribution between sites
+#' 
+#' Determines how snps distribute between sites. Requires
+#' output from midas_merge.py and a mapping file mapping 
+#' samples to sites.
+#' 
+#' Only samples in both the map and the depth and freq tables
+#' are considered. Everything else is removed (inner_join)
 #'
-#' @param info 
-#' @param freq 
-#' @param depth 
-#' @param map 
-#' @param depth_thres 
+#' @param info Data table corresponding to the 'snps_info.txt'
+#' file from MIDAS. Must have columns 'site_id' and 'sample'
+#' @param freq A data table corresponding to the 'snps_freq.txt'
+#' file from MIDAS. Must have a 'site_id' column, and one more
+#' column per sample. Each row is the frequency of the minor
+#' allele for the corresponding site in the corresponding sample.
+#' @param depth A data table corresponding to the 'snps_depth.txt'
+#' file from MIDAS. Must have a 'site_id' column, and one more
+#' column per sample. Each row is the sequencing depth for the
+#' corresponding site in the corresponding sample.
+#' @param map A data table associating samples with groups (sites).
+#' must have columns 'sample' and 'Group'.
+#' @param depth_thres Minimum number of reads (depth) at a site at
+#' a sample to be considered.
 #'
-#' @return
+#' @return A data table which is the same and info bnut with
+#' a 'distribution' column indicating the allele distribution
+#' between sites in the  given samples.
 #' @export
-#'
-#' @examples
-calculate_snp_dist <- function(info, freq, depth, map, depth_thres = 1){
+#' 
+#' @importFrom tidyr gather
+#' @importFrom magrittr %>%
+#' @importFrom dplyr inner_join left_join filter mutate
+#' @importFrom purrr map_chr
+#' @importFrom tibble tibble
+determine_snp_dist <- function(info, freq, depth, map,
+                               depth_thres = 1){
   # Reformat
-  depth <- depth %>% gather(key = "sample", value = 'depth', -site_id)
-  freq <- freq %>% gather(key = "sample", value = 'freq', -site_id)
+  depth <- depth %>% tidyr::gather(key = "sample", value = 'depth', -site_id)
+  freq <- freq %>% tidyr::gather(key = "sample", value = 'freq', -site_id)
   # meta <- info %>% select(site_id, ref_pos, snp_effect)
   
   dat <- depth %>%
-    inner_join(freq, by = c("site_id", "sample")) %>%
-    left_join(map, by = "sample") %>%
-    filter(depth >= depth_thres) %>%
-    mutate(allele = replace(freq, freq < 0.5, 'major')) %>%
-    mutate(allele = replace(allele, freq >= 0.5, 'minor'))
+    dplyr::inner_join(freq, by = c("site_id", "sample")) %>%
+    dplyr::left_join(map, by = "sample") %>%
+    dplyr::filter(depth >= depth_thres) %>%
+    dplyr::mutate(allele = replace(freq, freq < 0.5, 'major')) %>%
+    dplyr::mutate(allele = replace(allele, freq >= 0.5, 'minor'))
   
-  site_dist <- dat %>% split(.$site_id) %>% map_chr(determine_site_dist)
-  site_dist <- tibble(site_id = names(site_dist), distribution = factor(site_dist,
-                                                                        levels = c('Fixed', 'Invariant', 'Polymorphic')))
-  info <- info %>% inner_join(site_dist, by = "site_id")
+  site_dist <- dat %>%
+    split(.$site_id) %>%
+    purrr::map_chr(get_site_dist)
+  site_dist <- tibble::tibble(site_id = names(site_dist),
+                              distribution = factor(site_dist,
+                                                    levels = c('Fixed', 'Invariant', 'Polymorphic')))
+  info <- info %>%
+    dplyr::inner_join(site_dist, by = "site_id")
   
   return(info)
 }
