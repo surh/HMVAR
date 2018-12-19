@@ -429,7 +429,6 @@ midas_mktest <- function(midas_dir, map_file,
   Res <- Dat$info %>%
     split(.$gene_id) %>%
     purrr::map_dfr(mkvalues,
-                   depth_thres = depth_thres,
                    .id = "gene_id")
   
   return(Res)
