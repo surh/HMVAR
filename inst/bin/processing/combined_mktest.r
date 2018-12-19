@@ -21,105 +21,90 @@ library(HMVAR)
 library(tidyverse)
 library(argparser)
 
+################### Functions ###################
+process_arguments <- function(){
+  p <- arg_parser(paste0("Performs McDonald-Kreitman test on a subset ",
+                         "of genes from the output of MIDAS."))
+  
+  # Positional arguments
+  p <- add_argument(p, "midas_dir",
+                    help = paste0("Directory containing ",
+                                  "SNPs merged by MIDAS for a ",
+                                  "single genome. Must contain files: ",
+                                  "'snps_info.txt', 'snps_depth.txt', ",
+                                  "and 'snps_freq.txt'."),
+                    type = "character")
+  p <- add_argument(p, "map_file",
+                    help = paste0("Mapping file that associates samples ",
+                                  "with groups. It must be a tab-delimited ",
+                                  "file with headers 'ID' and 'Group'"),
+                    type = "character")
+  
+  # Optional arguments
+  p <- add_argument(p, "--genes",
+                    help = paste0("File with list of gene IDs to test. ",
+                                  "It must contain one gene id per line, ",
+                                  "without header, and the IDs must ",
+                                  "correspond to the gene_id column from ",
+                                  "the snps_info.txt file. If NULL, all ",
+                                  "genes will be tested."),
+                    default = NULL,
+                    type = "character")
+  p <- add_argument(p, "--depth_thres",
+                    help = paste0("Minumum number of reads at a given site ",
+                                  "at a given sample, for that site in that ",
+                                  "sample to be included in calculations"),
+                    default = 1,
+                    type = "integer")
+  p <- add_argument(p, "--freq_thres",
+                    help = paste0("This value is the threshold that will be ",
+                                  "used to determine which allele is present in ",
+                                  "a sample. The value from ",
+                                  "min(freq_thres, 1 - freq_thres) represents the ",
+                                  " distance from 0 or 1, for a site to be assigned ",
+                                  "to the major or minor allele respectively. ",
+                                  "It must be a value in [0,1]."),
+                    default = 0.5,
+                    type = "double")
+  
+  # Read arguments
+  args <- parse_args(p)
+  
+  # Process arguments
+  if(args$freq_thres < 0 || args$freq_thres > 1){
+    stop("ERROR: freq_thres must be a value in [0,1].")
+  }
+  if(args$depth_thres < 0){
+    stop("ERROR: depth_thres must be a non-negative integer.")
+  }
+  
+  return(args)
+}
+#################################################
 
-# 
-# mktest_file <- "../2018-12-14.hmp_mktest/results/Granulicatella_adiacens_61980_mktest.txt"
-# Genes <- read_tsv(mktest_file)
-# gene <- Genes$gene[2]
-genes <- c("638301.3.peg.1",
-           "638301.3.peg.444",
-           "638301.3.peg.884",
-           "638301.3.peg.944",
-           "638301.3.peg.955",
-           "638301.3.peg.1091",
-           "638301.3.peg.1273",
-           "638301.3.peg.1346",
-           "638301.3.peg.1361")
+args <- process_arguments()
+genes <- read_tsv(args$genes, col_names = FALSE, col_types = 'c')
+genes <- genes[,1]
 
-# Parameters
-midas_dir <- "/godot/shared_data/metagenomes/hmp/midas/merge/2018-02-07.merge.snps.d.5/Granulicatella_adiacens_61980/"
-depth_thres <- 1
-map_file <- "/godot/users/sur/exp/fraserv/2018/2018-12-14.hmp_mktest/hmp_SPvsTD_map.txt"
-freq_thres <- 0.5
+# # Parameters
+# midas_dir <- "/godot/shared_data/metagenomes/hmp/midas/merge/2018-02-07.merge.snps.d.5/Granulicatella_adiacens_61980/"
+# depth_thres <- 1
+# map_file <- "/godot/users/sur/exp/fraserv/2018/2018-12-14.hmp_mktest/hmp_SPvsTD_map.txt"
+# freq_thres <- 0.5
 
 
-mktest <- midas_mktest(midas_dir = midas_dir,
-                       map_file = map_file,
+mktest <- midas_mktest(midas_dir = args$midas_dir,
+                       map_file = args$map_file,
                        genes = genes,
-                       depth_thres = depth_thres,
-                       freq_thres = 0.5)
+                       depth_thres = args$depth_thres,
+                       freq_thres = args$freq_thres)
 mktest
 
-######### Placing function code ############
-map <- readr::read_tsv(map_file)
-map <- map %>% dplyr::select(sample = ID, Group)
-Dat <- read_midas_data(midas_dir = midas_dir, map = map, 
-                       genes = genes)
-Dat$info <- determine_snp_effect(Dat$info)
-# Works up to here
-
-# Dat$info <- determine_snp_dist(info = Dat$info, freq = Dat$freq, 
-#                                depth = Dat$depth, map = map,
-#                                depth_thres = depth_thres, 
-#                                freq_thres = freq_thres)
-
-
-info <- Dat$info
-freq <- Dat$freq
-depth <- Dat$depth
-
-
-freq_thres <- 0.2
-
-if (freq_thres < 0 || freq_thres > 1) 
-  stop("ERROR: freq_thres must have values in [0, 1]", 
-       call. = TRUE)
-freq_thres <- min(freq_thres, 1 - freq_thres)
-depth <- depth %>% tidyr::gather(key = "sample", value = "depth", 
-                                 -site_id)
-freq <- freq %>% tidyr::gather(key = "sample", value = "freq", 
-                               -site_id)
-
-dat <- depth %>%
-  dplyr::inner_join(freq, by = c("site_id", "sample")) %>% 
-  dplyr::left_join(map, by = "sample") %>% 
-  dplyr::filter(depth >= depth_thres)
-# dat
-
-dat <- dat %>%
-  dplyr::mutate(allele = replace(freq, freq < freq_thres, "major")) %>%
-  dplyr::mutate(allele = replace(allele, freq >= (1 - freq_thres), "minor"))
-# dat
-
-dat <- dat %>%
-  dplyr::mutate(allele = replace(allele, (freq >= freq_thres) & (freq < (1 - freq_thres)), NA))
-dat
-
-  dplyr::filter(!is.na(allele))
-dat
-
-site_dist <- dat %>% split(.$site_id) %>% purrr::map_chr(get_site_dist)
-site_dist <- tibble::tibble(site_id = names(site_dist), distribution = factor(site_dist, 
-                                                                              levels = c("Fixed", "Invariant", "Polymorphic")))
-info <- info %>% dplyr::inner_join(site_dist, by = "site_id")
-return(info)
 
 
 
 
 
-
-
-
-Res <- Dat$info %>% split(.$gene_id) %>% purrr::map_dfr(mkvalues, 
-                                                        depth_thres = depth_thres, .id = "gene_id")
-return(Res)
-
-
-
-
-
-
-vmwa <- read_tsv("hmp.vmwa.pvals.genes/Granulicatella_adiacens_61980_vmwa.genes.txt")
-vmwa <- vmwa %>% filter(gene_id %in% genes)
-vmwa %>% arrange(q.value)
+# vmwa <- read_tsv("/godot/users/sur/exp/fraserv/2018/2018-12-17.plot_genes/hmp.vmwa.pvals.genes/Granulicatella_adiacens_61980_vmwa.genes.txt")
+# vmwa <- vmwa %>% filter(gene_id %in% genes)
+# vmwa %>% arrange(q.value)
