@@ -175,7 +175,9 @@ determine_snp_effect <- function(info, nucleotides=c(A = 1, C = 2, G = 3, T = 4)
       aa = stringr::str_split(string = amino_acids,
                               pattern = ",",
                               simplify = TRUE)
-      if( aa[nucleotides[major_allele]] == aa[nucleotides[minor_allele]] ){
+      if(all(is.na(aa))){
+        type <- NA
+      }else if( aa[nucleotides[major_allele]] == aa[nucleotides[minor_allele]] ){
         type <- "synonymous"
       }else{
         type <- "non-synonymous"

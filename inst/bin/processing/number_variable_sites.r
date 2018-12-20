@@ -31,7 +31,8 @@ args <- list(midas_dir = "/godot/users/sur/exp/fraserv/2018/2018-12-14.hmp_mktes
              freq_thres = 0.5,
              cds_only = FALSE,
              plot_positin = TRUE,
-             prefix = "Granulicatella_adiacens_61980")
+             prefix = "Granulicatella_adiacens_61980",
+             outdir = "results/")
 
 # Read genes
 if(is.na(args$genes)){
@@ -82,16 +83,16 @@ depth <- depth %>%
   filter(site_id %in% info$site_id)
 
 
-
 # Calcualate snp effect
 info <- determine_snp_effect(info)
-# Calculate snp dist
-info <- determine_snp_dist(info = info,
-                           freq = freq,
-                           depth = depth,
-                           map = map,
-                           depth_thres = args$depth_thres,
-                           freq_thres = args$freq_thres)
+# # Calculate snp dist
+# info <- determine_snp_dist(info = info,
+#                            freq = freq,
+#                            depth = depth,
+#                            map = map,
+#                            depth_thres = args$depth_thres,
+#                            freq_thres = args$freq_thres)
+
 # Subsitution type
 info <- info %>%
   add_column(substitution = info %>%
