@@ -25,51 +25,97 @@ library(argparser)
 
 # Parameters
 args <- list(midas_dir = "/godot/users/sur/exp/fraserv/2018/2018-12-14.hmp_mktest/genomes/Granulicatella_adiacens_61980/",
-             depth_thres = 1,
              map_file = "/godot/users/sur/exp/fraserv/2018/2018-12-14.hmp_mktest/hmp_SPvsTD_map.txt",
-             genes = NULL,
+             # genes = NULL,
+             genes = c("638301.3.peg.1", 
+                       "638301.3.peg.2",
+                       "638301.3.peg.3",
+                       "638301.3.peg.4"),
              depth_thres = 1,
-             freq_thres = 0.5)
+             freq_thres = 0.5,
+             cds_only = FALSE,
+             plot_positin = TRUE)
 
-# midas_dir <- "../2018-12-14.hmp_mktest/genomes/Granulicatella_adiacens_61980/"
-# depth_thres <- 1
-# map_file <- "../2018-12-14.hmp_mktest/hmp_SPvsTD_map.txt"
-# genes <- "638301.3.peg.283"
+# Read genes
 
+# Read map
 map <- read_tsv(args$map_file)
 map <- map %>%
   select(sample = ID,
          everything())
 
-Dat <- read_midas_data(midas_dir = args$midas_dir,
-                       map = map,
-                       genes = args$genes)
+# Read MIDAS data
+info <- read_tsv(paste0(args$midas_dir, "/snps_info.txt"),
+                 col_types = 'ccncccnnnnnccccc',
+                 na = 'NA')
+depth <- read_midas_abun(paste0(args$midas_dir, "/snps_depth.txt"))
+freq <- read_midas_abun(paste0(args$midas_dir, "/snps_freq.txt"))
+
+# Process data
+# Clean info
+info <- info %>% 
+  select(-locus_type, -starts_with("count_"), -ref_allele)
+# Clean depth and freq
+depth <- depth %>%
+  select(site_id, intersect(map$sample, colnames(depth)) )
+freq <- freq %>%
+  select(site_id, intersect(map$sample, colnames(freq)) )
+# Clean map
+map <- map %>% 
+  filter(sample %in% colnames(depth))
+
+# Select gene/cds data
+if(args$cds_only){
+  info <- info %>% 
+    filter(!is.na(gene_id))
+}
+if(!is.null(args$genes)){
+  info <- info %>%
+    filter(gene_id %in% args$genes)
+}
+freq <- freq %>% 
+  filter(site_id %in% info$site_id)
+depth <- depth %>% 
+  filter(site_id %in% info$site_id)
+
+
 
 # Calcualate snp effect
-Dat$info <- determine_snp_effect(Dat$info)
+info <- determine_snp_effect(info)
 # Calculate snp dist
-Dat$info <- determine_snp_dist(info = Dat$info,
-                               freq = Dat$freq,
-                               depth = Dat$depth,
-                               map = map,
-                               depth_thres = args$depth_thres,
-                               freq_thres = args$freq_thres)
+info <- determine_snp_dist(info = info,
+                           freq = freq,
+                           depth = depth,
+                           map = map,
+                           depth_thres = args$depth_thres,
+                           freq_thres = args$freq_thres)
+# Subsitution type
+info <- info %>%
+  add_column(substitution = info %>%
+               pmap_chr(function(major_allele, minor_allele, ...){
+                 base_type <- c(A = "purine", C = "pyrimidine", G = "purine", T = "pyrimidine")
+                 if(base_type[major_allele] == base_type[minor_allele]){
+                   substitution <- "transition" 
+                 }else{
+                   substitution <- "transversion"
+                 }
+                 return(substitution)
+               }))
+
 
 
 # Match freqs and depth
-depth <- Dat$depth %>% gather(key = "sample", value = 'depth', -site_id)
-freq <- Dat$freq %>% gather(key = "sample", value = 'freq', -site_id)
-meta <- Dat$info %>% select(site_id, ref_id, ref_pos, snp_effect, distribution)
+depth <- depth %>% gather(key = "sample", value = 'depth', -site_id)
+freq <- freq %>% gather(key = "sample", value = 'freq', -site_id)
+# meta <- Dat$info %>% select(site_id, ref_id, ref_pos, snp_effect, distribution)
 
 dat <- depth %>%
   inner_join(freq, by = c("site_id", "sample")) %>%
   left_join(map, by = "sample") %>%
-  filter(depth >= depth_thres) %>%
-  left_join(meta, by = "site_id") %>%
-  mutate(allele = replace(freq, freq < 0.5, 'major')) %>%
-  mutate(allele = replace(allele, freq >= 0.5, 'minor')) %>%
+  filter(depth >= args$depth_thres) %>%
+  left_join(info, by = "site_id") %>%
   filter(distribution != "Invariant")
-dat
+# dat
 
 
 # Count number of sites and number of variable per sample
