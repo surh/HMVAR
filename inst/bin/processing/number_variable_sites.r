@@ -34,7 +34,8 @@ args <- list(midas_dir = "/godot/users/sur/exp/fraserv/2018/2018-12-14.hmp_mktes
              depth_thres = 1,
              freq_thres = 0.5,
              cds_only = FALSE,
-             plot_positin = TRUE)
+             plot_positin = TRUE,
+             prefix = "Granulicatella_adiacens_61980")
 
 # Read genes
 
@@ -126,60 +127,22 @@ varsites <- dat %>%
     nsites <- nrow(d)
     sites <- d$freq
     nfixed <- sum(sites >= 1 | sites <= 0)
+    ntransitions <- sum(d$substitution == "transition")
+    nsynonymous <- sum(d$snp_effect == "synonymous")
+    nnonsynonymous <- sum(d$snp_effect == "non-synonymous")
     return(tibble(nsites = nsites,
-                  nfixed = nfixed,
-                  nvariable = nsites - nfixed))
+                  fixed = nfixed,
+                  variable = nsites - nfixed,
+                  transitions = ntransitions,
+                  transversions = nsites - ntransitions,
+                  synonymous = nsynonymous,
+                  non.synonymous = nnonsynonymous,
+                  IGR = nsites - nsynonymous - nnonsynonymous))
   }, .id = "sample") %>%
   inner_join(map, by = "sample")
 varsites
 
-p1 <- varsites %>%
-  ggplot(aes(x = Group, y = 100*nvariable/nsites, col = Group)) +
-  geom_boxplot() +
-  geom_point(position = position_jitter(width = 0.2)) +
-  theme(panel.background = element_blank(),
-        panel.grid = element_blank())
-ggsave("Granulicatella_adiacens_61980_varsites_depth1.png", p1, width = 5, height = 4, dpi = 150)
-
-p1 <- varsites %>%
-  ggplot(aes(x = Group, y = nsites, col = Group)) +
-  geom_boxplot() +
-  geom_point(position = position_jitter(width = 0.2)) +
-  theme(panel.background = element_blank(),
-        panel.grid = element_blank())
-ggsave("Granulicatella_adiacens_61980_totsites.png", p1, width = 5, height = 4, dpi = 150)
-
-# varsites %>%
-#   ggplot(aes(x = Group, y = nvariable, col = Group)) +
-#   geom_boxplot() +
-#   geom_point(position = position_jitter(width = 0.2)) +
-#   theme(panel.background = element_blank(),
-#         panel.grid = element_blank())
-
-
-varsites <- dat %>%
-  filter(depth >= 15) %>%
-  split(.$sample) %>%
-  map_dfr(function(d){
-    nsites <- nrow(d)
-    sites <- d$freq
-    nfixed <- sum(sites >= 1 | sites <= 0)
-    return(tibble(nsites = nsites,
-                  nvariable = nsites - nfixed))
-  }, .id = "sample") %>%
-  inner_join(map, by = "sample")
-varsites
-
-p1 <- varsites %>%
-  ggplot(aes(x = Group, y = 100*nvariable/nsites, col = Group)) +
-  geom_boxplot() +
-  geom_point(position = position_jitter(width = 0.2)) +
-  theme(panel.background = element_blank(),
-        panel.grid = element_blank())
-p1
-ggsave("Granulicatella_adiacens_61980_varsites_depth15.png",
-       p1, width = 5, height = 4, dpi = 150)
-
+# Plot total. variable and fixed sites
 p1 <- varsites %>%
   ggplot(aes(x = Group, y = nsites, col = Group)) +
   geom_boxplot() +
@@ -187,5 +150,95 @@ p1 <- varsites %>%
   theme(panel.background = element_blank(),
         panel.grid = element_blank())
 p1
-ggsave("Granulicatella_adiacens_61980_totsites_depth15.png",
-       p1, width = 5, height = 4, dpi = 150)
+# ggsave("Granulicatella_adiacens_61980_totsites.png", p1, width = 5, height = 4, dpi = 150)
+
+p1 <- varsites %>%
+  ggplot(aes(x = Group, y = 100*variable/nsites, col = Group)) +
+  geom_boxplot() +
+  geom_point(position = position_jitter(width = 0.2)) +
+  theme(panel.background = element_blank(),
+        panel.grid = element_blank(),
+        panel.border = element_rect(color = "black", fill = NA))
+p1
+# ggsave("Granulicatella_adiacens_61980_varsites_depth1.png", p1, width = 5, height = 4, dpi = 150)
+
+p1 <- varsites %>%
+  ggplot(aes(x = Group, y = 100*fixed/nsites, col = Group)) +
+  geom_boxplot() +
+  geom_point(position = position_jitter(width = 0.2)) +
+  theme(panel.background = element_blank(),
+        panel.grid = element_blank(),
+        panel.border = element_rect(color = "black", fill = NA))
+p1
+
+# Plot transitions and transversions
+p1 <- varsites %>%
+  ggplot(aes(x = Group, y = transitions, col = Group)) +
+  geom_boxplot() +
+  geom_point(position = position_jitter(width = 0.2)) +
+  theme(panel.background = element_blank(),
+        panel.grid = element_blank(),
+        panel.border = element_rect(color = "black", fill = NA))
+p1
+
+p1 <- varsites %>%
+  ggplot(aes(x = Group, y = transversions, col = Group)) +
+  geom_boxplot() +
+  geom_point(position = position_jitter(width = 0.2)) +
+  theme(panel.background = element_blank(),
+        panel.grid = element_blank(),
+        panel.border = element_rect(color = "black", fill = NA))
+p1
+
+p1 <- varsites %>%
+  ggplot(aes(x = Group, y = transitions/transversions, col = Group)) +
+  geom_boxplot() +
+  geom_point(position = position_jitter(width = 0.2)) +
+  scale_y_log10() +
+  theme(panel.background = element_blank(),
+        panel.grid = element_blank(),
+        panel.border = element_rect(color = "black", fill = NA))
+p1
+
+
+# Plot synonymous and non-synonymous
+p1 <- varsites %>%
+  ggplot(aes(x = Group, y = 100*synonymous/nsites, col = Group)) +
+  geom_boxplot() +
+  geom_point(position = position_jitter(width = 0.2)) +
+  scale_y_continuous(limits = c(0,100)) +
+  theme(panel.background = element_blank(),
+        panel.grid = element_blank(),
+        panel.border = element_rect(color = "black", fill = NA))
+p1
+
+p1 <- varsites %>%
+  ggplot(aes(x = Group, y = 100*non.synonymous/nsites, col = Group)) +
+  geom_boxplot() +
+  geom_point(position = position_jitter(width = 0.2)) +
+  scale_y_continuous(limits = c(0,100)) +
+  theme(panel.background = element_blank(),
+        panel.grid = element_blank(),
+        panel.border = element_rect(color = "black", fill = NA))
+p1
+
+p1 <- varsites %>%
+  ggplot(aes(x = Group, y = 100*IGR/nsites, col = Group)) +
+  geom_boxplot() +
+  geom_point(position = position_jitter(width = 0.2)) +
+  scale_y_continuous(limits = c(0,100)) +
+  theme(panel.background = element_blank(),
+        panel.grid = element_blank(),
+        panel.border = element_rect(color = "black", fill = NA))
+p1
+
+p1 <- varsites %>%
+  ggplot(aes(x = Group, y = non.synonymous/synonymous, col = Group)) +
+  geom_boxplot() +
+  geom_point(position = position_jitter(width = 0.2)) +
+  scale_y_log10() +
+  theme(panel.background = element_blank(),
+        panel.grid = element_blank(),
+        panel.border = element_rect(color = "black", fill = NA))
+p1
+
