@@ -26,11 +26,7 @@ library(argparser)
 # Parameters
 args <- list(midas_dir = "/godot/users/sur/exp/fraserv/2018/2018-12-14.hmp_mktest/genomes/Granulicatella_adiacens_61980/",
              map_file = "/godot/users/sur/exp/fraserv/2018/2018-12-14.hmp_mktest/hmp_SPvsTD_map.txt",
-             # genes = NULL,
-             genes = c("638301.3.peg.1", 
-                       "638301.3.peg.2",
-                       "638301.3.peg.3",
-                       "638301.3.peg.4"),
+             genes = NA,
              depth_thres = 1,
              freq_thres = 0.5,
              cds_only = FALSE,
@@ -38,6 +34,12 @@ args <- list(midas_dir = "/godot/users/sur/exp/fraserv/2018/2018-12-14.hmp_mktes
              prefix = "Granulicatella_adiacens_61980")
 
 # Read genes
+if(is.na(args$genes)){
+  genes <- NULL
+}else{
+  genes <- read_tsv(args$genes, col_names = FALSE, col_types = 'c')
+  genes <- genes$X1
+}
 
 # Read map
 map <- read_tsv(args$map_file)
@@ -70,9 +72,9 @@ if(args$cds_only){
   info <- info %>% 
     filter(!is.na(gene_id))
 }
-if(!is.null(args$genes)){
+if(!is.null(genes)){
   info <- info %>%
-    filter(gene_id %in% args$genes)
+    filter(gene_id %in% genes)
 }
 freq <- freq %>% 
   filter(site_id %in% info$site_id)
@@ -241,4 +243,48 @@ p1 <- varsites %>%
         panel.grid = element_blank(),
         panel.border = element_rect(color = "black", fill = NA))
 p1
+
+#### Plot position
+
+
+
+
+
+
+ggplot(dat, aes(x = ref_pos ))
+
+
+
+pos.varsites <- dat %>%
+  split(.$site_id) %>%
+  map_dfr(function(d){
+    res <- d %>%
+      split(.$Group) %>% map_dfr(function(d){
+      nsamples <- nrow(d)
+      nfixed <- sum(d$freq == 0 | d$freq == 1)
+      return(tibble(site_id = unique(d$site_id),
+                    nsamples = nsamples,
+                    fixed = nfixed))
+    }, .id = "Group")
+  }) %>% left_join(info, by = "site_id")
+
+pos.varsites
+
+
+p1 <- ggplot(pos.varsites, aes(x = ref_pos, y = fixed / nsamples)) +
+  facet_grid(~ ref_id, space = "free_x") +
+  # geom_line(aes(color = Group)) +
+  geom_point(aes(color = Group), size = 0.1) +
+  geom_smooth(aes(color = Group), se = FALSE, method = "gam", formula = y ~ s(x, bs = "cs")) +
+  scale_y_continuous(limits = c(0,1)) +
+  theme(panel.background = element_blank(),
+        panel.grid = element_blank(),
+        axis.text = element_text(color = "black"),
+        axis.line.x.bottom = element_line(),
+        axis.line.y.left = element_line())
+p1
+
+
+
+
 
