@@ -30,7 +30,7 @@ args <- list(midas_dir = "/godot/users/sur/exp/fraserv/2018/2018-12-14.hmp_mktes
              depth_thres = 1,
              freq_thres = 0.5,
              cds_only = FALSE,
-             plot_positin = TRUE,
+             plot_position = TRUE,
              prefix = "Granulicatella_adiacens_61980",
              outdir = "results/")
 
@@ -86,12 +86,12 @@ depth <- depth %>%
 # Calcualate snp effect
 info <- determine_snp_effect(info)
 # # Calculate snp dist
-# info <- determine_snp_dist(info = info,
-#                            freq = freq,
-#                            depth = depth,
-#                            map = map,
-#                            depth_thres = args$depth_thres,
-#                            freq_thres = args$freq_thres)
+info <- determine_snp_dist(info = info,
+                           freq = freq,
+                           depth = depth,
+                           map = map,
+                           depth_thres = args$depth_thres,
+                           freq_thres = args$freq_thres)
 
 # Subsitution type
 info <- info %>%
@@ -107,11 +107,9 @@ info <- info %>%
                }))
 
 
-
 # Match freqs and depth
 depth <- depth %>% gather(key = "sample", value = 'depth', -site_id)
 freq <- freq %>% gather(key = "sample", value = 'freq', -site_id)
-# meta <- Dat$info %>% select(site_id, ref_id, ref_pos, snp_effect, distribution)
 
 dat <- depth %>%
   inner_join(freq, by = c("site_id", "sample")) %>%
@@ -121,6 +119,10 @@ dat <- depth %>%
   filter(distribution != "Invariant")
 # dat
 
+# Prepare output dir
+if(!dir.exists(args$outdir)){
+  dir.create(args$outdir)
+}
 
 # Count number of sites and number of variable per sample
 varsites <- dat %>%
@@ -131,8 +133,8 @@ varsites <- dat %>%
     sites <- d$freq
     nfixed <- sum(sites >= 1 | sites <= 0)
     ntransitions <- sum(d$substitution == "transition")
-    nsynonymous <- sum(d$snp_effect == "synonymous")
-    nnonsynonymous <- sum(d$snp_effect == "non-synonymous")
+    nsynonymous <- sum(d$snp_effect == "synonymous", na.rm = TRUE)
+    nnonsynonymous <- sum(d$snp_effect == "non-synonymous", na.rm = TRUE)
     return(tibble(nsites = nsites,
                   fixed = nfixed,
                   variable = nsites - nfixed,
@@ -140,10 +142,13 @@ varsites <- dat %>%
                   transversions = nsites - ntransitions,
                   synonymous = nsynonymous,
                   non.synonymous = nnonsynonymous,
-                  IGR = nsites - nsynonymous - nnonsynonymous))
+                  other = nsites - nsynonymous - nnonsynonymous))
   }, .id = "sample") %>%
   inner_join(map, by = "sample")
-varsites
+# varsites
+filename <- paste0(args$outdir, "/", args$prefix, ".varsites.txt")
+write_tsv(varsites, path = filename)
+
 
 # Plot total. variable and fixed sites
 p1 <- varsites %>%
@@ -151,58 +156,74 @@ p1 <- varsites %>%
   geom_boxplot() +
   geom_point(position = position_jitter(width = 0.2)) +
   theme(panel.background = element_blank(),
-        panel.grid = element_blank())
-p1
-# ggsave("Granulicatella_adiacens_61980_totsites.png", p1, width = 5, height = 4, dpi = 150)
+        panel.grid = element_blank(),
+        axis.text = element_text(color = "black"),
+        axis.line.x.bottom = element_line(),
+        axis.line.y.left = element_line())
+# p1
+filename <- paste0(args$outdir, "/", args$prefix, ".varsites.nsites.svg")
+ggsave(filename, p1, width = 5, height = 4)
 
 p1 <- varsites %>%
   ggplot(aes(x = Group, y = 100*variable/nsites, col = Group)) +
   geom_boxplot() +
   geom_point(position = position_jitter(width = 0.2)) +
+  scale_y_continuous(limits = c(0,100)) +
   theme(panel.background = element_blank(),
         panel.grid = element_blank(),
-        panel.border = element_rect(color = "black", fill = NA))
-p1
-# ggsave("Granulicatella_adiacens_61980_varsites_depth1.png", p1, width = 5, height = 4, dpi = 150)
+        axis.text = element_text(color = "black"),
+        axis.line.x.bottom = element_line(),
+        axis.line.y.left = element_line())
+# p1
+filename <- paste0(args$outdir, "/", args$prefix, ".varsites.percvarsites.svg")
+ggsave(filename, p1, width = 5, height = 4)
 
 p1 <- varsites %>%
   ggplot(aes(x = Group, y = 100*fixed/nsites, col = Group)) +
   geom_boxplot() +
   geom_point(position = position_jitter(width = 0.2)) +
+  scale_y_continuous(limits = c(0,100)) +
   theme(panel.background = element_blank(),
         panel.grid = element_blank(),
-        panel.border = element_rect(color = "black", fill = NA))
-p1
+        axis.text = element_text(color = "black"),
+        axis.line.x.bottom = element_line(),
+        axis.line.y.left = element_line())
+# p1
+filename <- paste0(args$outdir, "/", args$prefix, ".varsites.percfixsites.svg")
+ggsave(filename, p1, width = 5, height = 4)
 
 # Plot transitions and transversions
-p1 <- varsites %>%
-  ggplot(aes(x = Group, y = transitions, col = Group)) +
-  geom_boxplot() +
-  geom_point(position = position_jitter(width = 0.2)) +
-  theme(panel.background = element_blank(),
-        panel.grid = element_blank(),
-        panel.border = element_rect(color = "black", fill = NA))
-p1
-
-p1 <- varsites %>%
-  ggplot(aes(x = Group, y = transversions, col = Group)) +
-  geom_boxplot() +
-  geom_point(position = position_jitter(width = 0.2)) +
-  theme(panel.background = element_blank(),
-        panel.grid = element_blank(),
-        panel.border = element_rect(color = "black", fill = NA))
-p1
+# p1 <- varsites %>%
+#   ggplot(aes(x = Group, y = transitions, col = Group)) +
+#   geom_boxplot() +
+#   geom_point(position = position_jitter(width = 0.2)) +
+#   theme(panel.background = element_blank(),
+#         panel.grid = element_blank(),
+#         panel.border = element_rect(color = "black", fill = NA))
+# p1
+# 
+# p1 <- varsites %>%
+#   ggplot(aes(x = Group, y = transversions, col = Group)) +
+#   geom_boxplot() +
+#   geom_point(position = position_jitter(width = 0.2)) +
+#   theme(panel.background = element_blank(),
+#         panel.grid = element_blank(),
+#         panel.border = element_rect(color = "black", fill = NA))
+# p1
 
 p1 <- varsites %>%
   ggplot(aes(x = Group, y = transitions/transversions, col = Group)) +
   geom_boxplot() +
   geom_point(position = position_jitter(width = 0.2)) +
-  scale_y_log10() +
+  scale_y_log10(breaks = function(x){seq(from = x[1], to = x[2], length.out = 5)}) +
   theme(panel.background = element_blank(),
         panel.grid = element_blank(),
-        panel.border = element_rect(color = "black", fill = NA))
-p1
-
+        axis.text = element_text(color = "black"),
+        axis.line.x.bottom = element_line(),
+        axis.line.y.left = element_line())
+# p1
+filename <- paste0(args$outdir, "/", args$prefix, ".varsites.subs_type.svg")
+ggsave(filename, p1, width = 5, height = 4)
 
 # Plot synonymous and non-synonymous
 p1 <- varsites %>%
@@ -212,8 +233,12 @@ p1 <- varsites %>%
   scale_y_continuous(limits = c(0,100)) +
   theme(panel.background = element_blank(),
         panel.grid = element_blank(),
-        panel.border = element_rect(color = "black", fill = NA))
-p1
+        axis.text = element_text(color = "black"),
+        axis.line.x.bottom = element_line(),
+        axis.line.y.left = element_line())
+# p1
+filename <- paste0(args$outdir, "/", args$prefix, ".varsites.percsynom.svg")
+ggsave(filename, p1, width = 5, height = 4)
 
 p1 <- varsites %>%
   ggplot(aes(x = Group, y = 100*non.synonymous/nsites, col = Group)) +
@@ -222,54 +247,64 @@ p1 <- varsites %>%
   scale_y_continuous(limits = c(0,100)) +
   theme(panel.background = element_blank(),
         panel.grid = element_blank(),
-        panel.border = element_rect(color = "black", fill = NA))
-p1
+        axis.text = element_text(color = "black"),
+        axis.line.x.bottom = element_line(),
+        axis.line.y.left = element_line())
+# p1
+filename <- paste0(args$outdir, "/", args$prefix, ".varsites.percnonsynom.svg")
+ggsave(filename, p1, width = 5, height = 4)
 
 p1 <- varsites %>%
-  ggplot(aes(x = Group, y = 100*IGR/nsites, col = Group)) +
+  ggplot(aes(x = Group, y = 100*other/nsites, col = Group)) +
   geom_boxplot() +
   geom_point(position = position_jitter(width = 0.2)) +
   scale_y_continuous(limits = c(0,100)) +
   theme(panel.background = element_blank(),
         panel.grid = element_blank(),
-        panel.border = element_rect(color = "black", fill = NA))
-p1
+        axis.text = element_text(color = "black"),
+        axis.line.x.bottom = element_line(),
+        axis.line.y.left = element_line())
+# p1
+filename <- paste0(args$outdir, "/", args$prefix, ".varsites.percother.svg")
+ggsave(filename, p1, width = 5, height = 4)
 
 p1 <- varsites %>%
   ggplot(aes(x = Group, y = non.synonymous/synonymous, col = Group)) +
   geom_boxplot() +
   geom_point(position = position_jitter(width = 0.2)) +
-  scale_y_log10() +
+  scale_y_log10(breaks = function(x){seq(from = x[1], to = x[2], length.out = 5)}) +
   theme(panel.background = element_blank(),
         panel.grid = element_blank(),
-        panel.border = element_rect(color = "black", fill = NA))
+        axis.text = element_text(color = "black"),
+        axis.line.x.bottom = element_line(),
+        axis.line.y.left = element_line())
 p1
+filename <- paste0(args$outdir, "/", args$prefix, ".varsites.dnds.svg")
+ggsave(filename, p1, width = 5, height = 4)
 
 #### Plot position
 
+if(args$plot_position){
+  pos.varsites <- dat %>%
+    split(.$site_id) %>%
+    map_dfr(function(d){
+      res <- d %>%
+        split(.$Group) %>% map_dfr(function(d){
+          nsamples <- nrow(d)
+          nfixed <- sum(d$freq == 0 | d$freq == 1)
+          return(tibble(site_id = unique(d$site_id),
+                        nsamples = nsamples,
+                        fixed = nfixed))
+        }, .id = "Group")
+    }) %>% left_join(info, by = "site_id")
+  pos.varsites
+  filename <- paste0(args$outdir, "/", args$prefix, ".posvarsites.svg")
+  write_tsv(pos.varsites)
+  
+}
 
 
 
-
-
-ggplot(dat, aes(x = ref_pos ))
-
-
-
-pos.varsites <- dat %>%
-  split(.$site_id) %>%
-  map_dfr(function(d){
-    res <- d %>%
-      split(.$Group) %>% map_dfr(function(d){
-      nsamples <- nrow(d)
-      nfixed <- sum(d$freq == 0 | d$freq == 1)
-      return(tibble(site_id = unique(d$site_id),
-                    nsamples = nsamples,
-                    fixed = nfixed))
-    }, .id = "Group")
-  }) %>% left_join(info, by = "site_id")
-
-pos.varsites
 
 
 p1 <- ggplot(pos.varsites, aes(x = ref_pos, y = fixed / nsamples)) +
