@@ -39,7 +39,7 @@ process_arguments <- function(){
                     flag = TRUE)
   p <- add_argument(p, "--genes",
                     help = paste0("File with subset of genes to select. ",
-                                  "It must be one gene ID per line without headers.", 
+                                  "It must be one gene ID per line without headers. ", 
                                   "If NULL, all genes will be included."),
                     type = "character",
                     default = NULL)
@@ -50,7 +50,7 @@ process_arguments <- function(){
                     type = "character")
   p <- add_argument(p, "--samples",
                     help = paste0("File with subset of samples to select. ",
-                                  "It must be one gene ID per line without headers.",
+                                  "It must be one gene ID per line without headers. ",
                                   "If NULL, all samples will be included."),
                     type = "character",
                     default = NULL)
@@ -61,6 +61,8 @@ process_arguments <- function(){
   # Process arguments
   if(!dir.exists(args$midas_dir))
     stop("ERROR: midas_dir does not exist.")
+  if(is.na(args$genes) && is.na(args$samples) && !args$cds_only)
+    stop("ERROR: Failing to pass a list of genes and samples and selecting all sites won't do anything.")
   
   return(args)
 }
