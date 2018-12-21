@@ -297,30 +297,24 @@ if(args$plot_position){
                         fixed = nfixed))
         }, .id = "Group")
     }) %>% left_join(info, by = "site_id")
-  pos.varsites
-  filename <- paste0(args$outdir, "/", args$prefix, ".posvarsites.svg")
-  write_tsv(pos.varsites)
+  # pos.varsites
+  filename <- paste0(args$outdir, "/", args$prefix, ".posvarsites.txt")
+  write_tsv(pos.varsites, path = filename)
   
+  p1 <- ggplot(pos.varsites, aes(x = ref_pos, y = fixed / nsamples)) +
+    facet_grid(~ ref_id, space = "free_x", scales = "free_x") +
+    # geom_line(aes(color = Group)) +
+    geom_point(aes(color = Group), size = 0.05, alpha = 0.05) +
+    geom_smooth(aes(color = Group), se = FALSE,
+                method = "gam", formula = y ~ s(x, bs = "cs")) +
+    scale_y_continuous(limits = c(0,1)) +
+    theme(panel.background = element_blank(),
+          panel.grid = element_blank(),
+          axis.text = element_text(color = "black"),
+          axis.text.x = element_text(angle = 90),
+          axis.line.x.bottom = element_line(),
+          axis.line.y.left = element_line())
+  # p1
+  filename <- paste0(args$outdir, "/", args$prefix, ".posvarsites.propfixed.png")
+  ggsave(filename, p1, width = 12, height = 4, dpi = 200)
 }
-
-
-
-
-
-p1 <- ggplot(pos.varsites, aes(x = ref_pos, y = fixed / nsamples)) +
-  facet_grid(~ ref_id, space = "free_x") +
-  # geom_line(aes(color = Group)) +
-  geom_point(aes(color = Group), size = 0.1) +
-  geom_smooth(aes(color = Group), se = FALSE, method = "gam", formula = y ~ s(x, bs = "cs")) +
-  scale_y_continuous(limits = c(0,1)) +
-  theme(panel.background = element_blank(),
-        panel.grid = element_blank(),
-        axis.text = element_text(color = "black"),
-        axis.line.x.bottom = element_line(),
-        axis.line.y.left = element_line())
-p1
-
-
-
-
-
