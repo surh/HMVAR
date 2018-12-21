@@ -1,5 +1,6 @@
 library(HMVAR)
 library(tidyverse)
+library(argparser)
 
 # setwd("/godot/users/sur/exp/fraserv/2018/today3")
 
@@ -15,42 +16,33 @@ args <- list(midas_dir = "/godot/users/sur/exp/fraserv/2018/2018-12-14.hmp_mktes
              gene = "638301.3.peg.283",
              genes = NULL)
 
+# !!!!
+genes <- args$gene
 
-########## This is part of a function in HMVAR #############
-########## Should make the function more modular ###########
+# Read map
+cat("Reading map...\n")
+map <- read_tsv(args$map_file)
+map <- map %>%
+  select(sample = ID,
+         everything())
+
 # Read data
-map <- read_tsv(map_file)
-info <- read_tsv(paste0(midas_dir, "/snps_info.txt"),col_types = 'ccncccnnnnnccccc',
-                 na = 'NA')
-depth <- read_midas_abun(paste0(midas_dir, "/snps_depth.txt"))
-freq <- read_midas_abun(paste0(midas_dir, "/snps_freq.txt"))
+cat("Read MIDAS data...\n")
+Dat <- read_midas_data(args$midas_dir, map = map, genes = genes)
 
-# Process data
-# Rename map columns
-map <- map %>% select(sample = ID, Group) 
-# Clean info
-info <- info %>% select(-locus_type, -starts_with("count_"))
-# Clean depth and freq
-depth <- select_samples_from_abun(depth, map)
-freq <- select_samples_from_abun(freq, map)
-# Clean map
-map <- map %>% filter(sample %in% colnames(depth))
-
-# Select gene data
-info <- info %>% filter(gene_id %in% genes)
-freq <- freq %>% filter(site_id %in% info$site_id)
-depth <- depth %>% filter(site_id %in% info$site_id)
-
-# Calculate MK parameters
+# Annotate variants
+cat("Annotate variants...")
 # Calcualate snp effect
-info <- determine_snp_effect(info)
+Dat$info <- determine_snp_effect(Dat$info)
 # Calculate snp dist
-info <- calculate_snp_dist(info = info,
-                           freq = freq,
-                           depth = depth,
-                           map = map,
-                           depth_thres = depth_thres)
-###########################################################
+Dat$info <- determine_snp_dist(info = Dat$info,
+                               freq = Dat$freq,
+                               depth = Dat$depth,
+                               map = map,
+                               depth_thres = args$depth_thres)
+
+
+
 
 
 
