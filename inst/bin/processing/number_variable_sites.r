@@ -77,6 +77,7 @@ process_arguments <- function(){
                     type = "character")
 
   # Read arguments
+  cat("Processing arguments...\n")
   args <- parse_args(p)
   
   # Process arguments
@@ -108,17 +109,20 @@ args <- process_arguments()
 if(is.na(args$genes)){
   genes <- NULL
 }else{
+  cat("Reading list of genes...\n")
   genes <- read_tsv(args$genes, col_names = FALSE, col_types = 'c')
   genes <- genes$X1
 }
 
 # Read map
+cat("Reading map...\n")
 map <- read_tsv(args$map_file)
 map <- map %>%
   select(sample = ID,
          everything())
 
 # Read MIDAS data
+cat("Reading MIDAS output...\n")
 info <- read_tsv(paste0(args$midas_dir, "/snps_info.txt"),
                  col_types = 'ccncccnnnnnccccc',
                  na = 'NA')
@@ -126,6 +130,7 @@ depth <- read_midas_abun(paste0(args$midas_dir, "/snps_depth.txt"))
 freq <- read_midas_abun(paste0(args$midas_dir, "/snps_freq.txt"))
 
 # Process data
+cat("Processing MIDAS data...\n")
 # Clean info
 info <- info %>% 
   select(-locus_type, -starts_with("count_"), -ref_allele)
@@ -140,10 +145,12 @@ map <- map %>%
 
 # Select gene/cds data
 if(args$cds_only){
+  cat("Selecting CDS only...\n")
   info <- info %>% 
     filter(!is.na(gene_id))
 }
 if(!is.null(genes)){
+  cat("Selecting chosen genes...\n")
   info <- info %>%
     filter(gene_id %in% genes)
 }
@@ -154,8 +161,10 @@ depth <- depth %>%
 
 
 # Calcualate snp effect
+cat("Determining snp effect...\n")
 info <- determine_snp_effect(info)
 # # Calculate snp dist
+cat("Determining snp distribution...\n")
 info <- determine_snp_dist(info = info,
                            freq = freq,
                            depth = depth,
@@ -164,6 +173,7 @@ info <- determine_snp_dist(info = info,
                            freq_thres = args$freq_thres)
 
 # Subsitution type
+cat("Determining substitution type...\n")
 info <- info %>%
   add_column(substitution = info %>%
                pmap_chr(function(major_allele, minor_allele, ...){
@@ -178,6 +188,7 @@ info <- info %>%
 
 
 # Match freqs and depth
+cat("Matching all data...\n")
 depth <- depth %>% gather(key = "sample", value = 'depth', -site_id)
 freq <- freq %>% gather(key = "sample", value = 'freq', -site_id)
 
@@ -191,10 +202,12 @@ dat <- depth %>%
 
 # Prepare output dir
 if(!dir.exists(args$outdir)){
+  cat("Preparing output directory...\n")
   dir.create(args$outdir)
 }
 
 # Count number of sites and number of variable per sample
+cat("Calcuating variable sites...\n")
 varsites <- dat %>%
   filter(depth >= 1) %>%
   split(.$sample) %>%
@@ -216,11 +229,13 @@ varsites <- dat %>%
   }, .id = "sample") %>%
   inner_join(map, by = "sample")
 # varsites
+cat("\tWriting number of variable sites to file...\n")
 filename <- paste0(args$outdir, "/", args$prefix, ".varsites.txt")
 write_tsv(varsites, path = filename)
 
 
 # Plot total. variable and fixed sites
+cat("\tPlotting...\n")
 p1 <- varsites %>%
   ggplot(aes(x = Group, y = nsites, col = Group)) +
   geom_boxplot() +
@@ -355,6 +370,7 @@ ggsave(filename, p1, width = 5, height = 4)
 #### Plot position
 
 if(args$plot_position){
+  cat("Calculating variable samples per position...\n")
   pos.varsites <- dat %>%
     split(.$site_id) %>%
     map_dfr(function(d){
@@ -368,9 +384,11 @@ if(args$plot_position){
         }, .id = "Group")
     }) %>% left_join(info, by = "site_id")
   # pos.varsites
+  cat("\tWriting variable samples per position to file...\n")
   filename <- paste0(args$outdir, "/", args$prefix, ".posvarsites.txt")
   write_tsv(pos.varsites, path = filename)
   
+  cat("\tPlotting...\n")
   p1 <- ggplot(pos.varsites, aes(x = ref_pos, y = fixed / nsamples)) +
     facet_grid(~ ref_id, space = "free_x", scales = "free_x") +
     # geom_line(aes(color = Group)) +
