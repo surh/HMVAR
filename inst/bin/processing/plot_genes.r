@@ -1,7 +1,7 @@
 library(HMVAR)
 library(tidyverse)
 
-setwd("/godot/users/sur/exp/fraserv/2018/today3")
+# setwd("/godot/users/sur/exp/fraserv/2018/today3")
 
 # mktest_file <- "mktest_selected/results/Leptotrichia_shahii_5891_mktest.txt"
 # Genes <- read_tsv(mktest_file)
@@ -9,10 +9,11 @@ setwd("/godot/users/sur/exp/fraserv/2018/today3")
 # genes <- gene
 
 # Parameters
-midas_dir <- "../2018-12-14.hmp_mktest/genomes/Granulicatella_adiacens_61980/"
-depth_thres <- 1
-map_file <- "../2018-12-14.hmp_mktest/hmp_SPvsTD_map.txt"
-genes <- "638301.3.peg.283"
+args <- list(midas_dir = "/godot/users/sur/exp/fraserv/2018/2018-12-14.hmp_mktest/genomes/Granulicatella_adiacens_61980/",
+             depth_thres = 1,
+             map_file = "/godot/users/sur/exp/fraserv/2018/2018-12-14.hmp_mktest/hmp_SPvsTD_map.txt",
+             gene = "638301.3.peg.283",
+             genes = NULL)
 
 
 ########## This is part of a function in HMVAR #############
