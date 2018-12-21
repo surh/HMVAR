@@ -1,3 +1,10 @@
+# 0.0-5
+1. Added exectuable script to perform mktest.
+2. determine_snp_effect can handle non-coding loci.
+3. Added executable to calculate and plot the number of
+variable and fixed positions within sample (Issue
+https://github.com/surh/HMVAR/issues/4)
+
 # 0.0-4
 1. Added ggtree import
 2. Changed name to HMVAR

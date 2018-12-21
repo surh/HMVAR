@@ -1,3 +1,20 @@
+# (C) Copyright 2018 Sur Herrera Paredes
+# 
+# This file is part of HMVAR.
+# 
+# HMVAR is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# HMVAR is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with HMVAR.  If not, see <http://www.gnu.org/licenses/>.
+
 #' Get files for MK results
 #' 
 #' Takes a directory and finds all files that
@@ -158,7 +175,9 @@ determine_snp_effect <- function(info, nucleotides=c(A = 1, C = 2, G = 3, T = 4)
       aa = stringr::str_split(string = amino_acids,
                               pattern = ",",
                               simplify = TRUE)
-      if( aa[nucleotides[major_allele]] == aa[nucleotides[minor_allele]] ){
+      if(all(is.na(aa))){
+        type <- NA
+      }else if( aa[nucleotides[major_allele]] == aa[nucleotides[minor_allele]] ){
         type <- "synonymous"
       }else{
         type <- "non-synonymous"
@@ -323,7 +342,7 @@ determine_snp_dist <- function(info, freq, depth, map,
     dplyr::filter(depth >= depth_thres) %>%
     dplyr::mutate(allele = replace(freq, freq < freq_thres, 'major')) %>%
     dplyr::mutate(allele = replace(allele, freq >= (1 - freq_thres), 'minor')) %>%
-    dplyr::mutate(allele = replace(allele, (freq >= freq_thres) | (freq < (1 - freq_thres)), NA)) %>%
+    dplyr::mutate(allele = replace(allele, (freq >= freq_thres) & (freq < (1 - freq_thres)), NA)) %>%
     dplyr::filter(!is.na(allele))
   
   site_dist <- dat %>%
@@ -429,7 +448,6 @@ midas_mktest <- function(midas_dir, map_file,
   Res <- Dat$info %>%
     split(.$gene_id) %>%
     purrr::map_dfr(mkvalues,
-                   depth_thres = depth_thres,
                    .id = "gene_id")
   
   return(Res)
