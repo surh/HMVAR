@@ -22,11 +22,58 @@ library(tidyverse)
 library(argparser)
 
 
-args <- list(midas_dir = "/godot/shared_data/metagenomes/hmp/midas/merge/2018-02-07.merge.snps.d.5/Leptotrichia_shahii_58912/",
-             genes = "/godot/users/sur/exp/fraserv/2018/today2/selected_genes.txt",
-             outdir = "subset/",
-             samples = "/godot/users/sur/exp/fraserv/2018/today2/selected_samples.txt",
-             cds_only = TRUE)
+############### FUNCTIONS ################
+process_arguments <- function(){
+  p <- arg_parser(paste0("Take output from merging MIDAS SNPs, and select a ",
+                         "subset of the sites"))
+  
+  
+  p <- add_argument(p, "midas_dir",
+                    help = paste0("Directory with output from merging MIDAS SNPs. ",
+                                  "Must contain 'snps_info.txt', 'snps_depth.txt' ",
+                                  "and 'snps_freq.txt'."),
+                    type = "character")
+  p <- add_argument(p, "--cds_only",
+                    help = paste0("Flag indicating whether only sites at CDSs should ",
+                                  "be selected."),
+                    flag = TRUE)
+  p <- add_argument(p, "--genes",
+                    help = paste0("File with subset of genes to select. ",
+                                  "It must be one gene ID per line without headers.", 
+                                  "If NULL, all genes will be included."),
+                    type = "character",
+                    default = NULL)
+  p <- add_argument(p, "--outdir",
+                    help = paste0("Directory to write (and create if needed) to write ",
+                                  "the output."),
+                    default = "results/",
+                    type = "character")
+  p <- add_argument(p, "--samples",
+                    help = paste0("File with subset of samples to select. ",
+                                  "It must be one gene ID per line without headers.",
+                                  "If NULL, all samples will be included."),
+                    type = "character",
+                    default = NULL)
+  
+  cat("Processing arguments...\n")
+  args <- parse_args(p)
+  
+  # Process arguments
+  if(!dir.exists(args$midas_dir))
+    stop("ERROR: midas_dir does not exist.")
+  
+  return(args)
+}
+
+##########################################
+
+# Arguments
+# args <- list(midas_dir = "/godot/shared_data/metagenomes/hmp/midas/merge/2018-02-07.merge.snps.d.5/Leptotrichia_shahii_58912/",
+#              genes = "/godot/users/sur/exp/fraserv/2018/today2/selected_genes.txt",
+#              outdir = "subset/",
+#              samples = "/godot/users/sur/exp/fraserv/2018/today2/selected_samples.txt",
+#              cds_only = TRUE)
+args <- process_arguments()
 
 # Read genes
 if(is.na(args$genes)){
