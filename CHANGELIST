@@ -4,6 +4,8 @@
 3. Added executable to calculate and plot the number of
 variable and fixed positions within sample (Issue
 https://github.com/surh/HMVAR/issues/4)
+4. Added executable to subset SNPs from MIDAS after merging 
+(Issue https://github.com/surh/HMVAR/issues/3).
 
 # 0.0-4
 1. Added ggtree import
