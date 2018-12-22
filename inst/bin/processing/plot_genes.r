@@ -219,21 +219,47 @@ res
 
 p1 <- ggplot(res, aes(x = ref_pos)) +
   geom_hline(yintercept = 0) +
+  
+  geom_segment(aes(y = g1.count.major,
+                   yend = g1.count.minor,
+                   xend = ref_pos,
+                   col = snp_effect),
+               size = 0.2) +
+  geom_segment(aes(y = -g2.count.major,
+                   yend = -g2.count.minor,
+                   xend = ref_pos,
+                   col = snp_effect),
+               size = 0.4) +
+  
+  scale_color_manual(values = c("black", NA)) +
+  
+  
   geom_point(aes(y = g1.count.major), color = "red") +
   geom_point(aes(y = g1.count.minor), color = "blue") +
   
-  geom_point(aes(y = -g2.count.major), color = "red", shape = 17) +
-  geom_point(aes(y = -g2.count.minor), color = "blue", shape = 17) +
+  geom_point(aes(y = -g2.count.major), color = "red") +
+  geom_point(aes(y = -g2.count.minor), color = "blue") +
   
-  geom_segment(aes(y = g1.count.major,
-                   yend = g1.count.minor, xend = ref_pos),
-               size = 0.2) +
-  geom_segment(aes(y = -g2.count.major,
-                   yend = -g2.count.minor, xend = ref_pos),
-               size = 0.2) +
 
   
+  
   # scale_x_continuous(limits = c(68173, 68300)) +
+  theme(panel.background = element_blank(),
+        panel.grid = element_blank())
+p1
+
+
+
+
+p1 <- ggplot(res, aes(x = abs(g1.count.major - g1.count.minor))) +
+  geom_density(aes(color = snp_effect, fill = snp_effect), alpha = 0.4) +
+  theme(panel.background = element_blank(),
+        panel.grid = element_blank())
+p1
+
+
+p1 <- ggplot(res, aes(x = abs(g2.count.major - g2.count.minor))) +
+  geom_density(aes(color = snp_effect, fill = snp_effect), alpha = 0.4) +
   theme(panel.background = element_blank(),
         panel.grid = element_blank())
 p1
