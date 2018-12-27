@@ -220,26 +220,58 @@ res
 p1 <- ggplot(res, aes(x = ref_pos)) +
   geom_hline(yintercept = 0) +
   
-  geom_segment(aes(y = g1.count.major,
-                   yend = g1.count.minor,
+  # geom_segment(aes(y = g1.count.major,
+  #                  yend = g1.count.minor,
+  #                  xend = ref_pos,
+  #                  col = snp_effect),
+  #              size = 0.2) +
+  # geom_segment(aes(y = -g2.count.major,
+  #                  yend = -g2.count.minor,
+  #                  xend = ref_pos,
+  #                  col = snp_effect),
+  #              size = 0.4) +
+  # scale_color_manual(values = c(NA,"black")) +
+
+
+  # geom_point(aes(y = g1.count.major), color = "red", alpha = 1) +
+  # geom_point(aes(y = g1.count.minor), color = "blue", alpha = 1) +
+  # 
+  # geom_point(aes(y = -g2.count.major), color = "red", alpha = 1) +
+  # geom_point(aes(y = -g2.count.minor), color = "blue", alpha = 1) +
+  
+  
+  
+  geom_segment(aes(y = 100 * g1.count.minor / (g1.count.major + g1.count.minor),
+                   yend = 0,
                    xend = ref_pos,
                    col = snp_effect),
                size = 0.2) +
-  geom_segment(aes(y = -g2.count.major,
-                   yend = -g2.count.minor,
+  geom_segment(aes(y = -100 * g2.count.minor / (g2.count.major + g2.count.minor),
+                   yend = 0,
                    xend = ref_pos,
                    col = snp_effect),
-               size = 0.4) +
+               size = 0.2) +
+  geom_point(aes(y = 100 * g1.count.minor / (g1.count.major + g1.count.minor)),
+             color = "black", alpha = 1,
+             fill = "red",
+             shape = 21) +
+  geom_point(aes(y = -100 * g2.count.minor / (g2.count.major + g2.count.minor)),
+             color = "black", alpha = 1,
+             fill = "blue",
+             shape = 21) +
   
-  scale_color_manual(values = c("black", NA)) +
   
-  
-  geom_point(aes(y = g1.count.major), color = "red") +
-  geom_point(aes(y = g1.count.minor), color = "blue") +
-  
-  geom_point(aes(y = -g2.count.major), color = "red") +
-  geom_point(aes(y = -g2.count.minor), color = "blue") +
-  
+
+
+
+  # geom_segment(aes(y = g1.count.minor + g2.count.minor ,
+  #                  yend = 0,
+  #                  xend = ref_pos),
+  #              col = "black",
+  #              size = 0.2) +
+  # geom_point(aes(y = g1.count.minor + g2.count.minor,
+  #                fill = snp_effect),
+  #            color = "black", shape = 21) +
 
   
   
@@ -250,7 +282,7 @@ p1
 
 
 
-
+############################
 p1 <- ggplot(res, aes(x = abs(g1.count.major - g1.count.minor))) +
   geom_density(aes(color = snp_effect, fill = snp_effect), alpha = 0.4) +
   theme(panel.background = element_blank(),
