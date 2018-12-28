@@ -14,11 +14,13 @@ args <- list(midas_dir = "/godot/users/sur/exp/fraserv/2018/2018-12-14.hmp_mktes
              depth_thres = 1,
              freq_thres = 0.5,
              map_file = "/godot/users/sur/exp/fraserv/2018/2018-12-14.hmp_mktest/hmp_SPvsTD_map.txt",
+             gene_map = '/home/sur/micropopgen/data/midas_db_v1.2/rep_genomes/Granulicatella_adiacens_61980/genome.features.gz',
              gene = "638301.3.peg.283",
              oudtir = "results/",
-             genes = NULL,
+             genes = NA,
              heatmap = TRUE,
-             lollipop = TRUE)
+             lollipop = TRUE,
+             depth = TRUE)
 
 # !!!!
 genes <- args$gene
@@ -63,10 +65,21 @@ dat <- depth %>%
   left_join(map, by = "sample") %>%
   filter(depth >= args$depth_thres) %>%
   left_join(Dat$info, by = "site_id") %>%
-  mutate(allele = replace(freq, freq < 0.5, 'major')) %>%
-  mutate(allele = replace(allele, freq >= 0.5, 'minor')) %>%
+  
+  # mutate(allele = replace(freq, freq < 0.5, 'major')) %>%
+  # mutate(allele = replace(allele, freq >= 0.5, 'minor')) %>%
+  
+  mutate(allele = replace(freq, freq < args$freq_thres, 'major')) %>%
+  mutate(allele = replace(allele, freq >= (1 - args$freq_thres), 'minor')) %>%
+  mutate(allele = replace(allele, (freq >= args$freq_thres) & (freq < (1 - args$freq_thres)), NA)) %>%
+  filter(!is.na(allele)) %>%
+  
+  
   filter(distribution != "Invariant")
 dat
+
+  
+
 
 
 # dat <- depth %>%
