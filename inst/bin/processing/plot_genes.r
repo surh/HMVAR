@@ -47,14 +47,6 @@ Dat$info <- determine_snp_dist(info = Dat$info,
                                map = map,
                                depth_thres = args$depth_thres)
 
-
-# # Match freqs and depth
-# cat("Preparing data for plots...")
-# depth <- depth %>% gather(key = "sample", value = 'depth', -site_id)
-# freq <- freq %>% gather(key = "sample", value = 'freq', -site_id)
-# meta <- info %>% select(site_id, ref_id, ref_pos, snp_effect, distribution)
-
-
 # Match freqs and depth
 cat("Matching all data...\n")
 depth <- Dat$depth %>% gather(key = "sample", value = 'depth', -site_id)
@@ -65,62 +57,14 @@ dat <- depth %>%
   left_join(map, by = "sample") %>%
   filter(depth >= args$depth_thres) %>%
   left_join(Dat$info, by = "site_id") %>%
-  
-  # mutate(allele = replace(freq, freq < 0.5, 'major')) %>%
-  # mutate(allele = replace(allele, freq >= 0.5, 'minor')) %>%
-  
   mutate(allele = replace(freq, freq < args$freq_thres, 'major')) %>%
   mutate(allele = replace(allele, freq >= (1 - args$freq_thres), 'minor')) %>%
   mutate(allele = replace(allele, (freq >= args$freq_thres) & (freq < (1 - args$freq_thres)), NA)) %>%
   filter(!is.na(allele)) %>%
-  
-  
   filter(distribution != "Invariant")
 dat
 
-  
-
-
-
-# dat <- depth %>%
-#   inner_join(freq, by = c("site_id", "sample")) %>%
-#   left_join(map, by = "sample") %>%
-#   filter(depth >= args$depth_thres) %>%
-#   left_join(Dat$info, by = "site_id") %>%
-#   filter(distribution != "Invariant")
-
-# dat <- dat %>%
-#   mutate(site_id = factor(site_id,
-#                           levels = as.character(unique(sort(as.numeric(dat$site_id))))))
-
-
-# ggplot(subset(dat, site_id %in% c("68173","68332")),
-#        aes(x = freq, group = site_id)) +
-#   facet_grid(~ Group) +
-#   geom_density(aes(y = ..scaled..))
-# 
-# ggplot(dat,
-#        aes(x = freq, group = site_id)) +
-#   facet_grid(~ Group) +
-#   geom_density(aes(y = ..scaled..))
-
-
-# p1 <- ggplot(dat, aes(x = ref_pos, y = sample)) +
-#   facet_grid(Group ~ ., scales = "free_y", space = "free_y") +
-#   geom_point(aes(size = depth, col = snp_effect)) +
-#   theme(axis.text.y = element_blank(),
-#         panel.grid = element_blank(),
-#         panel.background = element_blank())
-# p1
-# 
-# 
-# p1 <- ggplot(dat, aes(x = ref_pos, y = sample)) +
-#   facet_grid(Group ~ ., scales = "free_y", space = "free_y") +
-#   geom_point(aes(size = freq, col = snp_effect)) +
-#   theme(axis.text.y = element_blank(),
-#         panel.grid = element_blank(),
-#         panel.background = element_blank())
-# p1
+#### Plotting
 
 p1 <- ggplot(dat, aes(x = ref_pos, y = sample)) +
   facet_grid(Group ~ distribution + snp_effect,
