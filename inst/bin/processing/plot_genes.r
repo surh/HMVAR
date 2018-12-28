@@ -65,17 +65,25 @@ dat <- depth %>%
 dat
 
 #### Plotting
+# Prepare outdir
+if(!dir.exists(args$outdir)){
+  cat("Preparing output directory...\n")
+  dir.create(args$outdir)
+}
 
-p1 <- ggplot(dat, aes(x = ref_pos, y = sample)) +
-  facet_grid(Group ~ distribution + snp_effect,
-             space = "free_y", scales = "free_y") +
-  geom_point(aes(col = allele), size = 0.5) +
-  theme(axis.text.y = element_blank(),
-        panel.grid = element_blank(),
-        panel.background = element_blank())
-p1
-# ggsave("638301.3.peg.283_allsites.svg", p1, width = 6, height = 4)
-# ggsave("638301.3.peg.283_allsites.png", p1, width = 12, height = 8, dpi = 150)
+# Heatmap
+if(args$heatmap){
+  p1 <- ggplot(dat, aes(x = ref_pos, y = sample)) +
+    facet_grid(Group ~ distribution + snp_effect,
+               space = "free_y", scales = "free_y") +
+    geom_point(aes(col = allele), size = 0.5) +
+    theme(axis.text.y = element_blank(),
+          panel.grid = element_blank(),
+          panel.background = element_blank())
+  filename <- paste0(args$outdir, "/", args$gene, "_mkheatmap.png")
+  ggsave(filename, p1, width = 12, height = 8, dpi = 200)
+}
+
 
 # p1 <- ggplot(dat, aes(x = ref_pos, y = sample)) +
 #   facet_grid(Group ~ ., scales = "free_y", space = "free_y") +
