@@ -15,7 +15,10 @@ args <- list(midas_dir = "/godot/users/sur/exp/fraserv/2018/2018-12-14.hmp_mktes
              freq_thres = 0.5,
              map_file = "/godot/users/sur/exp/fraserv/2018/2018-12-14.hmp_mktest/hmp_SPvsTD_map.txt",
              gene = "638301.3.peg.283",
-             genes = NULL)
+             oudtir = "results/",
+             genes = NULL,
+             heatmap = TRUE,
+             lollipop = TRUE)
 
 # !!!!
 genes <- args$gene
