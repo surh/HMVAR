@@ -84,52 +84,16 @@ if(args$heatmap){
   ggsave(filename, p1, width = 12, height = 8, dpi = 200)
 }
 
+if(args$depth){
+  p1 <- ggplot(dat, aes(x = ref_pos, y = depth)) +
+    geom_line(aes(color = Group, group = sample)) +
+    scale_y_log10() +
+    theme(panel.background = element_rect(color = "black", fill = NA),
+          panel.grid = element_blank())
+  filename <- paste0(args$outdir, "/", args$gene, "_groupdepth.png")
+  ggsave(filename, p1, width = 10, height = 4, dpi = 200)
+}
 
-# p1 <- ggplot(dat, aes(x = ref_pos, y = sample)) +
-#   facet_grid(Group ~ ., scales = "free_y", space = "free_y") +
-#   geom_point(aes(size = log2(freq*depth + 1), col = snp_effect)) +
-#   theme(axis.text.y = element_blank(),
-#         panel.grid = element_blank(),
-#         panel.background = element_blank())
-# p1
-
-###
-# p1 <- ggplot(dat, aes(x = ref_pos, y = sample)) +
-#   facet_grid(Group ~ ., scales = "free_y", space = "free_y") +
-#   geom_tile(aes(fill = freq, col = snp_effect)) +
-#   theme(axis.text.y = element_blank(),
-#         panel.grid = element_blank(),
-#         panel.background = element_blank())
-# p1
-# 
-# p1 <- ggplot(dat, aes(x = ref_pos, y = sample)) +
-#   facet_grid(Group ~ ., scales = "free_y", space = "free_y") +
-#   geom_tile(aes(fill = allele)) +
-#   theme(axis.text.y = element_blank(),
-#         panel.grid = element_blank(),
-#         panel.background = element_blank())
-# p1
-
-
-###
-p1 <- ggplot(dat, aes(x = ref_pos, y = depth)) +
-  geom_line(aes(color = Group, group = sample)) +
-  scale_y_log10() +
-  theme(panel.background = element_rect(color = "black", fill = NA),
-        panel.grid = element_blank())
-p1
-
-# p1 <- ggplot(dat, aes(x = ref_pos, y = freq)) +
-#   geom_line(aes(color = Group, group = sample)) +
-#   theme(panel.background = element_rect(color = "black", fill = NA),
-#         panel.grid = element_blank())
-# p1
-
-# p1 <- ggplot(dat, aes(x = ref_pos, y = freq*depth)) +
-#   geom_line(aes(color = Group, group = sample)) +
-#   theme(panel.background = element_rect(color = "black", fill = NA),
-#         panel.grid = element_blank())
-# p1
 
 p1 <- ggplot(dat, aes(x = site_id, y = allele, fill = allele)) +
   facet_grid(Group ~ .) +
