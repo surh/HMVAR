@@ -105,6 +105,59 @@ p1 <- ggplot(dat, aes(x = site_id, y = allele, fill = allele)) +
 p1
 # ggsave("638301.3.peg.283_allsites_bar.png", p1, width = 12, height = 6, dpi = 150)
 
+
+dat.sub <- dat %>% filter(Group == unique(Group)[1])
+dat.sub$site_id <- factor(dat.sub$site_id,
+                          levels = dat.sub %>%
+                            split(.$site_id) %>%
+                            map_dfr(function(d){
+                              tibble(prop = sum(d$allele == "minor") / nrow(d))},
+                              .id = "site_id" ) %>%
+                            arrange(prop) %>%
+                            select(site_id) %>%
+                            unlist())
+
+p1 <- ggplot(dat.sub, aes(x = site_id, fill = allele)) +
+  geom_bar(position = "fill") +
+  ggtitle(label = unique(dat.sub$Group)) +
+  xlab(label = "locus") +
+  ylab(label = "proportion") +
+  theme(panel.grid = element_blank(),
+        panel.background = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
+# p1
+
+
+dat.sub <- dat %>% filter(Group == unique(Group)[2])
+dat.sub$site_id <- factor(dat.sub$site_id,
+                          levels = dat.sub %>%
+                            split(.$site_id) %>%
+                            map_dfr(function(d){
+                              tibble(prop = sum(d$allele == "minor") / nrow(d))},
+                              .id = "site_id" ) %>%
+                            arrange(prop) %>%
+                            select(site_id) %>%
+                            unlist())
+
+p2 <- ggplot(dat.sub, aes(x = site_id, fill = allele)) +
+  geom_bar(position = "fill") +
+  ggtitle(label = unique(dat.sub$Group)) +
+  xlab(label = "locus") +
+  ylab(label = "proportion") +
+  theme(panel.grid = element_blank(),
+        panel.background = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
+# p2
+
+
+grid::pushViewport(grid::viewport(layout = grid::grid.layout(2, 1)))
+print(p1, vp = grid::viewport(layout.pos.row = 1, layout.pos.col = 1))
+print(p2, vp = grid::viewport(layout.pos.row = 2, layout.pos.col = 1))
+
+
+
 ###
 # p1 <- ggplot(dat, aes(x = freq)) +
 #   facet_grid(Group ~ snp_effect) +
