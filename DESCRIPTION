@@ -11,7 +11,8 @@ Imports:
 	ggtree (>= 1.8.2),
 	reshape2 (>= 1.4.3),
 	tidyverse (>= 1.2.1),
-	argparser (>= 0.4)
+	argparser (>= 0.4),
+	grid (>= 3.5.1)
 Recomends:
   svglite
 Date: 2018-03-07
