@@ -56,7 +56,7 @@ read_midas_data <- function(midas_dir, map, genes){
   # Process data
   # Clean info
   info <- info %>% 
-    dplyr::select(-locus_type, -starts_with("count_"))
+    dplyr::select(-locus_type, -tidyselect::starts_with("count_"))
   # Clean depth and freq
   depth <- select_samples_from_abun(depth, map)
   freq <- select_samples_from_abun(freq, map)
