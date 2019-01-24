@@ -45,6 +45,7 @@ read_midas_abun <- function(file){
 #' @importFrom magrittr %>%
 #' @importFrom readr read_tsv
 #' @importFrom dplyr select filter
+#' @importFrom tidyselect starts_with
 read_midas_data <- function(midas_dir, map, genes){
   # Read data
   info <- readr::read_tsv(paste0(midas_dir, "/snps_info.txt"),
