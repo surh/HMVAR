@@ -10,10 +10,9 @@ args <- list(midas_dir = "/godot/shared_data/metagenomes/hmp/midas/merge/2018-02
              outdir = "testout/")
 
 
+map <- read_tsv(args$map_file, col_types = 'cc')
+map <- map %>% select(sample = ID, Group = Group)
 Dat <- read_midas_data(midas_dir = args$midas_dir,
-                       map = args$map_file,
+                       map = map,
                        genes = NULL)
-
-
-
 
