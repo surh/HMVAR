@@ -7,7 +7,9 @@ Sys.setenv(LD_LIBRARY_PATH="/opt/modules/pkgs/eqtlbma/git/lib/")
 
 args <- list(midas_dir = "/godot/shared_data/metagenomes/hmp/midas/merge/2018-02-07.merge.snps.d.5/Actinomyces_odontolyticus_57475/",
              map_file = "hmp_SPvsTD_map.txt",
-             outdir = "testout/")
+             outdir = "testout/",
+             prefix = "Actinomyces_odontolyticus_57475",
+             gemma = "~/bin/gemma.0.93b")
 
 
 map <- read_tsv(args$map_file, col_types = 'cc')
@@ -18,6 +20,13 @@ Dat <- read_midas_data(midas_dir = args$midas_dir,
                        cds_only = FALSE)
 
 
+# Get a dendrogram of samples
+
+# tre <- hclust(dist(t(Dat$freq[,-1])))
+tre <- hclust(dist(t(apply(t(Dat$depth[,-1]),1, scale))))
+# tre <- hclust(dist(t(Dat$depth[,-1])))
+# plot(tre)
+tre <- ape::as.phylo(tre)
 
 # Match freqs and depth
 Dat$depth <- Dat$depth %>% gather(key = "sample", value = 'depth', -site_id)
@@ -55,4 +64,18 @@ write_tsv(pheno, path = phen_file)
 snp_file <- paste0(args$outdir, "/bimbam/snp.bimbam")
 write_tsv(snp, path = snp_file, col_names = FALSE)
 
+phylo_file <- paste0(args$outdir, "/bimbam/phylo.tre")
+ape::write.tree(phy = tre, file = phylo_file)
+
+
+rm(Dat, dat, map, geno, pheno, snp, tre)
+gc()
+
+## Call bugwas
+b1 <- linLocGEMMA(gemmaGenFile = gen_file,
+                  gemmaSnpFile = snp_file,
+                  pheno = phen_file,
+                  phylo = phylo_file,
+                  prefix = args$prefix,
+                  gem.path = args$gemma)
 
