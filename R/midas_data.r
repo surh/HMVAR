@@ -36,6 +36,9 @@ read_midas_abun <- function(file){
 #' Must correspond to entries in the 'genes_id' column
 #' of the 'snps_info.txt' file. If NULL, all genes will
 #' be tested.
+#' @param cds_only If TRUE, it will remove all sites that
+#' do not have a gene_id. If a gene list is passed its effect
+#' is redundant.
 #'
 #' @return A list with three data tables: info, freq
 #' and depth, corresponding to the three files from 
@@ -46,7 +49,7 @@ read_midas_abun <- function(file){
 #' @importFrom readr read_tsv
 #' @importFrom dplyr select filter
 #' @importFrom tidyselect starts_with
-read_midas_data <- function(midas_dir, map, genes){
+read_midas_data <- function(midas_dir, map, genes, cds_only = TRUE){
   # Read data
   info <- readr::read_tsv(paste0(midas_dir, "/snps_info.txt"),
                           col_types = 'ccncccnnnnnccccc',
@@ -66,12 +69,12 @@ read_midas_data <- function(midas_dir, map, genes){
     dplyr::filter(sample %in% colnames(depth))
   
   # Select gene data
-  if(is.null(genes)){
-    info <- info %>% 
-      dplyr::filter(!is.na(gene_id))
-  }else{
+  if(!is.null(genes)){
     info <- info %>%
       dplyr::filter(gene_id %in% genes)
+  }else if(cds_only){
+    info <- info %>% 
+      dplyr::filter(!is.na(gene_id))
   }
   freq <- freq %>% 
     dplyr::filter(site_id %in% info$site_id)
