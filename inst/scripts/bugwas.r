@@ -14,14 +14,15 @@ map <- read_tsv(args$map_file, col_types = 'cc')
 map <- map %>% select(sample = ID, Group = Group)
 Dat <- read_midas_data(midas_dir = args$midas_dir,
                        map = map,
-                       genes = NULL)
+                       genes = NULL,
+                       cds_only = FALSE)
 
 
 
 # Match freqs and depth
 Dat$depth <- Dat$depth %>% gather(key = "sample", value = 'depth', -site_id)
 Dat$freq <- Dat$freq %>% gather(key = "sample", value = 'freq', -site_id)
-Dat$info <- Dat$info %>% select(site_id, ref_id, major_allele, minor_allele)
+Dat$info <- Dat$info %>% select(site_id, ref_id, ref_pos, major_allele, minor_allele)
 
 # Find missing data
 dat <- Dat$depth %>%
@@ -29,6 +30,7 @@ dat <- Dat$depth %>%
 dat$freq[ dat$depth < 1 ] <- NA
 Dat$freq <- dat %>% select(-depth) %>% spread(sample, freq)
 
+# Create BIMBAM tables
 geno <- Dat$info %>%
   select(site_id, minor_allele, major_allele) %>%
   left_join(Dat$freq, by = "site_id")  
@@ -39,18 +41,18 @@ pheno <- map %>%
   mutate(phenotype = 1*(Group == "Supragingival.plaque")) %>%
   select(id = sample, phenotype)
 
+snp <- Dat$info %>% select(ID = site_id, pos = ref_pos, chr = ref_id)
+
+# Write bimbam tables
+dir.create(args$outdir)
+dir.create(paste0(args$outdir, "/bimbam/"))
+gen_file <- paste0(args$outdir, "/bimbam/geno.bimbam")
+write_tsv(geno, path = gen_file, col_names = FALSE)
+
+phen_file <- paste0(args$outdir, "/bimbam/pheno.bimbam")
+write_tsv(pheno, path = phen_file)
+
+snp_file <- paste0(args$outdir, "/bimbam/snp.bimbam")
+write_tsv(snp, path = snp_file, col_names = FALSE)
 
 
-
-%>%
-  left_join(map, by = "sample") %>%
-  filter(depth >= depth_thres) %>%
-  left_join(meta, by = "site_id") %>%
-  mutate(allele = replace(freq, freq < 0.5, 'major')) %>%
-  mutate(allele = replace(allele, freq >= 0.5, 'minor')) %>%
-  filter(distribution != "Invariant")
-dat
-
-dat <- dat %>%
-  mutate(site_id = factor(site_id,
-                          levels = as.character(unique(sort(as.numeric(dat$site_id))))))
