@@ -19,6 +19,11 @@ Dat <- read_midas_data(midas_dir = args$midas_dir,
                        genes = NULL,
                        cds_only = FALSE)
 
+# Keep only full covered
+Dat$freq <- Dat$freq %>% filter(rowSums(Dat$depth[,-1] == 0) == 0)
+Dat$info <- Dat$info %>% filter(rowSums(Dat$depth[,-1] == 0) == 0)
+Dat$depth <- Dat$depth %>% filter(rowSums(Dat$depth[,-1] == 0) == 0)
+
 
 # Get a dendrogram of samples
 
