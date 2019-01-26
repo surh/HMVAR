@@ -8,6 +8,7 @@ https://github.com/surh/HMVAR/issues/4)
 (Issue https://github.com/surh/HMVAR/issues/3).
 6. read_midas_data now can keep non CDS positions.
 (Issue https://github.com/surh/HMVAR/issues/7)
+7. Created midas_to_bimbam function
 
 # 0.0-4
 1. Added ggtree import

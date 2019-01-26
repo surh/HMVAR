@@ -83,3 +83,86 @@ read_midas_data <- function(midas_dir, map, genes, cds_only = TRUE){
   
   return(list(info = info, freq = freq, depth = depth))
 }
+
+
+#' Convert MIDAS merge output to BIMBAM input
+#' 
+#' @param midas_dir Directory where midas merge output for one genome
+#' is located. Must contain files snps_info.txt, snps_depth.txt and
+#' snps_freq.txt
+#' @param map Data frame or tibble that maps samples to groups. It
+#' must have columns 'sample' and 'ID'.
+#' @param outdir Directory where to store the results. It will be
+#' created if it does not exists already. If it exists, and files
+#' with the output file names exist, they will be overwriten.
+#' @param prefix Prefix to append to all filenames.
+#' 
+#' @return A list with elements filenames and Dat. The first element
+#' contains the relative paths to the three BIMBAM files, and the
+#' second contains tibbles with the data written to those files
+#' 
+#' @export
+#' 
+#' 
+midas_to_bimbam <- function(midas_dir, map, outdir, prefix = NULL){
+  Dat <- read_midas_data(midas_dir = midas_dir,
+                         map = map,
+                         genes = NULL,
+                         cds_only = FALSE)
+  
+  # Keep only full covered
+  # Dat$freq <- Dat$freq %>% filter(rowSums(Dat$depth[,-1] == 0) == 0)
+  # Dat$info <- Dat$info %>% filter(rowSums(Dat$depth[,-1] == 0) == 0)
+  # Dat$depth <- Dat$depth %>% filter(rowSums(Dat$depth[,-1] == 0) == 0)
+  
+  # Match freqs and depth
+  Dat$depth <- Dat$depth %>% gather(key = "sample", value = 'depth', -site_id)
+  Dat$freq <- Dat$freq %>% gather(key = "sample", value = 'freq', -site_id)
+  Dat$info <- Dat$info %>% select(site_id, ref_id, ref_pos, major_allele, minor_allele)
+  
+  # Set sites without coverage to NA
+  dat <- Dat$depth %>%
+    inner_join(Dat$freq, by = c("site_id", "sample"))
+  dat$freq[ dat$depth < 1 ] <- NA
+  Dat$freq <- dat %>% select(-depth) %>% spread(sample, freq)
+  
+  # Create BIMBAM tables
+  geno <- Dat$info %>%
+    select(site_id, minor_allele, major_allele) %>%
+    left_join(Dat$freq, by = "site_id")  
+  
+  pheno <- map %>%
+    filter(sample %in% colnames(geno)) %>%
+    arrange(factor(sample, levels = colnames(geno)[-(1:3)])) %>%
+    mutate(phenotype = 1*(Group == "Supragingival.plaque")) %>%
+    select(id = sample, phenotype)
+  
+  snp <- Dat$info %>% select(ID = site_id, pos = ref_pos, chr = ref_id)
+  
+  # Write bimbam tables
+  if(!dir.exists(outdir)){
+    dir.create(outdir)
+  }
+  
+  gen_file <- file.path(outdir, paste(c(prefix, 'geno.bimbam'), collapse = "_"))
+  write_tsv(geno, path = gen_file, col_names = FALSE)
+  # write_csv(geno, path = gen_file, col_names = FALSE, na = '??')
+  # write.table(geno, gen_file, sep = ", ", na = 'NA', col.names = FALSE, quote = FALSE, row.names = FALSE)
+  
+  phen_file <- file.path(outdir, paste(c(prefix, 'pheno.bimbam'), collapse = "_"))
+  # write_tsv(pheno, path = phen_file)
+  write_tsv(pheno %>% select(phenotype),
+            path = phen_file, col_names = FALSE)
+  
+  snp_file <- file.path(outdir, paste(c(prefix, 'snp.bimbam'), collapse = "_"))
+  write_tsv(snp, path = snp_file, col_names = FALSE)
+  # write_csv(snp, path = snp_file, col_names = FALSE)
+  
+  
+  return(list(filenames = list(geno_file = gen_file,
+                               pheno_file = phen_file,
+                               snp_file = snp_file),
+              Dat = list(geno = geno,
+                         pheno = pheno,
+                         snp = snp)))
+}
