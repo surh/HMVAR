@@ -12,6 +12,14 @@ args <- list(midas_dir = "/godot/shared_data/metagenomes/hmp/midas/merge/2018-02
              gemma = "~/bin/gemma.0.93b")
 
 
+
+# test_genes <- c("411466.7.peg.516", "411466.7.peg.602",
+#                 "411466.7.peg.603", "411466.7.peg.604",
+#                 "411466.7.peg.605", "411466.7.peg.606",
+#                 "411466.7.peg.607", "411466.7.peg.608",
+#                 "411466.7.peg.609", "411466.7.peg.965",
+#                 "411466.7.peg.975", "411466.7.peg.1738")
+
 map <- read_tsv(args$map_file, col_types = 'cc')
 map <- map %>% select(sample = ID, Group = Group)
 Dat <- read_midas_data(midas_dir = args$midas_dir,
@@ -20,9 +28,9 @@ Dat <- read_midas_data(midas_dir = args$midas_dir,
                        cds_only = FALSE)
 
 # Keep only full covered
-Dat$freq <- Dat$freq %>% filter(rowSums(Dat$depth[,-1] == 0) == 0)
-Dat$info <- Dat$info %>% filter(rowSums(Dat$depth[,-1] == 0) == 0)
-Dat$depth <- Dat$depth %>% filter(rowSums(Dat$depth[,-1] == 0) == 0)
+# Dat$freq <- Dat$freq %>% filter(rowSums(Dat$depth[,-1] == 0) == 0)
+# Dat$info <- Dat$info %>% filter(rowSums(Dat$depth[,-1] == 0) == 0)
+# Dat$depth <- Dat$depth %>% filter(rowSums(Dat$depth[,-1] == 0) == 0)
 
 
 # Get a dendrogram of samples
@@ -62,12 +70,17 @@ dir.create(args$outdir)
 dir.create(paste0(args$outdir, "/bimbam/"))
 gen_file <- paste0(args$outdir, "/bimbam/geno.bimbam")
 write_tsv(geno, path = gen_file, col_names = FALSE)
+# write_csv(geno, path = gen_file, col_names = FALSE, na = '??')
+# write.table(geno, gen_file, sep = ", ", na = 'NA', col.names = FALSE, quote = FALSE, row.names = FALSE)
 
 phen_file <- paste0(args$outdir, "/bimbam/pheno.bimbam")
-write_tsv(pheno, path = phen_file)
+# write_tsv(pheno, path = phen_file)
+write_tsv(pheno %>% select(phenotype),
+          path = phen_file, col_names = FALSE)
 
 snp_file <- paste0(args$outdir, "/bimbam/snp.bimbam")
 write_tsv(snp, path = snp_file, col_names = FALSE)
+# write_csv(snp, path = snp_file, col_names = FALSE)
 
 phylo_file <- paste0(args$outdir, "/bimbam/phylo.tre")
 ape::write.tree(phy = tre, file = phylo_file)
