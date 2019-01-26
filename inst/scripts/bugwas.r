@@ -39,7 +39,9 @@ map <- map %>% select(sample = ID, Group = Group)
 #' with the output file names exist, they will be overwriten.
 #' @param prefix Prefix to append to all filenames.
 #' 
-#' 
+#' @return A list with elements filenames and Dat. The first element
+#' contains the relative paths to the three BIMBAM files, and the
+#' second contains tibbles with the data written to those files
 #' 
 #' @export
 #' 
@@ -80,24 +82,31 @@ midas_to_bimbam <- function(midas_dir, map, outdir, prefix = NULL){
   snp <- Dat$info %>% select(ID = site_id, pos = ref_pos, chr = ref_id)
   
   # Write bimbam tables
-  dir.create(args$outdir)
-  dir.create(paste0(args$outdir, "/bimbam/"))
-  gen_file <- paste0(args$outdir, "/bimbam/geno.bimbam")
+  if(!dir.exists(outdir)){
+    dir.create(outdir)
+  }
+  
+  gen_file <- file.path(outdir, paste(c(prefix, 'geno.bimbam'), collapse = "_"))
   write_tsv(geno, path = gen_file, col_names = FALSE)
   # write_csv(geno, path = gen_file, col_names = FALSE, na = '??')
   # write.table(geno, gen_file, sep = ", ", na = 'NA', col.names = FALSE, quote = FALSE, row.names = FALSE)
   
-  phen_file <- paste0(args$outdir, "/bimbam/pheno.bimbam")
+  phen_file <- file.path(outdir, paste(c(prefix, 'pheno.bimbam'), collapse = "_"))
   # write_tsv(pheno, path = phen_file)
   write_tsv(pheno %>% select(phenotype),
             path = phen_file, col_names = FALSE)
   
-  snp_file <- paste0(args$outdir, "/bimbam/snp.bimbam")
+  snp_file <- file.path(outdir, paste(c(prefix, 'snp.bimbam'), collapse = "_"))
   write_tsv(snp, path = snp_file, col_names = FALSE)
   # write_csv(snp, path = snp_file, col_names = FALSE)
   
   
-  
+  return(list(filenames = list(geno_file = geno_file,
+                               pheno_file = phen_file,
+                               snp_file = snp_file),
+              Dat = list(geno = geno,
+                         pheno = pheno,
+                         snp = snp)))
 }
 
 
