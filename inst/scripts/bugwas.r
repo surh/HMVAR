@@ -101,7 +101,7 @@ midas_to_bimbam <- function(midas_dir, map, outdir, prefix = NULL){
   # write_csv(snp, path = snp_file, col_names = FALSE)
   
   
-  return(list(filenames = list(geno_file = geno_file,
+  return(list(filenames = list(geno_file = gen_file,
                                pheno_file = phen_file,
                                snp_file = snp_file),
               Dat = list(geno = geno,
@@ -110,6 +110,8 @@ midas_to_bimbam <- function(midas_dir, map, outdir, prefix = NULL){
 }
 
 
+
+res <- midas_to_bimbam(midas_dir = args$midas_dir, map = map, outdir = 'bimbam', prefix = 'Actino')
 
 
 
