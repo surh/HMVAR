@@ -103,7 +103,12 @@ file.remove("output/kinship.cXX.txt")
 Files$Files$kinship_file <- file.path(Files$Dirs$kinship_dir, "kinship.cXX.txt")
 
 
-
+# SVD & PCA
+# Since there are no patterns all genotypes have the same weighth
+geno <- Dat_gemma$geno %>% select(-site_id, -minor_allele, -major_allele) %>%
+  as.matrix %>% t
+geno.svd <- svd(geno)
+geno.pca <- prcomp(geno)
 
 
 
