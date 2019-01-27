@@ -133,6 +133,32 @@ file.remove("output/lmm.assoc.txt")
 Files$Files$lmm_assoc_file <- file.path(Files$Dirs$lmm_dir, "lmm.assoc.txt")
 Files$Files$lmm_log_file <- file.path(Files$Dirs$lmm_dir, "lmm.log.txt")
 
+# Process lmm results
+# Get lognull and lambda
+# For newer GEMMA versions I need vg/ve from two diff lines.
+lognull <- scan(Files$Files$lmm_log_file,
+                what = character(0),
+                sep = "\n")[args$loglik_null_line] %>%
+  strsplit(" ") %>%
+  unlist %>%
+  last
+lambda <- scan(Files$Files$lmm_log_file,
+                what = character(0),
+                sep = "\n")[13] %>%
+  strsplit(" ") %>%
+  unlist %>%
+  last
+
+# Read results
+lmm_res <- read_tsv(Files$Files$lmm_assoc_file,
+                    col_types = cols(rs = 'c')) %>% 
+  select(chr, rs, ps, lambda_H1 = l_mle,
+         loglik_H1 = logl_H1, p.value = p_lrt) %>%
+  mutate(minus.log.p = -log10(p.value))
+
+lmm <- list(lmm = lmm_res,
+            lognull = as.numeric(lognull),
+            lambda = as.numeric(lambda))
 
 
 
