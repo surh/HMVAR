@@ -93,9 +93,14 @@ cmd <- paste(args$gemma,
              "-o", "kinship")
 cat("Running\n\t>", cmd, "\n")
 out <- system(cmd)
-
-
-
+# Re-organize files
+Files$Dirs$kinship_dir <- file.path(args$outdir, "kinship")
+dir.create(Files$Dirs$kinship_dir)
+file.copy("output/kinship.cXX.txt", Files$Dirs$kinship_dir)
+file.copy("output/kinship.log.txt", Files$Dirs$kinship_dir)
+file.remove("output/kinship.log.txt")
+file.remove("output/kinship.cXX.txt")
+Files$Files$kinship_file <- file.path(Files$Dirs$kinship_dir, "kinship.cXX.txt")
 
 
 
