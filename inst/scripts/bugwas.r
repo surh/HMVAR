@@ -5,6 +5,7 @@ library(bugwas)
 # The following will be based on bugwas:
 # Steps
 # 1. Impute genotypes with BIMBAM
+# 2. Get kinship matrix
 
 Sys.setenv(LD_LIBRARY_PATH="/opt/modules/pkgs/eqtlbma/git/lib/")
 args <- list(midas_dir = "/godot/shared_data/metagenomes/hmp/midas/merge/2018-02-07.merge.snps.d.5/Actinomyces_odontolyticus_57475/",
@@ -25,13 +26,21 @@ args <- list(midas_dir = "/godot/shared_data/metagenomes/hmp/midas/merge/2018-02
 # Main output directory
 dir.create(args$outdir)
 
+# Create list for filenames
+Files <- list(Dirs = list(),
+              Files = list())
+
 # Read map
 map <- read_tsv(args$map_file, col_types = 'cc')
 map <- map %>% select(sample = ID, Group = Group)
 
 # Convert to bimbam
 bimbam_dir <- file.path(args$outdir, "bimbam")
+Files$Dirs$bimbam_dir <- bimbam_dir
 midas_bimbam <- midas_to_bimbam(midas_dir = args$midas_dir, map = map, outdir = bimbam_dir, prefix = NULL)
+Files$Files$midas_geno_file <- midas_bimbam$filenames$geno_file
+Files$Files$pheno_file <- midas_bimbam$filenames$pheno_file
+Files$Files$snp_file <- midas_bimbam$filenames$snp_file
 
 # Run bimbam
 cmd <- paste(args$bimbam,
@@ -50,13 +59,14 @@ out <- system(cmd)
 # Re-organize files
 imputed_dir <- file.path(args$outdir, "imputed")
 dir.create(imputed_dir)
+Files$Dirs$imputed_dir <- imputed_dir
 file.copy("output/imputed.log.txt", imputed_dir)
 file.copy("output/imputed.mean.genotype.txt", imputed_dir)
 file.copy("output/imputed.snpinfo.txt", imputed_dir)
 file.remove("output/imputed.log.txt")
 file.remove("output/imputed.mean.genotype.txt")
 file.remove("output/imputed.snpinfo.txt")
-
+Files$Files$imputed_geno_file <- file.path(imputed_dir, "imputed.mean.genotype.txt")
 
 # Prepare data for gemma
 Dat_gemma <- list(geno = read_table2(file.path(imputed_dir, "imputed.mean.genotype.txt"),
@@ -72,91 +82,18 @@ Dat_gemma <- list(geno = read_table2(file.path(imputed_dir, "imputed.mean.genoty
 rm(midas_bimbam, cmd, out)
 gc()
 
+# Get kinship matrix
+# Works with both gemma v0.93b & v0.98.1
+# I am ingoring patterns since genotypes are not fixed but frequencies instead
+cmd <- paste(args$gemma,
+             "-g", Files$Files$imputed_geno_file,
+             "-p", Files$Files$pheno_file,
+             "-a", Files$Files$snp_file,
+             "-gk", 1,
+             "-o", "kinship")
+cat("Running\n\t>", cmd, "\n")
+out <- system(cmd)
 
-
-
-
-gemmaGen.df = read.table(file=gemmaGenFile, header=F, as.is=T)
-gemmaSNP.df = read.table(file=gemmaSnpFile, header=F, as.is=T)
-# bipCount = nrow(gemmaGen.df)
-# dataCount = ncol(gemmaGen.df) - 3
-
-n_snvs <- nrow(Dat_gemma$geno)
-n_samples <- ncol(Dat_gemma$geno) - 3
-
-if(nrow(Dat_gemma$pheno) != n_samples){
-  stop("ERROR: Number of samples does not match between genotype and phenotype")
-}
-if(nrow(Dat_gemma$snp != n_snvs)){
-  stop("ERROR: Number of SNVs does not match between genotype and position file")
-}
-
-
-# m = matrix(nrow=2,ncol=bipCount)
-# gen = gemmaGen.df[,-c(1:3)]
-# m[2,] = rowSums(gemmaGen.df[,-c(1:3)])
-# m[1,] = dataCount - m[2,]
-m <- matrix(nrow = 2, ncol = n_snvs)
-
-
-allele.id <- matrix(c(0, 1)[apply(m, 2, order, decreasing=TRUE)], nrow=2)
-
-# Output filenames
-# biallelic polymorphisms encoded -1 (missing) 0 (allele 0) 1 (allele 1)
-bip_outfile <- paste0(prefix, ".gemma.bip.patterns.txt");		
-
-# positional and allelic information for biallelic polymorphisms
-bipinfo_outfile <- paste0(prefix, ".gemma.bipinfo.txt");		
-
-# Allocate memory for bip and snp, because need to transform so cannot output on the fly
-bip <- matrix(NA, bipCount, dataCount)
-
-for(i in 1:ncol(gen)) {
-  # Read the mapcall file
-  fa <- gen[,i]
-  bip[, i] <- -1
-  bip[fa==allele.id[1, ], i] = 0
-  bip[fa==allele.id[2, ], i] = 1
-  
-}
-
-# Convert BIP and SNP patterns to factors to identify equivalencies
-bip.pat <- factor(apply(bip, 1, paste, collapse=""))
-# Record only unique patterns, and record the pattern equivalence in the bipinfo file
-bip.pat1 <- match(levels(bip.pat), bip.pat)
-
-# Output compacted bip and snp objects
-if(is.null(id)){
-  id = paste("id", c(1:ncol(bip)), sep="")
-}
-colnames(bip) = id
-write.table(bip[bip.pat1, ], bip_outfile, row=FALSE, col=TRUE, quote=FALSE, sep="\t")
-
-# Output info files
-pos = as.numeric(gemmaSNP.df[,2])
-bipinfo <- data.frame("Position"= pos,
-                      "Allele0"=allele.id[1,],
-                      "Allele1"=allele.id[2,],
-                      "0"=m[1,],
-                      "1"=m[2,],
-                      "Pattern"=as.numeric(bip.pat));
-
-write.table(bipinfo, bipinfo_outfile, row=FALSE, col=TRUE, quote=FALSE, sep="\t")
-ps.bips <- bipinfo$Position
-bippat <- sapply(1:max(bipinfo$Pattern), function(x)sum(bipinfo$Pattern==x))
-ipat <- bipinfo$Pattern
-rm(bipinfo)		
-
-return(list("XX" = bip[bip.pat1, ],
-            "XX.tritetra" = NULL,
-            "bippat" = bippat,
-            "snppat" = NULL,
-            "pattern" = ipat,
-            "pattern.snps" = NULL,
-            "ps" = ps.bips,
-            "ps.snps" = NULL,
-            "n.triallelic" = 0,
-            "n.tetraallelic" = 0))
 
 
 
