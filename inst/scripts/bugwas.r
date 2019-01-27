@@ -149,16 +149,30 @@ lambda <- scan(Files$Files$lmm_log_file,
   unlist %>%
   last
 
-# Read results
+# # Read results
+# lmm_res <- read_tsv(Files$Files$lmm_assoc_file,
+#                     col_types = cols(rs = 'c')) %>% 
+#   select(chr, rs, ps, lambda_H1 = l_mle,
+#          loglik_H1 = logl_H1, p.value = p_lrt) %>%
+#   mutate(minus.log.p = -log10(p.value))
+# 
+# lmm <- list(lmm = lmm_res,
+#             lognull = as.numeric(lognull),
+#             lambda = as.numeric(lambda))
 lmm_res <- read_tsv(Files$Files$lmm_assoc_file,
-                    col_types = cols(rs = 'c')) %>% 
-  select(chr, rs, ps, lambda_H1 = l_mle,
-         loglik_H1 = logl_H1, p.value = p_lrt) %>%
-  mutate(minus.log.p = -log10(p.value))
+                    col_types = cols(rs = 'c')) %>%
+  mutate(negLog10 = -log10(p_lrt))
 
-lmm <- list(lmm = lmm_res,
-            lognull = as.numeric(lognull),
-            lambda = as.numeric(lambda))
+lmm.bi <- list(lmm = lmm_res, "lognull" = as.numeric(lognull),
+     lambda = as.numeric(lambda))
+     
+cor.geno <- bugwas:::get_correlations(XX = geno,
+                                      pca = geno.pca$x,
+                                      npcs = length(Dat_gemma$pheno$id),
+                                      id = Dat_gemma$pheno$id)
+lmm <- list(logreg.bi = NULL, lmm.bi = lmm.bi,
+            lognull = lognull,
+            lambda = lambda, cor.XX = cor.geno)
 
 
 
