@@ -6,6 +6,7 @@ library(bugwas)
 # Steps
 # 1. Impute genotypes with BIMBAM
 # 2. Get kinship matrix
+# 3. Run lmm
 
 Sys.setenv(LD_LIBRARY_PATH="/opt/modules/pkgs/eqtlbma/git/lib/")
 args <- list(midas_dir = "/godot/shared_data/metagenomes/hmp/midas/merge/2018-02-07.merge.snps.d.5/Actinomyces_odontolyticus_57475/",
@@ -13,7 +14,8 @@ args <- list(midas_dir = "/godot/shared_data/metagenomes/hmp/midas/merge/2018-02
              outdir = "testout/",
              prefix = "Actinomyces_odontolyticus_57475",
              gemma = "~/bin/gemma.0.93b",
-             bimbam = "~/bin/bimbam")
+             bimbam = "~/bin/bimbam",
+             loglik_null_line = 17)
 
 # test_genes <- c("411466.7.peg.516", "411466.7.peg.602",
 #                 "411466.7.peg.603", "411466.7.peg.604",
@@ -109,6 +111,30 @@ geno <- Dat_gemma$geno %>% select(-site_id, -minor_allele, -major_allele) %>%
   as.matrix %>% t
 geno.svd <- svd(geno)
 geno.pca <- prcomp(geno)
+
+# Run lmm
+cmd <- paste(args$gemma,
+             "-g", Files$Files$imputed_geno_file,
+             "-p", Files$Files$pheno_file,
+             "-a", Files$Files$snp_file,
+             "-k", Files$Files$kinship_file,
+             "-lmm", 2,
+             "-o", "lmm",
+             "-maf", 0)
+cat("Running\n\t>", cmd, "\n")
+out <- system(cmd)
+# Re-organize files
+Files$Dirs$lmm_dir <- file.path(args$outdir, "lmm")
+dir.create(Files$Dirs$lmm_dir)
+file.copy("output/lmm.assoc.txt", Files$Dirs$lmm_dir)
+file.copy("output/lmm.log.txt", Files$Dirs$lmm_dir)
+file.remove("output/lmm.log.txt")
+file.remove("output/lmm.assoc.txt")
+Files$Files$lmm_assoc_file <- file.path(Files$Dirs$lmm_dir, "lmm.assoc.txt")
+Files$Files$lmm_log_file <- file.path(Files$Dirs$lmm_dir, "lmm.log.txt")
+
+
+
 
 
 
