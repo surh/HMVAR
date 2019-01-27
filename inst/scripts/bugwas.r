@@ -15,7 +15,8 @@ args <- list(midas_dir = "/godot/shared_data/metagenomes/hmp/midas/merge/2018-02
              prefix = "Actinomyces_odontolyticus_57475",
              gemma = "~/bin/gemma.0.93b",
              bimbam = "~/bin/bimbam",
-             loglik_null_line = 17)
+             loglik_null_line = 17,
+             PC_branch_cors = FALSE)
 
 # test_genes <- c("411466.7.peg.516", "411466.7.peg.602",
 #                 "411466.7.peg.603", "411466.7.peg.604",
@@ -178,27 +179,20 @@ lmm <- list(logreg.bi = NULL, lmm.bi = lmm.bi,
 
 
 
+
 # Get a dendrogram of samples
-
-# tre <- hclust(dist(t(Dat$freq[,-1])))
-tre <- hclust(dist(t(apply(t(Dat$depth[,-1]),1, scale))))
-# tre <- hclust(dist(t(Dat$depth[,-1])))
-# plot(tre)
+# TEMPORARY. MOVE EARLIER
+tre <- hclust(dist(dist(geno)))
 tre <- ape::as.phylo(tre)
+Files$Files$phylo_file <- file.path(args$outdir, "bimbam/phylo.tre")
+ape::write.tree(phy = tre, file = Files$Files$phylo_file)
 
+# Get list of all tree info
+treeInfo <- bugwas:::get_tree(phylo = Files$Files$phylo_file,
+                              prefix = 'actino',
+                              XX.ID = Dat_gemma$pheno$id,
+                              pca = geno.pca,
+                              npcs = length(Dat_gemma$pheno$id),
+                              allBranchAndPCCor = args$PC_branch_cors)
 
-phylo_file <- paste0(args$outdir, "/bimbam/phylo.tre")
-ape::write.tree(phy = tre, file = phylo_file)
-
-
-rm(Dat, dat, map, geno, pheno, snp, tre)
-gc()
-
-## Call bugwas
-b1 <- linLocGEMMA(gemmaGenFile = gen_file,
-                  gemmaSnpFile = snp_file,
-                  pheno = phen_file,
-                  phylo = phylo_file,
-                  prefix = args$prefix,
-                  gem.path = args$gemma)
 
