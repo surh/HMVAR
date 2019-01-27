@@ -196,3 +196,24 @@ treeInfo <- bugwas:::get_tree(phylo = Files$Files$phylo_file,
                               allBranchAndPCCor = args$PC_branch_cors)
 
 
+
+# Ridge regression
+wald <- bugwas:::wald_test(y = Dat_gemma$pheno$phenotype,
+                           XX = geno,
+                           svd.XX = geno.svd,
+                           lambda = lmm$lambda,
+                           XX.all = XX.all,
+                           prefix = 'actino',
+                           npcs = length(Dat_gemma$pheno$id),
+                           pca = geno.pca)
+
+
+
+ggplot(lmm_res, aes(x = ps, y = negLog10)) +
+  facet_grid(~chr, space = "free_x", scales = "free_x") +
+  geom_hline(yintercept = 8, color = "red", size = 3) +
+  geom_point()
+
+ggplot(lmm_res, aes(x = p_lrt)) +
+  geom_histogram(bins = 20) +
+  AMOR::theme_blackbox()
