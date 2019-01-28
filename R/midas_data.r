@@ -134,7 +134,8 @@ midas_to_bimbam <- function(midas_dir, map, outdir, prefix = NULL){
   pheno <- map %>%
     filter(sample %in% colnames(geno)) %>%
     arrange(factor(sample, levels = colnames(geno)[-(1:3)])) %>%
-    mutate(phenotype = 1*(Group == "Supragingival.plaque")) %>%
+    #mutate(phenotype = 1*(Group == "Supragingival.plaque")) %>%
+    mutate(phenotype = as.numeric(factor(Group)) - 1) %>%
     select(id = sample, phenotype)
   
   snp <- Dat$info %>% select(ID = site_id, pos = ref_pos, chr = ref_id)
