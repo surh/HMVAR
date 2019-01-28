@@ -9,13 +9,19 @@ library(bugwas)
 # 3. Run lmm
 
 Sys.setenv(LD_LIBRARY_PATH="/opt/modules/pkgs/eqtlbma/git/lib/")
-args <- list(midas_dir = "/godot/shared_data/metagenomes/hmp/midas/merge/2018-02-07.merge.snps.d.5/Actinomyces_odontolyticus_57475/",
-             map_file = "hmp_SPvsTD_map.txt",
-             outdir = "testout/",
-             prefix = "Actinomyces_odontolyticus_57475",
+indir <- commandArgs(trailingOnly = TRUE)[1]
+spec <- commandArgs(trailingOnly = TRUE)[2]
+indir <- "/godot/shared_data/metagenomes/hmp/midas/merge/2018-02-07.merge.snps.d.5/"
+spec <- "Actinomyces_odontolyticus_57475"
+
+args <- list(midas_dir = file.path(indir, spec),
+             map_file = "map.txt",
+             outdir = "metawas",
+             prefix = spec,
              gemma = "~/bin/gemma.0.93b",
              bimbam = "~/bin/bimbam",
              gemma_version = 'bugwas')
+rm(indir, spec)
 
 # test_genes <- c("411466.7.peg.516", "411466.7.peg.602",
 #                 "411466.7.peg.603", "411466.7.peg.604",
