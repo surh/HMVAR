@@ -245,15 +245,27 @@ bwt.pvals <- -log10(exp(1)) *
          df = 1, lower.tail = FALSE, log.p = TRUE)
 # bwt.pvals
 
+# Predict phenotype using effect sizes.
+# There are small numerical differences from this prediction but it is the same
+# as y.pred
+# effect <- t(t(XX) * as.vector(fit.lmm$Ebeta))
+# pred <- rowSums(effect)
+# pheno.pred <- rowSums(t(t(geno) * as.vector(m1.ridge$Ebeta)))
 
-# Get order of PCs by Wald test results
-signif_cutoff <- -log10(0.05/npcs)
 
-pc_order <- get_pc_order(p.pca.bwt = p.pca.bwt, signif_cutoff = signif_cutoff)
-# Predict phenotype using effect sizes
-effect <- t(t(XX) * as.vector(fit.lmm$Ebeta))
-pred <- rowSums(effect)
-
+# y.pred <- geno %*% m1.ridge$Ebeta
+# pheno.pred <- t(geno) * as.vector(m1.ridge$Ebeta)
+# summary(colSums(pheno.pred) - as.vector(y.pred))
+# 
+# mat <- matrix(1:10, ncol = 5 )
+# beta <- matrix(1:5, ncol = 1)
+# mat
+# beta
+# mat %*% beta
+# 
+# t(mat)
+# t(mat) * as.vector(beta)
+# colSums(t(mat) * as.vector(beta))
 
 return(list("pc_order" = pc_order, "p.pca.bwt" = p.pca.bwt, "pred" = pred,
             "signif_cutoff" = signif_cutoff))
