@@ -9,10 +9,12 @@ library(bugwas)
 # 3. Run lmm
 
 Sys.setenv(LD_LIBRARY_PATH="/opt/modules/pkgs/eqtlbma/git/lib/")
-indir <- commandArgs(trailingOnly = TRUE)[1]
-spec <- commandArgs(trailingOnly = TRUE)[2]
+# indir <- commandArgs(trailingOnly = TRUE)[1]
+# spec <- commandArgs(trailingOnly = TRUE)[2]
 # indir <- "/godot/shared_data/metagenomes/hmp/midas/merge/2018-02-07.merge.snps.d.5/"
 # spec <- "Actinomyces_odontolyticus_57475"
+indir <- "/godot/users/sur/exp/fraserv/2019/today/"
+spec <- "midas_output_small/"
 
 args <- list(midas_dir = file.path(indir, spec),
              map_file = "map.txt",
@@ -111,10 +113,11 @@ Files$Files$kinship_file <- file.path(Files$Dirs$kinship_dir, "kinship.cXX.txt")
 
 # # SVD & PCA
 # # Since there are no patterns all genotypes have the same weighth
-# geno <- Dat_gemma$geno %>% select(-site_id, -minor_allele, -major_allele) %>%
-#   as.matrix %>% t
-# geno.svd <- svd(geno)
-# geno.pca <- prcomp(geno)
+geno <- Dat_gemma$geno %>% select(-site_id, -minor_allele, -major_allele) %>%
+  as.matrix %>% t
+geno.svd <- svd(geno)
+geno.pca <- prcomp(geno)
+rm(geno)
 
 # Run lmm
 cmd <- paste(args$gemma,
@@ -137,22 +140,24 @@ file.remove("output/lmm.assoc.txt")
 Files$Files$lmm_assoc_file <- file.path(Files$Dirs$lmm_dir, "lmm.assoc.txt")
 Files$Files$lmm_log_file <- file.path(Files$Dirs$lmm_dir, "lmm.log.txt")
 
-# # Process lmm results
-# # Get lognull and lambda
-# # For newer GEMMA versions I need vg/ve from two diff lines.
-# lognull <- scan(Files$Files$lmm_log_file,
-#                 what = character(0),
-#                 sep = "\n")[args$loglik_null_line] %>%
-#   strsplit(" ") %>%
-#   unlist %>%
-#   last
-# lambda <- scan(Files$Files$lmm_log_file,
-#                 what = character(0),
-#                 sep = "\n")[13] %>%
-#   strsplit(" ") %>%
-#   unlist %>%
-#   last
-# 
+# Process lmm results
+# Get lognull and lambda
+# For newer GEMMA versions I need vg/ve from two diff lines.
+lognull <- scan(Files$Files$lmm_log_file,
+                what = character(0),
+                sep = "\n")[17] %>%
+  strsplit(" ") %>%
+  unlist %>%
+  last %>%
+  as.numeric
+lambda <- scan(Files$Files$lmm_log_file,
+                what = character(0),
+                sep = "\n")[13] %>%
+  strsplit(" ") %>%
+  unlist %>%
+  last %>%
+  as.numeric
+
 # # # Read results
 # # lmm_res <- read_tsv(Files$Files$lmm_assoc_file,
 # #                     col_types = cols(rs = 'c')) %>% 
@@ -177,6 +182,84 @@ Files$Files$lmm_log_file <- file.path(Files$Dirs$lmm_dir, "lmm.log.txt")
 # lmm <- list(logreg.bi = NULL, lmm.bi = lmm.bi,
 #             lognull = lognull,
 #             lambda = lambda, cor.XX = cor.geno)
+
+
+
+# Wald test
+# wald <- wald_test(y = y,
+#                   XX = XX,
+#                   svd.XX = svd.XX,
+#                   lambda = biallelic$lambda,
+#                   XX.all = XX.all,
+#                   prefix = prefix,
+#                   npcs = npcs,
+#                   pca = pca$pca)
+
+# fit.lmm <- ridge_regression(y, XX, svdX=svd.XX,
+#                             lambda_init=as.numeric(lambda)/sum(XX.all$bippat),
+#                             maximize=FALSE, skip.var=TRUE)
+m1.ridge <- bugwas:::ridge_regression(y = Dat_gemma$pheno$phenotype, x = geno,
+                                      svdX = geno.svd, lambda_init = lambda / nrow(Dat_gemma$geno),
+                                      maximize = FALSE, skip.var = TRUE)
+
+# Fit the grand null model
+# fit.0 <- lm(y~1)
+m0 <- lm(phenotype ~ 1, data = Dat_gemma$pheno)
+
+# LRT for the LMM null vs grand null
+# LRTnullVgrand <- -log10(pchisq(2*(fit.lmm$ML - as.numeric(logLik(fit.0))), 1, low=F)/2)
+# cat(paste0("## LRT for the LMM null vs grand null = ", LRTnullVgrand),
+#     file = paste0(prefix, "_logfile.txt"), sep="\n", append = TRUE)
+lrt.pval <- pchisq(2*(m1.ridge$ML - as.numeric(logLik(m0))), df = 1, lower.tail = FALSE) / 2
+
+# Heritability
+# fit.lmm.ypred <- XX %*% fit.lmm$Ebeta
+# cat(paste0("## Heritability (R^2) = ", cor(fit.lmm.ypred,y)^2),
+#     file=paste0(prefix, "_logfile.txt"), sep="\n", append=TRUE)
+y.pred <- geno %*% m1.ridge$Ebeta
+# plot(y.pred, Dat_gemma$pheno$phenotype)
+h2 <- cor(y.pred, Dat_gemma$pheno$phenotype)^2
+# h2
+
+# Get full posterior covariance matrix for Bayesian Wald Test
+# Need the full posterior covariance matrix for the Bayesian Wald test,
+# to get the posterior uncertainty for each point estimate
+# wald_input <- get_wald_input(fit.lmm = fit.lmm, pca = pca, svd.XX = svd.XX,
+#                              y = y, npcs = npcs, XX = XX)
+wald_input <- bugwas:::get_wald_input(fit.lmm = m1.ridge,
+                                      pca = geno.pca,
+                                      svd.XX = geno.svd,
+                                      y = Dat_gemma$pheno$phenotype,
+                                      npcs = length(Dat_gemma$pheno$phenotype),
+                                      XX = geno)
+
+# Bayesian Wald Test
+# pca.bwt <- wald_input$Ebeta^2/diag(wald_input$Vbeta)
+# p.pca.bwt <- -log10(exp(1))*pchisq(pca.bwt, 1, low=F, log=T)
+# cat(paste0("## Bayesian Wald Test for PCs range = ", paste(range(p.pca.bwt), collapse=" ")),
+#     file=paste0(prefix, "_logfile.txt"), sep="\n", append=TRUE)
+# write.table(p.pca.bwt, file = paste0(prefix, "_Bayesian_Wald_Test_negLog10.txt"),
+#             sep="\t", row=T, col = F, quote=F)
+bwt.pvals <- -log10(exp(1)) *
+  pchisq(wald_input$Ebeta^2 / diag(wald_input$Vbeta),
+         df = 1, lower.tail = FALSE, log.p = TRUE)
+# bwt.pvals
+
+
+# Get order of PCs by Wald test results
+signif_cutoff <- -log10(0.05/npcs)
+
+pc_order <- get_pc_order(p.pca.bwt = p.pca.bwt, signif_cutoff = signif_cutoff)
+# Predict phenotype using effect sizes
+effect <- t(t(XX) * as.vector(fit.lmm$Ebeta))
+pred <- rowSums(effect)
+
+
+return(list("pc_order" = pc_order, "p.pca.bwt" = p.pca.bwt, "pred" = pred,
+            "signif_cutoff" = signif_cutoff))
+
+
+
 
 
 
