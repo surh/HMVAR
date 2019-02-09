@@ -2,6 +2,79 @@ library(HMVAR)
 library(tidyverse)
 library(bugwas)
 
+#' Run system command
+#' 
+#' Internal
+#' 
+#' @param cmd System command
+run_command <- function(cmd){
+  cat("Running\n\t>", cmd, "\n")
+  out <- system(cmd)
+  
+  return(out)
+}
+
+# Run bimbam
+#' Impute genotypes with BIMBAM
+#' 
+#' @param geno_file Path to mean genotype file. See BIMBAM docummentation
+#' for details.
+#' @param pheno_file Path to phenotype file. See BIMBAM docummentation
+#' for details.
+#' @param pos_file Path to SNP position file. See BIMBAM docummentation
+#' for details.
+#' @param bimbam BIMBAM executable.
+#' @param outdir Output directory.
+#' @param em_runs Number of EM algorithm runs.
+#' @param em_steps Steps of each EM run.
+#' @param em_clusters Number of clusters in EM algorithm.
+#' @param prefix Prefix of all output files
+#' 
+#' @References
+#' http://www.haplotype.org/download/bimbam-manual.pdf
+#' 
+#' @export
+bimbam_impute <- function(geno_file, pheno_file, pos_file,
+                          bimbam = 'bimbam',
+                          outdir = "imputed/",
+                          em_runs = 10,
+                          em_steps = 20,
+                          em_clusters = 15,
+                          prefix = "imputed"){
+  
+  cmd <- paste(bimbam,
+               "-g", geno_file,
+               "-p", pheno_file,
+               "-pos", pos_file,
+               "-e", em_runs,
+               "-s", em_steps,
+               "-c", em_clusters,
+               "--nobf",
+               "-o", prefix,
+               "-wmg",
+               "-gmode", 1)
+  out <- run_command(cmd)
+  
+  # Re-organize files
+  dir.create(outdir)
+  
+  filename <- paste0("output/", paste(c(prefix, "log.txt"), collapse = "."))
+  file.copy(filename, outdir)
+  file.remove(filename)
+  
+  filename <- paste0("output/", paste(c(prefix, "snpinfo.txt"), collapse = "."))
+  file.copy(filename, outdir)
+  file.remove(filename)
+  
+  filename <- paste0("output/", paste(c(prefix, "mean.genotype.txt"), collapse = "."))
+  file.copy(filename, outdir)
+  file.remove(filename)
+  imputed_file <- file.path(outdir, paste(c(prefix, "mean.genotype.txt"), collapse = "."))
+  
+  return(imputed_file)
+}
+
+
 # The following will be based on bugwas:
 # Steps
 # 1. Impute genotypes with BIMBAM
@@ -52,30 +125,19 @@ Files$Files$pheno_file <- midas_bimbam$filenames$pheno_file
 Files$Files$snp_file <- midas_bimbam$filenames$snp_file
 rm(map)
 
-# Run bimbam
-cmd <- paste(args$bimbam,
-             "-g", midas_bimbam$filenames$geno_file,
-             "-p", midas_bimbam$filenames$pheno_file,
-             "-pos", midas_bimbam$filenames$snp_file,
-             "-e", 10,
-             "-s", 20,
-             "-c", 15,
-             "--nobf",
-             "-o", "imputed",
-             "-wmg",
-             "-gmode", 1)
-cat("Running\n\t>", cmd, "\n")
-out <- system(cmd)
-# Re-organize files
+# Impute
 Files$Dirs$imputed_dir <- file.path(args$outdir, "imputed")
-dir.create(Files$Dirs$imputed_dir)
-file.copy("output/imputed.log.txt", Files$Dirs$imputed_dir)
-file.copy("output/imputed.mean.genotype.txt", Files$Dirs$imputed_dir)
-file.copy("output/imputed.snpinfo.txt", Files$Dirs$imputed_dir)
-file.remove("output/imputed.log.txt")
-file.remove("output/imputed.mean.genotype.txt")
-file.remove("output/imputed.snpinfo.txt")
-Files$Files$imputed_geno_file <- file.path(Files$Dirs$imputed_dir, "imputed.mean.genotype.txt")
+Files$Files$imputed_geno_file <- bimbam_impute(geno_file = midas_bimbam$filenames$geno_file,
+                                               pheno_file = midas_bimbam$filenames$pheno_file,
+                                               pos_file = midas_bimbam$filenames$snp_file,
+                                               bimbam = args$bimbam,
+                                               outdir = Files$Dirs$imputed_dir,
+                                               em_runs = 10,
+                                               em_steps = 20,
+                                               em_clusters = 15,
+                                               prefix = "imputed")
+
+
 
 # Prepare data for gemma
 Dat_gemma <- list(geno = read_table2(file.path(Files$Dirs$imputed_dir, "imputed.mean.genotype.txt"),
@@ -94,6 +156,30 @@ gc()
 # Get kinship matrix
 # Works with both gemma v0.93b & v0.98.1
 # I am ingoring patterns since genotypes are not fixed but frequencies instead
+
+#' Calculate kinship matrix with GEMMA
+#' 
+#' @param geno_file Mean genotype file in BIMBAM format. See GEMMA
+#' manual for details.
+#' @param pheno_file Phenotype file in BIMBAM format. See GEMMA
+#' manual for details.
+#' @param snp_file SNP annotation file in BIMBAM format. See GEMMA
+#' manual for details.
+#' @param gemma GEMMA executable.
+#' @param outdir directory to write output.
+#' @param prefix Prefix for output filenames.
+#' 
+#' @references 
+#' http://www.xzlab.org/software/GEMMAmanual.pdf
+#' 
+#' @export
+gemma_kinship <- function(geno_file, pheno_file, snp_file,
+                          gemma = 'gemma',
+                          outdir = "./",
+                          prefix = "kinship"){
+  
+}
+
 cmd <- paste(args$gemma,
              "-g", Files$Files$imputed_geno_file,
              "-p", Files$Files$pheno_file,
@@ -267,8 +353,8 @@ bwt.pvals <- -log10(exp(1)) *
 # t(mat) * as.vector(beta)
 # colSums(t(mat) * as.vector(beta))
 
-return(list("pc_order" = pc_order, "p.pca.bwt" = p.pca.bwt, "pred" = pred,
-            "signif_cutoff" = signif_cutoff))
+# return(list("pc_order" = pc_order, "p.pca.bwt" = p.pca.bwt, "pred" = pred,
+#             "signif_cutoff" = signif_cutoff))
 
 
 
