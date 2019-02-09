@@ -74,6 +74,49 @@ bimbam_impute <- function(geno_file, pheno_file, pos_file,
   return(imputed_file)
 }
 
+#' Calculate kinship matrix with GEMMA
+#' 
+#' @param geno_file Mean genotype file in BIMBAM format. See GEMMA
+#' manual for details.
+#' @param pheno_file Phenotype file in BIMBAM format. See GEMMA
+#' manual for details.
+#' @param snp_file SNP annotation file in BIMBAM format. See GEMMA
+#' manual for details.
+#' @param gemma GEMMA executable.
+#' @param outdir directory to write output.
+#' @param prefix Prefix for output filenames.
+#' 
+#' @references 
+#' http://www.xzlab.org/software/GEMMAmanual.pdf
+#' 
+#' @export
+gemma_kinship <- function(geno_file, pheno_file, snp_file,
+                          gemma = 'gemma',
+                          outdir = "./",
+                          prefix = "kinship"){
+  
+  cmd <- paste(gemma,
+               "-g", geno_file,
+               "-p", pheno_file,
+               "-a", snp_file,
+               "-gk", 1,
+               "-o", prefix)
+  out <- run_command(cmd)
+  
+  # Re-organize files
+  dir.create(outdir)
+  
+  filename <- paste0("output/", paste(c(prefix, "log.txt"), collapse = "."))
+  file.copy(filename, outdir)
+  file.remove(filename)
+  
+  filename <- paste0("output/", paste(c(prefix, "cXX.txt"), collapse = "."))
+  file.copy(filename, outdir)
+  file.remove(filename)
+  kinship_file <- file.path(outdir, paste(c(prefix, "cXX.txt"), collapse = "."))
+  
+  return(kinship_file)
+}
 
 # The following will be based on bugwas:
 # Steps
@@ -137,7 +180,16 @@ Files$Files$imputed_geno_file <- bimbam_impute(geno_file = midas_bimbam$filename
                                                em_clusters = 15,
                                                prefix = "imputed")
 
-
+# Get kinship matrix
+# Works with both gemma v0.93b & v0.98.1
+# I am ingoring patterns since genotypes are not fixed but frequencies instead
+Files$Dirs$kinship_dir <- file.path(args$outdir, "kinship")
+Files$Files$kinship_file <- gemma_kinship(geno_file = Files$Files$imputed_geno_file,
+                                          pheno_file = Files$Files$pheno_file,
+                                          snp_file = Files$Files$snp_file,
+                                          gemma = args$gemma,
+                                          outdir = Files$Dirs$kinship_dir,
+                                          prefix = 'kinship')
 
 # Prepare data for gemma
 Dat_gemma <- list(geno = read_table2(file.path(Files$Dirs$imputed_dir, "imputed.mean.genotype.txt"),
@@ -153,49 +205,7 @@ Dat_gemma <- list(geno = read_table2(file.path(Files$Dirs$imputed_dir, "imputed.
 rm(midas_bimbam, cmd, out)
 gc()
 
-# Get kinship matrix
-# Works with both gemma v0.93b & v0.98.1
-# I am ingoring patterns since genotypes are not fixed but frequencies instead
 
-#' Calculate kinship matrix with GEMMA
-#' 
-#' @param geno_file Mean genotype file in BIMBAM format. See GEMMA
-#' manual for details.
-#' @param pheno_file Phenotype file in BIMBAM format. See GEMMA
-#' manual for details.
-#' @param snp_file SNP annotation file in BIMBAM format. See GEMMA
-#' manual for details.
-#' @param gemma GEMMA executable.
-#' @param outdir directory to write output.
-#' @param prefix Prefix for output filenames.
-#' 
-#' @references 
-#' http://www.xzlab.org/software/GEMMAmanual.pdf
-#' 
-#' @export
-gemma_kinship <- function(geno_file, pheno_file, snp_file,
-                          gemma = 'gemma',
-                          outdir = "./",
-                          prefix = "kinship"){
-  
-}
-
-cmd <- paste(args$gemma,
-             "-g", Files$Files$imputed_geno_file,
-             "-p", Files$Files$pheno_file,
-             "-a", Files$Files$snp_file,
-             "-gk", 1,
-             "-o", "kinship")
-cat("Running\n\t>", cmd, "\n")
-out <- system(cmd)
-# Re-organize files
-Files$Dirs$kinship_dir <- file.path(args$outdir, "kinship")
-dir.create(Files$Dirs$kinship_dir)
-file.copy("output/kinship.cXX.txt", Files$Dirs$kinship_dir)
-file.copy("output/kinship.log.txt", Files$Dirs$kinship_dir)
-file.remove("output/kinship.log.txt")
-file.remove("output/kinship.cXX.txt")
-Files$Files$kinship_file <- file.path(Files$Dirs$kinship_dir, "kinship.cXX.txt")
 
 # # SVD & PCA
 # # Since there are no patterns all genotypes have the same weighth
