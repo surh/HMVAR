@@ -261,6 +261,24 @@ Files$Files$lmm_assoc_file <- res[2]
 rm(res)
 
 
+# Process lmm results
+# Get lognull and lambda
+# For newer GEMMA versions I need vg/ve from two diff lines.
+lognull <- scan(Files$Files$lmm_log_file,
+                what = character(0),
+                sep = "\n")[17] %>%
+  strsplit(" ") %>%
+  unlist %>%
+  last %>%
+  as.numeric
+lambda <- scan(Files$Files$lmm_log_file,
+               what = character(0),
+               sep = "\n")[13] %>%
+  strsplit(" ") %>%
+  unlist %>%
+  last %>%
+  as.numeric
+
 # Prepare data for gemma
 Dat_gemma <- list(geno = read_table2(file.path(Files$Dirs$imputed_dir, "imputed.mean.genotype.txt"),
                                      col_names = colnames(midas_bimbam$Dat$geno),
@@ -274,44 +292,9 @@ Dat_gemma <- list(geno = read_table2(file.path(Files$Dirs$imputed_dir, "imputed.
 rm(midas_bimbam, cmd, out)
 gc()
 
-# Run lmm
-cmd <- paste(args$gemma,
-             "-g", Files$Files$imputed_geno_file,
-             "-p", Files$Files$pheno_file,
-             "-a", Files$Files$snp_file,
-             "-k", Files$Files$kinship_file,
-             "-lmm", 2,
-             "-o", "lmm",
-             "-maf", 0)
-cat("Running\n\t>", cmd, "\n")
-out <- system(cmd)
-# Re-organize files
-Files$Dirs$lmm_dir <- file.path(args$outdir, "lmm")
-dir.create(Files$Dirs$lmm_dir)
-file.copy("output/lmm.assoc.txt", Files$Dirs$lmm_dir)
-file.copy("output/lmm.log.txt", Files$Dirs$lmm_dir)
-file.remove("output/lmm.log.txt")
-file.remove("output/lmm.assoc.txt")
-Files$Files$lmm_assoc_file <- file.path(Files$Dirs$lmm_dir, "lmm.assoc.txt")
-Files$Files$lmm_log_file <- file.path(Files$Dirs$lmm_dir, "lmm.log.txt")
 
-# Process lmm results
-# Get lognull and lambda
-# For newer GEMMA versions I need vg/ve from two diff lines.
-lognull <- scan(Files$Files$lmm_log_file,
-                what = character(0),
-                sep = "\n")[17] %>%
-  strsplit(" ") %>%
-  unlist %>%
-  last %>%
-  as.numeric
-lambda <- scan(Files$Files$lmm_log_file,
-                what = character(0),
-                sep = "\n")[13] %>%
-  strsplit(" ") %>%
-  unlist %>%
-  last %>%
-  as.numeric
+
+
 
 # # # Read results
 # # lmm_res <- read_tsv(Files$Files$lmm_assoc_file,
