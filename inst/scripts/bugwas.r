@@ -9,7 +9,10 @@ library(bugwas)
 # 3. Run lmm
 # 4. Perform bayesian Wald test on principal components
 
+# Required in fraserv for the bugwas modified gemma
 Sys.setenv(LD_LIBRARY_PATH="/opt/modules/pkgs/eqtlbma/git/lib/")
+
+# Setting up options for test
 # indir <- commandArgs(trailingOnly = TRUE)[1]
 # spec <- commandArgs(trailingOnly = TRUE)[2]
 # indir <- "/godot/shared_data/metagenomes/hmp/midas/merge/2018-02-07.merge.snps.d.5/"
@@ -17,6 +20,7 @@ Sys.setenv(LD_LIBRARY_PATH="/opt/modules/pkgs/eqtlbma/git/lib/")
 indir <- "/godot/users/sur/exp/fraserv/2019/today/"
 spec <- "midas_output_small/"
 
+# Eventually replace this with argparse
 args <- list(midas_dir = file.path(indir, spec),
              map_file = "map.txt",
              outdir = "metawas",
@@ -147,10 +151,12 @@ gc()
 #             lambda = lambda, cor.XX = cor.geno)
 
 
-# # SVD & PCA
-# # Since there are no patterns all genotypes have the same weighth
+# SVD & PCA
+# Since there are no patterns all genotypes have the same weight
+# Need to recenter genotype
 geno <- Dat_gemma$geno %>% select(-site_id, -minor_allele, -major_allele) %>%
   as.matrix %>% t
+geno <- t(t(geno) - colMeans(geno))
 geno.svd <- svd(geno)
 geno.pca <- prcomp(geno)
 # rm(geno)
@@ -168,9 +174,12 @@ geno.pca <- prcomp(geno)
 # fit.lmm <- ridge_regression(y, XX, svdX=svd.XX,
 #                             lambda_init=as.numeric(lambda)/sum(XX.all$bippat),
 #                             maximize=FALSE, skip.var=TRUE)
-m1.ridge <- bugwas:::ridge_regression(y = Dat_gemma$pheno$phenotype, x = geno,
-                                      svdX = geno.svd, lambda_init = lambda / nrow(Dat_gemma$geno),
-                                      maximize = FALSE, skip.var = TRUE)
+m1.ridge <- bugwas:::ridge_regression(y = Dat_gemma$pheno$phenotype,
+                                      x = geno,
+                                      svdX = geno.svd,
+                                      lambda_init = lambda / nrow(Dat_gemma$geno),
+                                      maximize = FALSE,
+                                      skip.var = TRUE)
 
 # Fit the grand null model
 # fit.0 <- lm(y~1)
@@ -215,30 +224,6 @@ bwt.pvals <- -log10(exp(1)) *
          df = 1, lower.tail = FALSE, log.p = TRUE)
 # bwt.pvals
 
-# Predict phenotype using effect sizes.
-# There are small numerical differences from this prediction but it is the same
-# as y.pred
-# effect <- t(t(XX) * as.vector(fit.lmm$Ebeta))
-# pred <- rowSums(effect)
-# pheno.pred <- rowSums(t(t(geno) * as.vector(m1.ridge$Ebeta)))
-
-
-# y.pred <- geno %*% m1.ridge$Ebeta
-# pheno.pred <- t(geno) * as.vector(m1.ridge$Ebeta)
-# summary(colSums(pheno.pred) - as.vector(y.pred))
-# 
-# mat <- matrix(1:10, ncol = 5 )
-# beta <- matrix(1:5, ncol = 1)
-# mat
-# beta
-# mat %*% beta
-# 
-# t(mat)
-# t(mat) * as.vector(beta)
-# colSums(t(mat) * as.vector(beta))
-
-# return(list("pc_order" = pc_order, "p.pca.bwt" = p.pca.bwt, "pred" = pred,
-#             "signif_cutoff" = signif_cutoff))
 
 
 
