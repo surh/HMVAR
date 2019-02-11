@@ -13,7 +13,7 @@
 #' @param em_clusters Number of clusters in EM algorithm.
 #' @param prefix Prefix of all output files
 #' 
-#' @References
+#' @references
 #' http://www.haplotype.org/download/bimbam-manual.pdf
 #' 
 #' @export
