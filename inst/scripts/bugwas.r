@@ -160,13 +160,13 @@ rm(res)
 # Process lmm results
 # Get lognull and lambda
 # For newer GEMMA versions I need vg/ve from two diff lines.
-lognull <- scan(Files$Files$lmm_log_file,
-                what = character(0),
-                sep = "\n")[17] %>%
-  strsplit(" ") %>%
-  unlist %>%
-  last %>%
-  as.numeric
+# lognull <- scan(Files$Files$lmm_log_file,
+#                 what = character(0),
+#                 sep = "\n")[17] %>%
+#   strsplit(" ") %>%
+#   unlist %>%
+#   last %>%
+#   as.numeric
 lambda <- scan(Files$Files$lmm_log_file,
                what = character(0),
                sep = "\n")[13] %>%
@@ -208,6 +208,74 @@ bwt.pvals <- bwt_pcs(pheno = Dat_gemma$pheno$phenotype,
 
 
 
+# Get a dendrogram of samples
+# TEMPORARY. MOVE EARLIER
+tre <- hclust(dist(dist(geno)))
+tre <- ape::as.phylo(tre)
+Files$Files$phylo_file <- file.path(args$outdir, "bimbam/phylo.tre")
+ape::write.tree(phy = tre, file = Files$Files$phylo_file)
+
+# Get list of all tree info
+tree_info <- bugwas:::get_tree(phylo = Files$Files$phylo_file,
+                               prefix = 'actino',
+                               XX.ID = Dat_gemma$pheno$id,
+                               pca = geno.pca,
+                               npcs = length(Dat_gemma$pheno$id),
+                               allBranchAndPCCor = FALSE)
+
+
+
+
+
+
+### Plots
+pc_alpha <- 0.5 ## FOR TEST PURPOSES!!
+
+# Get a random sample of colours to use for all plots, equal to the number of significant PCs
+# colourPalette <- getColourPalette(p.pca.bwt = p.pca.bwt, signifCutOff = signifCutOff, pc.lim = pc.lim)
+pc_colors <- rep("grey50", nrow(bwt.pvals))
+ii <- bwt.pvals[,1] > -log10(pc_alpha / nrow(bwt.pvals))
+pc_colors[ ii ] <- rep(c(RColorBrewer::brewer.pal(n=12, name = 'Paired'),
+                         "#000000"),
+                       length.out = sum(ii))
+
+
+# sampleCount = length(Dat_gemphenotype)
+# m = match(o[pc.lim], which.mtp.pc)
+n_samples <- length(Dat_gemma$pheno$phenotype)
+matched_lineages <- match(which(ii), tree_info$cor.tree$which.pc)
+
+# pc.lim 1:n_significant_pcs or NULL if no significant
+
+#Bayesian Wald test for genome-wide PCs
+p.genomewidepc = .testGenomeWidePCs(prefix = prefix,
+                                    pc.lim = pc.lim,
+                                    pca = pca,
+                                    bippat = bippat,
+                                    ipat = ipat,
+                                    o = o)
+message("Bayesian Wald test for genome-wide PCs has been completed successfully.")
+
+# No patterns
+bugwas:::.testGenomeWidePCs(prefix = 'testpc',
+                            pc.lim = 1,
+                            pca = geno.pca,
+                            bippat = rep(1, ncol(geno)),
+                            ipat = 1:(ncol(geno)),
+                            o = order(bwt.pvals[,1], decreasing = TRUE))
+
+
+
+
+#The barplot for the Bayesian wald test for genome-wide PCs
+.BayesianWaldTestPCsBarplot(prefix = prefix,
+                            p.pca.bwt = p.pca.bwt,
+                            colourPalette = colourPalette,
+                            o = o,
+                            m = m,
+                            p.genomewidepc = p.genomewidepc,
+                            pc.lim = pc.lim)
+message("The barplot for the Bayesian wald test for genome-wide PCs has been completed successfully.")
 
 
 
@@ -225,35 +293,8 @@ bwt.pvals <- bwt_pcs(pheno = Dat_gemma$pheno$phenotype,
 
 
 
-# # Get a dendrogram of samples
-# # TEMPORARY. MOVE EARLIER
-# tre <- hclust(dist(dist(geno)))
-# tre <- ape::as.phylo(tre)
-# Files$Files$phylo_file <- file.path(args$outdir, "bimbam/phylo.tre")
-# ape::write.tree(phy = tre, file = Files$Files$phylo_file)
-# 
-# # Get list of all tree info
-# treeInfo <- bugwas:::get_tree(phylo = Files$Files$phylo_file,
-#                               prefix = 'actino',
-#                               XX.ID = Dat_gemma$pheno$id,
-#                               pca = geno.pca,
-#                               npcs = length(Dat_gemma$pheno$id),
-#                               allBranchAndPCCor = args$PC_branch_cors)
-# 
-# 
-# 
-# # Ridge regression
-# wald <- bugwas:::wald_test(y = Dat_gemma$pheno$phenotype,
-#                            XX = geno,
-#                            svd.XX = geno.svd,
-#                            lambda = lmm$lambda,
-#                            XX.all = XX.all,
-#                            prefix = 'actino',
-#                            npcs = length(Dat_gemma$pheno$id),
-#                            pca = geno.pca)
-# 
-# 
-# 
+
+
 # ggplot(lmm_res, aes(x = ps, y = negLog10)) +
 #   facet_grid(~chr, space = "free_x", scales = "free_x") +
 #   geom_hline(yintercept = 8, color = "red", size = 3) +
