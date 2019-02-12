@@ -7,7 +7,7 @@ library(bugwas)
 #' From bugwas
 #' 
 #' @export
-test_pcs <- function(pheno, geno, x.svd, x.pca, lambda.init){
+bwt_pcs <- function(pheno, geno, x.svd, x.pca, lambda.init){
   # NOTE: move svd and PCA inside?
   
   # fit.lmm <- ridge_regression(y, XX, svdX=svd.XX,
@@ -198,11 +198,11 @@ geno.svd <- svd(geno)
 geno.pca <- prcomp(geno)
 
 # Bayesian wald test on PCS
-bwt.pvals <- test_pcs(pheno = Dat_gemma$pheno$phenotype,
-                      geno = geno,
-                      x.svd = geno.svd,
-                      x.pca = geno.pca,
-                      lambda.init = lambda / ncol(geno))
+bwt.pvals <- bwt_pcs(pheno = Dat_gemma$pheno$phenotype,
+                     geno = geno,
+                     x.svd = geno.svd,
+                     x.pca = geno.pca,
+                     lambda.init = lambda / ncol(geno))
 
 
 
