@@ -2,6 +2,73 @@ library(HMVAR)
 library(tidyverse)
 library(bugwas)
 
+#' Function to test PCs as composite of genetic effects
+#' 
+#' From bugwas
+#' 
+#' @export
+test_pcs <- function(pheno, geno, x.svd, x.pca, lambda.init){
+  # NOTE: move svd and PCA inside?
+  
+  # fit.lmm <- ridge_regression(y, XX, svdX=svd.XX,
+  #                             lambda_init=as.numeric(lambda)/sum(XX.all$bippat),
+  #                             maximize=FALSE, skip.var=TRUE)
+  m1.ridge <- bugwas:::ridge_regression(y = pheno,
+                                        x = geno,
+                                        svdX = x.svd,
+                                        lambda_init = lambda.init,
+                                        maximize = FALSE,
+                                        skip.var = TRUE)
+  
+  # Fit the grand null model, why?
+  # fit.0 <- lm(y~1)
+  m0 <- lm(pheno ~ 1)
+  
+  # LRT for the LMM null vs grand null
+  # LRTnullVgrand <- -log10(pchisq(2*(fit.lmm$ML - as.numeric(logLik(fit.0))), 1, low=F)/2)
+  # cat(paste0("## LRT for the LMM null vs grand null = ", LRTnullVgrand),
+  #     file = paste0(prefix, "_logfile.txt"), sep="\n", append = TRUE)
+  lrt.pval <- pchisq(2*(m1.ridge$ML - as.numeric(logLik(m0))),
+                     df = 1, lower.tail = FALSE) / 2
+  
+  # Heritability
+  # fit.lmm.ypred <- XX %*% fit.lmm$Ebeta
+  # cat(paste0("## Heritability (R^2) = ", cor(fit.lmm.ypred,y)^2),
+  #     file=paste0(prefix, "_logfile.txt"), sep="\n", append=TRUE)
+  y.pred <- geno %*% m1.ridge$Ebeta
+  # plot(y.pred, Dat_gemma$pheno$phenotype)
+  h2 <- cor(y.pred, pheno)^2
+  # h2
+  
+  # Get full posterior covariance matrix for Bayesian Wald Test
+  # Need the full posterior covariance matrix for the Bayesian Wald test,
+  # to get the posterior uncertainty for each point estimate
+  # wald_input <- get_wald_input(fit.lmm = fit.lmm, pca = pca, svd.XX = svd.XX,
+  #                              y = y, npcs = npcs, XX = XX)
+  wald_input <- bugwas:::get_wald_input(fit.lmm = m1.ridge,
+                                        pca = x.pca,
+                                        svd.XX = x.svd,
+                                        y = pheno,
+                                        npcs = length(pheno),
+                                        XX = geno)
+  
+  
+  # Bayesian Wald Test
+  # pca.bwt <- wald_input$Ebeta^2/diag(wald_input$Vbeta)
+  # p.pca.bwt <- -log10(exp(1))*pchisq(pca.bwt, 1, low=F, log=T)
+  # cat(paste0("## Bayesian Wald Test for PCs range = ", paste(range(p.pca.bwt), collapse=" ")),
+  #     file=paste0(prefix, "_logfile.txt"), sep="\n", append=TRUE)
+  # write.table(p.pca.bwt, file = paste0(prefix, "_Bayesian_Wald_Test_negLog10.txt"),
+  #             sep="\t", row=T, col = F, quote=F)
+  bwt.pvals <- -log10(exp(1)) *
+    pchisq(wald_input$Ebeta^2 / diag(wald_input$Vbeta),
+           df = 1, lower.tail = FALSE, log.p = TRUE)
+  
+  # NOTE: write output
+  return(bwt.pvals)
+}
+
+
 # The following will be based on bugwas:
 # Steps
 # 1. Impute genotypes with BIMBAM
@@ -121,36 +188,6 @@ Dat_gemma <- list(geno = read_table2(file.path(Files$Dirs$imputed_dir, "imputed.
 rm(midas_bimbam, cmd, out)
 gc()
 
-
-
-
-
-# # # Read results
-# # lmm_res <- read_tsv(Files$Files$lmm_assoc_file,
-# #                     col_types = cols(rs = 'c')) %>% 
-# #   select(chr, rs, ps, lambda_H1 = l_mle,
-# #          loglik_H1 = logl_H1, p.value = p_lrt) %>%
-# #   mutate(minus.log.p = -log10(p.value))
-# # 
-# # lmm <- list(lmm = lmm_res,
-# #             lognull = as.numeric(lognull),
-# #             lambda = as.numeric(lambda))
-# lmm_res <- read_tsv(Files$Files$lmm_assoc_file,
-#                     col_types = cols(rs = 'c')) %>%
-#   mutate(negLog10 = -log10(p_lrt))
-# 
-# lmm.bi <- list(lmm = lmm_res, "lognull" = as.numeric(lognull),
-#      lambda = as.numeric(lambda))
-#      
-# cor.geno <- bugwas:::get_correlations(XX = geno,
-#                                       pca = geno.pca$x,
-#                                       npcs = length(Dat_gemma$pheno$id),
-#                                       id = Dat_gemma$pheno$id)
-# lmm <- list(logreg.bi = NULL, lmm.bi = lmm.bi,
-#             lognull = lognull,
-#             lambda = lambda, cor.XX = cor.geno)
-
-
 # SVD & PCA
 # Since there are no patterns all genotypes have the same weight
 # Need to recenter genotype
@@ -159,70 +196,25 @@ geno <- Dat_gemma$geno %>% select(-site_id, -minor_allele, -major_allele) %>%
 geno <- t(t(geno) - colMeans(geno))
 geno.svd <- svd(geno)
 geno.pca <- prcomp(geno)
-# rm(geno)
 
-# Wald test
-# wald <- wald_test(y = y,
-#                   XX = XX,
-#                   svd.XX = svd.XX,
-#                   lambda = biallelic$lambda,
-#                   XX.all = XX.all,
-#                   prefix = prefix,
-#                   npcs = npcs,
-#                   pca = pca$pca)
+# Bayesian wald test on PCS
+bwt.pvals <- test_pcs(pheno = Dat_gemma$pheno$phenotype,
+                      geno = geno,
+                      x.svd = geno.svd,
+                      x.pca = geno.pca,
+                      lambda.init = lambda / ncol(geno))
 
-# fit.lmm <- ridge_regression(y, XX, svdX=svd.XX,
-#                             lambda_init=as.numeric(lambda)/sum(XX.all$bippat),
-#                             maximize=FALSE, skip.var=TRUE)
-m1.ridge <- bugwas:::ridge_regression(y = Dat_gemma$pheno$phenotype,
-                                      x = geno,
-                                      svdX = geno.svd,
-                                      lambda_init = lambda / nrow(Dat_gemma$geno),
-                                      maximize = FALSE,
-                                      skip.var = TRUE)
 
-# Fit the grand null model
-# fit.0 <- lm(y~1)
-m0 <- lm(phenotype ~ 1, data = Dat_gemma$pheno)
 
-# LRT for the LMM null vs grand null
-# LRTnullVgrand <- -log10(pchisq(2*(fit.lmm$ML - as.numeric(logLik(fit.0))), 1, low=F)/2)
-# cat(paste0("## LRT for the LMM null vs grand null = ", LRTnullVgrand),
-#     file = paste0(prefix, "_logfile.txt"), sep="\n", append = TRUE)
-lrt.pval <- pchisq(2*(m1.ridge$ML - as.numeric(logLik(m0))), df = 1, lower.tail = FALSE) / 2
 
-# Heritability
-# fit.lmm.ypred <- XX %*% fit.lmm$Ebeta
-# cat(paste0("## Heritability (R^2) = ", cor(fit.lmm.ypred,y)^2),
-#     file=paste0(prefix, "_logfile.txt"), sep="\n", append=TRUE)
-y.pred <- geno %*% m1.ridge$Ebeta
-# plot(y.pred, Dat_gemma$pheno$phenotype)
-h2 <- cor(y.pred, Dat_gemma$pheno$phenotype)^2
-# h2
 
-# Get full posterior covariance matrix for Bayesian Wald Test
-# Need the full posterior covariance matrix for the Bayesian Wald test,
-# to get the posterior uncertainty for each point estimate
-# wald_input <- get_wald_input(fit.lmm = fit.lmm, pca = pca, svd.XX = svd.XX,
-#                              y = y, npcs = npcs, XX = XX)
-wald_input <- bugwas:::get_wald_input(fit.lmm = m1.ridge,
-                                      pca = geno.pca,
-                                      svd.XX = geno.svd,
-                                      y = Dat_gemma$pheno$phenotype,
-                                      npcs = length(Dat_gemma$pheno$phenotype),
-                                      XX = geno)
 
-# Bayesian Wald Test
-# pca.bwt <- wald_input$Ebeta^2/diag(wald_input$Vbeta)
-# p.pca.bwt <- -log10(exp(1))*pchisq(pca.bwt, 1, low=F, log=T)
-# cat(paste0("## Bayesian Wald Test for PCs range = ", paste(range(p.pca.bwt), collapse=" ")),
-#     file=paste0(prefix, "_logfile.txt"), sep="\n", append=TRUE)
-# write.table(p.pca.bwt, file = paste0(prefix, "_Bayesian_Wald_Test_negLog10.txt"),
-#             sep="\t", row=T, col = F, quote=F)
-bwt.pvals <- -log10(exp(1)) *
-  pchisq(wald_input$Ebeta^2 / diag(wald_input$Vbeta),
-         df = 1, lower.tail = FALSE, log.p = TRUE)
-# bwt.pvals
+
+
+
+
+
+
 
 
 
