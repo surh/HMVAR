@@ -96,7 +96,8 @@ args <- list(midas_dir = file.path(indir, spec),
              bimbam = "~/bin/bimbam",
              gemma_version = 'bugwas',
              pcs = "pcs.txt",
-             pval_thres = 1e-6)
+             pval_thres = 1e-6,
+             focal_group = "Supragingival.plaque")
 rm(indir, spec)
 
 # Main output directory
@@ -115,6 +116,7 @@ Files$Dirs$bimbam_dir <- file.path(args$outdir, "bimbam")
 midas_bimbam <- midas_to_bimbam(midas_dir = args$midas_dir,
                                 map = map,
                                 outdir = Files$Dirs$bimbam_dir,
+                                focal_group = args$focal_group,
                                 prefix = NULL)
 Files$Files$midas_geno_file <- midas_bimbam$filenames$geno_file
 Files$Files$pheno_file <- midas_bimbam$filenames$pheno_file
