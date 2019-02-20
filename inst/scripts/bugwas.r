@@ -84,7 +84,7 @@ Sys.setenv(LD_LIBRARY_PATH="/opt/modules/pkgs/eqtlbma/git/lib/")
 # spec <- commandArgs(trailingOnly = TRUE)[2]
 # indir <- "/godot/shared_data/metagenomes/hmp/midas/merge/2018-02-07.merge.snps.d.5/"
 # spec <- "Actinomyces_odontolyticus_57475"
-indir <- "/godot/users/sur/exp/fraserv/2019/today/"
+indir <- "/godot/users/sur/exp/fraserv/2019/2019-02-08.test_metawas/"
 spec <- "midas_output_small/"
 
 # Eventually replace this with argparse
@@ -94,7 +94,8 @@ args <- list(midas_dir = file.path(indir, spec),
              prefix = spec,
              gemma = "~/bin/gemma.0.93b",
              bimbam = "~/bin/bimbam",
-             gemma_version = 'bugwas')
+             gemma_version = 'bugwas',
+             pcs = "hmp_SPvsTD_relabun_10pcs.txt")
 rm(indir, spec)
 
 # Main output directory
@@ -248,14 +249,13 @@ matched_lineages <- match(which(ii), tree_info$cor.tree$which.pc)
 # pc.lim 1:n_significant_pcs or NULL if no significant
 
 #Bayesian Wald test for genome-wide PCs
-p.genomewidepc = .testGenomeWidePCs(prefix = prefix,
-                                    pc.lim = pc.lim,
-                                    pca = pca,
-                                    bippat = bippat,
-                                    ipat = ipat,
-                                    o = o)
-message("Bayesian Wald test for genome-wide PCs has been completed successfully.")
-
+# p.genomewidepc = .testGenomeWidePCs(prefix = prefix,
+#                                     pc.lim = pc.lim,
+#                                     pca = pca,
+#                                     bippat = bippat,
+#                                     ipat = ipat,
+#                                     o = o)
+# message("Bayesian Wald test for genome-wide PCs has been completed successfully.")
 # No patterns
 bugwas:::.testGenomeWidePCs(prefix = 'testpc',
                             pc.lim = 1,
