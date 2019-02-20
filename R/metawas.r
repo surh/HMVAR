@@ -123,20 +123,27 @@ gemma_kinship <- function(geno_file, pheno_file, snp_file,
 #' 
 #' @export
 gemma_lmm <- function(geno_file, pheno_file, snp_file, kinship_file,
+                      cov_file = NULL,
                       gemma = "gemma",
                       outdir = "lmm/",
                       maf = 0,
                       prefix = "lmm"){
   
   # Run lmm
-  cmd <- paste(gemma,
-               "-g", geno_file,
-               "-p", pheno_file,
-               "-a", snp_file,
-               "-k", kinship_file,
-               "-lmm", 2,
-               "-o", prefix,
-               "-maf", maf)
+  cmd <- c(gemma,
+           "-g", geno_file,
+           "-p", pheno_file,
+           "-a", snp_file,
+           "-k", kinship_file,
+           "-lmm", 2,
+           "-o", prefix,
+           "-maf", maf)
+  if(!is.null(cov_file)){
+    cmd <- c(cmd,
+             "-c", cov_file)
+  }
+
+  cmd <- paste(cmd, collapse = " ")
   out <- run_command(cmd)
   
   # Re-organize files

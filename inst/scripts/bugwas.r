@@ -95,7 +95,8 @@ args <- list(midas_dir = file.path(indir, spec),
              gemma = "~/bin/gemma.0.93b",
              bimbam = "~/bin/bimbam",
              gemma_version = 'bugwas',
-             pcs = "hmp_SPvsTD_relabun_10pcs.txt")
+             pcs = "hmp_SPvsTD_relabun_10pcs.txt",
+             pval_thres = 1e-6)
 rm(indir, spec)
 
 # Main output directory
@@ -144,28 +145,67 @@ Files$Files$kinship_file <- gemma_kinship(geno_file = Files$Files$imputed_geno_f
                                           prefix = 'kinship')
 
 
-# Get covariates
-pcs <- read_tsv(args$pcs)
-pcs <- pcs %>% slice(match(midas_bimbam$Dat$pheno$id, ID))
-pcs$ID <- 1
-Files$Files$pc_covariates <- file.path(Files$Dirs$bimbam_dir, "pcs.bimbam")
-write_tsv(pcs, Files$Files$pc_covariates, col_names = FALSE)
-
-
-# Run lmm
+# Run standard lmm
 Files$Dirs$lmm_dir <- file.path(args$outdir, "lmm")
 res <- gemma_lmm(geno_file = Files$Files$imputed_geno_file,
-          pheno_file = Files$Files$pheno_file,
-          snp_file = Files$Files$snp_file,
-          kinship_file = Files$Files$kinship_file,
-          gemma = args$gemma,
-          outdir = Files$Dirs$lmm_dir,
-          maf = 0,
-          prefix = "lmm")
+                 pheno_file = Files$Files$pheno_file,
+                 snp_file = Files$Files$snp_file,
+                 kinship_file = Files$Files$kinship_file,
+                 cov_file = NULL,
+                 gemma = args$gemma,
+                 outdir = Files$Dirs$lmm_dir,
+                 maf = 0,
+                 prefix = "lmm")
 Files$Files$lmm_log_file <- res[1]
 Files$Files$lmm_assoc_file <- res[2]
 rm(res)
 
+
+
+# Run lmm with pcs
+# There might be other ways to get those pcs
+if(!is.null(args$pcs)){
+  # Get covariates
+  pcs <- read_tsv(args$pcs)
+  pcs <- pcs %>% slice(match(midas_bimbam$Dat$pheno$id, ID))
+  pcs$ID <- 1
+  Files$Files$pc_covariates <- file.path(Files$Dirs$bimbam_dir, "pcs.bimbam")
+  write_tsv(pcs, Files$Files$pc_covariates, col_names = FALSE)
+}
+
+# Run lmm
+Files$Dirs$lmmpcs_dir <- file.path(args$outdir, "lmmpcs")
+res <- gemma_lmm(geno_file = Files$Files$imputed_geno_file,
+                 pheno_file = Files$Files$pheno_file,
+                 snp_file = Files$Files$snp_file,
+                 kinship_file = Files$Files$kinship_file,
+                 cov_file = Files$Files$pc_covariates,
+                 gemma = args$gemma,
+                 outdir = Files$Dirs$lmmpcs_dir,
+                 maf = 0,
+                 prefix = "lmmpcs")
+Files$Files$lmmpcs_log_file <- res[1]
+Files$Files$lmmpcs_assoc_file <- res[2]
+rm(res)
+
+# Combine results
+lmm <- read_tsv(Files$Files$lmm_assoc_file, col_types = 'ccnnnnn') %>%
+  select(-n_miss)
+lmmpcs <- read_tsv(Files$Files$lmmpcs_assoc_file, col_types = 'ccnnnnn') %>%
+  select(-n_miss)
+lmm <- lmm %>% full_join(lmmpcs, by = c("chr", "rs", "ps"), suffix = c(".lmm", ".lmmpcs"))
+lmm
+# Select interpretation using
+# args$pval_thres <- 1e-3
+res <- rep('none', nrow(lmm))
+res[ lmm$p_lrt.lmm < args$pval_thres & lmm$p_lrt.lmmpcs >= args$pval_thres ] <- "int"
+res[ lmm$p_lrt.lmm >= args$pval_thres & lmm$p_lrt.lmmpcs < args$pval_thres ] <- "env"
+res[ lmm$p_lrt.lmm < args$pval_thres & lmm$p_lrt.lmmpcs < args$pval_thres ] <- "both"
+lmm <- lmm %>% bind_cols(type = res)
+# lmm$type %>% table
+  
+Files$Files$results <- file.path(args$outdir, "lmm.results.txt")
+write_tsv(lmm, Files$Files$results)
 
 # # Process lmm results
 # # Get lognull and lambda
