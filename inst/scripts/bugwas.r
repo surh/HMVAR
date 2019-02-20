@@ -80,12 +80,12 @@ bwt_pcs <- function(pheno, geno, x.svd, x.pca, lambda.init){
 Sys.setenv(LD_LIBRARY_PATH="/opt/modules/pkgs/eqtlbma/git/lib/")
 
 # Setting up options for test
-# indir <- commandArgs(trailingOnly = TRUE)[1]
-# spec <- commandArgs(trailingOnly = TRUE)[2]
+indir <- commandArgs(trailingOnly = TRUE)[1]
+spec <- commandArgs(trailingOnly = TRUE)[2]
 # indir <- "/godot/shared_data/metagenomes/hmp/midas/merge/2018-02-07.merge.snps.d.5/"
 # spec <- "Actinomyces_odontolyticus_57475"
-indir <- "/godot/users/sur/exp/fraserv/2019/2019-02-08.test_metawas/"
-spec <- "midas_output_small/"
+# indir <- "/godot/users/sur/exp/fraserv/2019/2019-02-08.test_metawas/"
+# spec <- "midas_output_small/"
 
 # Eventually replace this with argparse
 args <- list(midas_dir = file.path(indir, spec),
@@ -95,7 +95,7 @@ args <- list(midas_dir = file.path(indir, spec),
              gemma = "~/bin/gemma.0.93b",
              bimbam = "~/bin/bimbam",
              gemma_version = 'bugwas',
-             pcs = "hmp_SPvsTD_relabun_10pcs.txt",
+             pcs = "pcs.txt",
              pval_thres = 1e-6)
 rm(indir, spec)
 
