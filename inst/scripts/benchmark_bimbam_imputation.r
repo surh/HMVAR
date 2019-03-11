@@ -1,8 +1,13 @@
 library(HMVAR)
 library(tidyverse)
 
+indir <- commandArgs(trailingOnly = TRUE)[1]
+spec <- commandArgs(trailingOnly = TRUE)[2]
+indir <- "./"
+spec <- "midas_output_small/"
+
 # Eventually replace this with argparse
-args <- list(midas_dir = "midas_output_small/",
+args <- list(midas_dir = file.path(indir, spec),
              map_file = "map.txt",
              outdir = "benchmark_imputation",
              prefix = "test",
@@ -84,5 +89,5 @@ hidden_imputed <- read_delim(hidden_immputed_file, col_names = FALSE, delim = " 
 # Sorting
 hidden_imputed <- hidden_imputed[ match(midas_bimbam$Dat$geno$site_id, hidden_imputed$X1 ), ] 
 hidden_imputed <- hidden_imputed %>% select(-X1, -X2, -X3) %>% as.matrix
-res <- res %>% bind_cols(imputed = hidden_imputed[hidden_index])
-
+res <- res %>% bind_cols(imputed = hidden_imputed[hidden_index]) %>% mutate(dir = args$midas_dir)
+write_tsv(res, file.path(args$outdir, "imputation_results.txt"))
