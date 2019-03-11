@@ -95,6 +95,9 @@ read_midas_data <- function(midas_dir, map, genes, cds_only = TRUE){
 #' @param outdir Directory where to store the results. It will be
 #' created if it does not exists already. If it exists, and files
 #' with the output file names exist, they will be overwriten.
+#' @param focal_group A character string with the group that is going
+#' to be compared against everything else. If NULL, then the function
+#' assumes that column group contains only two levels.
 #' @param prefix Prefix to append to all filenames.
 #' 
 #' @return A list with elements filenames and Dat. The first element
@@ -104,7 +107,8 @@ read_midas_data <- function(midas_dir, map, genes, cds_only = TRUE){
 #' @export
 #' 
 #' 
-midas_to_bimbam <- function(midas_dir, map, outdir, prefix = NULL){
+midas_to_bimbam <- function(midas_dir, map, outdir, focal_group = NULL,
+                            prefix = NULL){
   Dat <- read_midas_data(midas_dir = midas_dir,
                          map = map,
                          genes = NULL,
@@ -133,10 +137,18 @@ midas_to_bimbam <- function(midas_dir, map, outdir, prefix = NULL){
   
   pheno <- map %>%
     filter(sample %in% colnames(geno)) %>%
-    arrange(factor(sample, levels = colnames(geno)[-(1:3)])) %>%
-    #mutate(phenotype = 1*(Group == "Supragingival.plaque")) %>%
-    mutate(phenotype = as.numeric(factor(Group)) - 1) %>%
-    select(id = sample, phenotype)
+    arrange(factor(sample, levels = colnames(geno)[-(1:3)]))
+  if(is.null(focal_group)){
+    pheno <- pheno %>%
+      # mutate(phenotype = 1*(Group == "Supragingival.plaque")) %>%
+      mutate(phenotype = as.numeric(factor(Group)) - 1) %>%
+      select(id = sample, phenotype)
+  }else{
+    pheno <- pheno %>%
+      mutate(phenotype = 1*(Group == focal_group)) %>%
+      # mutate(phenotype = as.numeric(factor(Group)) - 1) %>%
+      select(id = sample, phenotype)
+  }
   
   snp <- Dat$info %>% select(ID = site_id, pos = ref_pos, chr = ref_id)
   
