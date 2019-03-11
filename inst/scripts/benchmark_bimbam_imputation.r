@@ -3,8 +3,8 @@ library(tidyverse)
 
 indir <- commandArgs(trailingOnly = TRUE)[1]
 spec <- commandArgs(trailingOnly = TRUE)[2]
-indir <- "./"
-spec <- "midas_output_small/"
+# indir <- "./"
+# spec <- "midas_output_small/"
 
 # Eventually replace this with argparse
 args <- list(midas_dir = file.path(indir, spec),
