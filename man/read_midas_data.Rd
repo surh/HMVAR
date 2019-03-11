@@ -4,7 +4,7 @@
 \alias{read_midas_data}
 \title{Read midas snp merge data}
 \usage{
-read_midas_data(midas_dir, map, genes)
+read_midas_data(midas_dir, map, genes, cds_only = TRUE)
 }
 \arguments{
 \item{midas_dir}{Directory where the output from
@@ -19,6 +19,10 @@ and a 'Group' column.}
 Must correspond to entries in the 'genes_id' column
 of the 'snps_info.txt' file. If NULL, all genes will
 be tested.}
+
+\item{cds_only}{If TRUE, it will remove all sites that
+do not have a gene_id. If a gene list is passed its effect
+is redundant.}
 }
 \value{
 A list with three data tables: info, freq

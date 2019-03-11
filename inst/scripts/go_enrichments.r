@@ -27,10 +27,12 @@ get_go_enrichment <- function(Genes, outfile,
   # Test for enrichment
   go_enrichments <- Genes %>% split(.$Annotation) %>%
     map_dfr(go_enrichment,
-            m = sum(Genes$q.value < threshold),
-            n = sum(Genes$q.value >= threshold)) %>%
+            m = length(unique(Genes$gene_id[ Genes$q.value < threshold])),
+            n = length(unique(Genes$gene_id[ Genes$q.value >= threshold]))) %>%
     mutate(q.value = p.adjust(p.value, 'fdr'))
   # go_enrichments
+  
+  
   
   # get GO annotations
   go_annots <- go_enrichments$Annotation %>% map_dfr(function(x, GOTERM){
@@ -74,6 +76,12 @@ args <- list(dir.genes = "hmp.vmwa.pvals.genes/",
              outdir = "hmp.vmwa.genes.GO/",
              outfile = "hmp.vmwa.genes.GO.all.txt")
 
+args <- list(dir.genes = "../2018-10-19.vmwa_enriched_genes/hmp.vmwa.pvals.genes/",
+             dir.annots = "./",
+             threshold = 0.01,
+             outdir = "hmp.vmwa.genes.GO/",
+             outfile = "hmp.vmwa.genes.GO.all.txt")
+
 if(!dir.exists(args$outdir))
   dir.create(args$outdir)
 
@@ -82,6 +90,7 @@ files
 
 Res <- NULL
 for(f in files){
+  # f <- files[24]
   name <- str_replace(string = f, pattern = "_vmwa.genes.txt$", replacement = "")
   cat("\t", name, "\n")
   

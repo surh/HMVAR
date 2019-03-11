@@ -6,6 +6,11 @@ variable and fixed positions within sample (Issue
 https://github.com/surh/HMVAR/issues/4)
 4. Added executable to subset SNPs from MIDAS after merging 
 (Issue https://github.com/surh/HMVAR/issues/3).
+6. read_midas_data now can keep non CDS positions.
+(Issue https://github.com/surh/HMVAR/issues/7)
+7. Added functions for metawas steps: midas_to_bimbam,
+gemma_kinship, and gemma_lmm.
+8. Created util set of function for internal utility functions.
 
 # 0.0-4
 1. Added ggtree import
