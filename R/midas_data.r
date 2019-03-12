@@ -150,7 +150,8 @@ midas_to_bimbam <- function(midas_dir, map, outdir, focal_group = NULL,
       select(id = sample, phenotype)
   }
   
-  snp <- Dat$info %>% select(ID = site_id, pos = ref_pos, chr = ref_id)
+  snp <- Dat$info %>% select(ID = site_id, pos = ref_pos, chr = ref_id)  %>%
+    mutate(chr = as.numeric(factor(chr)))
   
   # Write bimbam tables
   if(!dir.exists(outdir)){
