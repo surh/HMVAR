@@ -31,6 +31,33 @@ tidy_mice <- function(d, m = 5, verbose = FALSE, seed = NA){
 
 
 
+#' Imputation via mice
+#' 
+#' Imputes missing genotypes using mice
+#'
+#' @param geno A data table with genotype information. First three columns
+#' must be site_id, minor_allele and major allele; folowed by one column per
+#' sample with the sample ID as column name. Missing genotypes must be encoded
+#' as NA values
+#' @param snp SNP information data table. Must have columns ID, pos and chr.
+#' ID mut correspond to the "site_id" column in \code{geno}, and the SNPs must
+#' be in the same order in both tables.
+#' @param outdir Output directory to create and write the imputed table in
+#' BIMBAM format.
+#' @param m Number of multiple imputations. See \link{mice} documentation.
+#' @param verbose Whether to print progress during imputation.
+#' @param prefix Prefix for imputed file.
+#' @param return_table If TRUE, the function will return a list with both
+#' the output file path and the imputed table. If FALSE, only the file path
+#' will be returned.
+#' @param seed Seed for imputation. See \link{mice} documentation.
+#'
+#' @return Either the output file path, or a list containing the file path
+#' and the imputed table.
+#' 
+#' @export
+#' 
+#' @importFrom magrittr %>%
 mice_impute <- function(geno, snp,
                         outdir = "imputed/",
                         m = 5,
@@ -43,19 +70,17 @@ mice_impute <- function(geno, snp,
     stop("ERROR: geno and snp tables do not match", call. = TRUE)
   }
   
-  imp <- geno %>% split(snp$chr) %>%
-    map_dfr(~tidy_mice(.), m1 = m, verbose = verbose, seed = seed) %>%
-    arrange(match(site_id, snp$ID))
-  
-  # # Make sure order matches
-  # imp <- imp %>% arrange(match(site_id, snp$ID))
+  imp <- geno %>%
+    split(snp$chr) %>%
+    purrr::map_dfr(~tidy_mice(.), m1 = m, verbose = verbose, seed = seed) %>%
+    dplyr::arrange(match(site_id, snp$ID))
   
   # Write results
   dir.create(outdir)
   
   filename <- file.path(outdir,
                         paste(c(prefix, "mean.genotype.txt"), collapse = "."))
-  write_tsv(imp, path = filename, col_names = FALSE)
+  readr::write_tsv(imp, path = filename, col_names = FALSE)
   
   if(return_table){
     return(list(imputed_file = filename, imp = imp))
