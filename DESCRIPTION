@@ -13,6 +13,7 @@ Imports:
 	tidyverse (>= 1.2.1),
 	argparser (>= 0.4),
 	grid (>= 3.5.1),
+	mice (>= 3.4.0),
 	bugwas
 Recomends:
   svglite

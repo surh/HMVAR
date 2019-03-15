@@ -232,7 +232,7 @@ mice_impute <- function(geno, snp,
 #'
 #' @return A tibble with imputed results
 #' 
-#' @importFrom maggritr %>%
+#' @importFrom magrittr %>%
 tidy_mice <- function(d, m = 5, verbose = FALSE, seed = NA){
   res <- d %>%
     dplyr::select(site_id, minor_allele, major_allele)
