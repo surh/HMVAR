@@ -15,14 +15,14 @@ library(mice)
 #' @return A tibble with imputed results
 #' 
 #' @importFrom maggritr %>%
-tidy_mice <- function(d, m = 5, verbose = FALSE){
+tidy_mice <- function(d, m = 5, verbose = FALSE, seed = NA){
   res <- d %>%
     dplyr::select(site_id, minor_allele, major_allele)
   
   d <- d %>%
     dplyr::select(-site_id, -minor_allele, -major_allele) %>%
     dplyr::filter_all(dplyr::any_vars(!is.na(.))) %>%
-    mice::mice(m = 5, printFlag = verbose) %>% 
+    mice::mice(m = 5, printFlag = verbose, seed = seed) %>% 
     mice::complete() %>%
     dplyr::as_tibble()
   
@@ -36,14 +36,15 @@ mice_impute <- function(geno, snp,
                         m = 5,
                         verbose = FALSE,
                         prefix = "imputed",
-                        return_table = FALSE){
+                        return_table = FALSE,
+                        seed = NA){
   
   if(any(geno$site_id != snp$ID)){
     stop("ERROR: geno and snp tables do not match", call. = TRUE)
   }
   
   imp <- geno %>% split(snp$chr) %>%
-    map_dfr(~tidy_mice(.), m1 = m, verbose = verbose) %>%
+    map_dfr(~tidy_mice(.), m1 = m, verbose = verbose, seed = seed) %>%
     arrange(match(site_id, snp$ID))
   
   # # Make sure order matches
@@ -84,13 +85,15 @@ imputed <- mice_impute(geno = Dat$Dat$geno,
                        m = 1,
                        verbose = FALSE,
                        prefix = "imputed",
-                       return_table = TRUE)
+                       return_table = TRUE,
+                       seed = 234567)
 
 
-rm(imp)
+
 imp <- Dat$Dat$geno %>% split(Dat$Dat$snp$chr) %>%
-  map_dfr(~tidy_mice(.), m1 = 1)
-imp
+  map_dfr(~tidy_mice(.), m1 = 1, seed = 234567)
+
+all.equal(imp, imputed$imp)
 
 
 
