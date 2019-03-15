@@ -35,34 +35,32 @@ mice_impute <- function(geno, snp,
                         outdir = "imputed/",
                         m = 5,
                         verbose = FALSE,
-                        prefix = "imputed"){
+                        prefix = "imputed",
+                        return_table = FALSE){
   
   if(any(geno$site_id != snp$ID)){
     stop("ERROR: geno and snp tables do not match", call. = TRUE)
   }
   
   imp <- geno %>% split(snp$chr) %>%
-    map_dfr(~tidy_mice(.), .id = "site_id", m1 = 1)
-  imp
+    map_dfr(~tidy_mice(.), m1 = m, verbose = verbose) %>%
+    arrange(match(site_id, snp$ID))
   
+  # # Make sure order matches
+  # imp <- imp %>% arrange(match(site_id, snp$ID))
   
-  # Re-organize files
+  # Write results
   dir.create(outdir)
   
-  filename <- paste0("output/", paste(c(prefix, "log.txt"), collapse = "."))
-  file.copy(filename, outdir)
-  file.remove(filename)
+  filename <- file.path(outdir,
+                        paste(c(prefix, "mean.genotype.txt"), collapse = "."))
+  write_tsv(imp, path = filename, col_names = FALSE)
   
-  filename <- paste0("output/", paste(c(prefix, "snpinfo.txt"), collapse = "."))
-  file.copy(filename, outdir)
-  file.remove(filename)
-  
-  filename <- paste0("output/", paste(c(prefix, "mean.genotype.txt"), collapse = "."))
-  file.copy(filename, outdir)
-  file.remove(filename)
-  imputed_file <- file.path(outdir, paste(c(prefix, "mean.genotype.txt"), collapse = "."))
-  
-  return(imputed_file)
+  if(return_table){
+    return(list(imputed_file = filename, imp = imp))
+  }else{
+    return(filename)
+  }
 }
 
 
@@ -78,6 +76,15 @@ map <- read_tsv("map.txt", col_types = cols(.default = col_character())) %>%
   select(sample = ID, Group = Group)
 map
 Dat <- midas_to_bimbam(midas_dir = "midas_output_small/", outdir = "bimbam", map = map, focal_group = "Supragingival.plaque", prefix = "test")
+
+
+imputed <- mice_impute(geno = Dat$Dat$geno,
+                       snp = Dat$Dat$snp,
+                       outdir = "imputed/",
+                       m = 1,
+                       verbose = FALSE,
+                       prefix = "imputed",
+                       return_table = TRUE)
 
 
 rm(imp)
