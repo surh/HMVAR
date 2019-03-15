@@ -22,7 +22,7 @@ tidy_mice <- function(d, m = 5, verbose = FALSE, seed = NA){
   d <- d %>%
     dplyr::select(-site_id, -minor_allele, -major_allele) %>%
     dplyr::filter_all(dplyr::any_vars(!is.na(.))) %>%
-    mice::mice(m = 5, printFlag = verbose, seed = seed) %>% 
+    mice::mice(m = m, printFlag = verbose, seed = seed) %>% 
     mice::complete() %>%
     dplyr::as_tibble()
   
