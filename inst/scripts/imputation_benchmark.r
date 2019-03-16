@@ -1,45 +1,5 @@
 library(HMVAR)
 library(tidyverse)
-bimbam_impute <- function(geno_file, pheno_file, pos_file,
-                          bimbam = 'bimbam',
-                          outdir = "imputed/",
-                          em_runs = 10,
-                          em_steps = 20,
-                          em_clusters = 15,
-                          prefix = "imputed"){
-  
-  cmd <- paste(bimbam,
-               "-g", geno_file,
-               "-p", pheno_file,
-               "-pos", pos_file,
-               "-e", em_runs,
-               "-s", em_steps,
-               "-c", em_clusters,
-               "--nobf",
-               "-o", prefix,
-               "-wmg",
-               "-gmode", 1)
-  out <- HMVAR:::run_command(cmd)
-  
-  # Re-organize files
-  dir.create(outdir)
-  
-  filename <- paste0("output/", paste(c(prefix, "log.txt"), collapse = "."))
-  file.copy(filename, outdir)
-  file.remove(filename)
-  
-  filename <- paste0("output/", paste(c(prefix, "snpinfo.txt"), collapse = "."))
-  file.copy(filename, outdir)
-  file.remove(filename)
-  
-  filename <- paste0("output/", paste(c(prefix, "mean.genotype.txt"), collapse = "."))
-  file.copy(filename, outdir)
-  file.remove(filename)
-  imputed_file <- file.path(outdir, paste(c(prefix, "mean.genotype.txt"), collapse = "."))
-  
-  return(imputed_file)
-}
-
 
 indir <- commandArgs(trailingOnly = TRUE)[1]
 spec <- commandArgs(trailingOnly = TRUE)[2]
@@ -51,11 +11,6 @@ args <- list(midas_dir = file.path(indir, spec),
              map_file = "map.txt",
              outdir = "benchmark_imputation",
              prefix = "test",
-             # gemma = "~/bin/gemma.0.93b",
-             bimbam = "~/bin/bimbam",
-             # gemma_version = 'bugwas',
-             # pcs = "pcs.txt",
-             # pval_thres = 1e-6,
              focal_group = "Supragingival.plaque",
              hidden_proportion = 0.1)
 
@@ -86,8 +41,6 @@ rm(map)
 ### Hide 10% of data
 Files$Dirs$data_hidden_dir <- file.path(args$outdir, "data_hidden_geno_files/")
 dir.create(Files$Dirs$data_hidden_dir)
-min_samples <- 0
-min_snps <- 0
 set.seed(12345)
 # midas_bimbam$Dat$geno
 
