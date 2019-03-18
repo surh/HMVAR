@@ -2,15 +2,17 @@ library(HMVAR)
 library(tidyverse)
 
 benchmark_imputation <- function(geno, snp, outdir, p = 0.1 ,m = 5, verbose = FALSE, seed = NA){
-  dir.create(Files$Dirs$data_hidden_dir)
+  dir.create(outdir)
   
   # Select positions to impute
+  # geno <- midas_bimbam$Dat$geno
   gen_only <- geno %>% dplyr::select(-site_id, -minor_allele, -major_allele)
+  
   if (!is.na(seed)){
     set.seed(seed)
   }
-  res <- which(!is.na(gen_only), arr.ind = TRUE) %>%
-    dplyr::as_tibble() %>%
+  res <- dplyr::as_tibble(which(!is.na(gen_only), arr.ind = TRUE))
+  res <- res %>%
     dplyr::bind_cols(hide = sample(c(0,1),
                                    prob = c(1 - p, p),
                                    size = nrow(.), replace = TRUE)) %>%
@@ -27,7 +29,7 @@ benchmark_imputation <- function(geno, snp, outdir, p = 0.1 ,m = 5, verbose = FA
   gen_only[ii] <- NA
   geno_hidden <- geno %>%
     dplyr::select(site_id, minor_allele, major_allele) %>%
-    dplyr::bind_cols(gen_only %>% dplyr::as_tibble)
+    dplyr::bind_cols(dplyr::as_tibble(gen_only))
   
   # Impute
   t <- system.time(imp <- mice_impute(geno = geno_hidden,
@@ -58,7 +60,7 @@ benchmark_imputation <- function(geno, snp, outdir, p = 0.1 ,m = 5, verbose = FA
   p.imputed <- 1 - (is.na(res$imputed) / nrow(res))
   
   # Plot
-  p1 <- ggpllot(res, aes(x = observed, y = imputed)) +
+  p1 <- ggplot(res, aes(x = observed, y = imputed)) +
     geom_point() +
     geom_smooth(method = "lm") +
     AMOR::theme_blackbox()
