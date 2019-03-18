@@ -1,6 +1,82 @@
 library(HMVAR)
 library(tidyverse)
 
+benchmark_imputation <- function(geno, snp, outdir, p = 0.1 ,m = 5, verbose = FALSE, seed = NA){
+  dir.create(Files$Dirs$data_hidden_dir)
+  
+  # Select positions to impute
+  gen_only <- geno %>% dplyr::select(-site_id, -minor_allele, -major_allele)
+  if (!is.na(seed)){
+    set.seed(seed)
+  }
+  res <- which(!is.na(gen_only), arr.ind = TRUE) %>%
+    dplyr::as_tibble() %>%
+    dplyr::bind_cols(hide = sample(c(0,1),
+                                   prob = c(1 - p, p),
+                                   size = nrow(.), replace = TRUE)) %>%
+    filter(hide == 1)
+  
+  # Collect observations
+  gen_only <- gen_only %>% as.matrix
+  ii <- res %>%
+    dplyr::select(row, col) %>%
+    as.matrix
+  res$observed <- gen_only[ii]
+  
+  # Hide data
+  gen_only[ii] <- NA
+  geno_hidden <- geno %>%
+    dplyr::select(site_id, minor_allele, major_allele) %>%
+    dplyr::bind_cols(gen_only %>% dplyr::as_tibble)
+  
+  # Impute
+  t <- system.time(imp <- mice_impute(geno = geno_hidden,
+                                      snp = snp,
+                                      outdir = outdir,
+                                      m = m,
+                                      verbose = verbose,
+                                      prefix = "imputed",
+                                      return_table = TRUE,
+                                      seed = seed))
+  
+  # Check imputation output
+  if( any(imp$imp$site_id != geno_hidden$site_id)){
+    stop("ERROR")
+  }
+  if( any(colnames(imp$imp) != colnames(geno_hidden))){
+    stop("ERROR")
+  }
+  
+  # Collect imputed values
+  res$imputed <- (imp$imp %>%
+                    select(-site_id, -minor_allele, -major_allele) %>%
+                    as.matrix)[ii]
+  res$path <- args$outdir
+  
+  # Calculate correlation
+  r <- cor(res$observed, res$imputed, use = "complete.obs")
+  p.imputed <- 1 - (is.na(res$imputed) / nrow(res))
+  
+  # Plot
+  p1 <- ggpllot(res, aes(x = observed, y = imputed)) +
+    geom_point() +
+    geom_smooth(method = "lm") +
+    AMOR::theme_blackbox()
+  filename <- filepath(outdir, "observed_vs_imputed.svg")
+  ggsave(filename, p1, width = 5, height = 5)
+  
+  p1 <- res %>%
+    gather(key = "Type", value = "allele_frequency", observed, imputed) %>%
+    ggplot(aes(x=allele_frequency)) +
+    facet_grid(Type ~ .) +
+    geom_histogram(bins = 20) +
+    AMOR::theme_blackbox()
+  filename <- filepath(outdir, "alllele_freq_histograms.svg")
+  ggsave(filename, p1, width = 12, height = 5)
+  
+  return(list(r = r, p.imputed = p.imputed, res = res, imputed_file = imp$imputed_file))
+}
+
 indir <- commandArgs(trailingOnly = TRUE)[1]
 spec <- commandArgs(trailingOnly = TRUE)[2]
 indir <- "./"
@@ -14,7 +90,7 @@ args <- list(midas_dir = file.path(indir, spec),
              focal_group = "Supragingival.plaque",
              hidden_proportion = 0.1,
              seed = 76543,
-             m = 1)
+             m = 5)
 
 # Main output directory
 dir.create(args$outdir)
@@ -42,54 +118,28 @@ rm(map)
 
 ### Hide 10% of data
 Files$Dirs$data_hidden_dir <- file.path(args$outdir, "data_hidden_geno_files/")
-dir.create(Files$Dirs$data_hidden_dir)
 
-# Select positions to impute
-gen_only <- midas_bimbam$Dat$geno %>% select(-site_id, -minor_allele, -major_allele)
-set.seed(args$seed)
-set.seed(12345)
-res <- which(!is.na(gen_only), arr.ind = TRUE) %>%
-  as_tibble() %>%
-  bind_cols(hide = sample(c(0,1),
-                      prob = c(1 - args$hidden_proportion, args$hidden_proportion),
-                      size = nrow(.), replace = TRUE)) %>%
-  filter(hide == 1)
 
-# Collect observations
-gen_only <- gen_only %>% as.matrix
-ii <- res %>% select(row, col) %>% as.matrix
-res$observed <- gen_only[ii]
 
-# Hide data
-gen_only[ii] <- NA
-hidden_bimbam <- midas_bimbam$Dat$geno %>% select(site_id, minor_allele, major_allele) %>% bind_cols(gen_only %>% as_tibble)
 
-# Impute
-date()
-imp <- mice_impute(geno = hidden_bimbam,
-                   snp = midas_bimbam$Dat$snp,
-                   outdir = file.path(args$outdir, "imputed_hidden/"),
-                   m = args$m,
-                   verbose = FALSE,
-                   prefix = "imputed",
-                   return_table = TRUE,
-                   seed = args$seed)
-date()
+Res <- benchmark_imputation(geno = )
 
-# Collect imputed values
-if( any(imp$imp$site_id != hidden_bimbam$site_id)){
-  stop("ERROR")
-}
-res$imputed <- (imp$imp %>% select(-site_id, -minor_allele, -major_allele) %>% as.matrix)[ii]
-res$path <- args$outdir
+
+
+
+
+
+
+
+
+
 
 # Compare
-cor(res$observed, res$imputed, use = "complete.obs")
+
 hist(res$imputed)
 hist(res$observed)
 p1 <- ggplot(res, aes(x = observed, y = imputed)) +
   geom_point() +
   geom_smooth(method = "lm")
 p1
-summary(res$imputed)
 
