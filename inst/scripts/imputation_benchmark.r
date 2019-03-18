@@ -41,8 +41,62 @@ rm(map)
 ### Hide 10% of data
 Files$Dirs$data_hidden_dir <- file.path(args$outdir, "data_hidden_geno_files/")
 dir.create(Files$Dirs$data_hidden_dir)
+
+# Select positions to impute
 set.seed(12345)
-# midas_bimbam$Dat$geno
+positions <- is.na(midas_bimbam$Dat$geno) %>% which(arr.ind = TRUE) %>%
+  as_tibble() %>%
+  filter(col > 3) %>%
+  bind_cols(hide = sample(c(0,1),
+                          prob = c(1 - args$hidden_proportion, args$hidden_proportion),
+                          size = length(.$col), replace = TRUE))
+positions %>% filter(hide == 1)
+
+geno_partial <- midas_bimbam$Dat$geno
+
+geno_partial
+
+gen_only <- midas_bimbam$Dat$geno %>% select(-site_id, -minor_allele, -major_allele)
+
+res <- which(!is.na(gen_only), arr.ind = TRUE) %>%
+  as_tibble() %>%
+  bind_cols(hide = sample(c(0,1),
+                      prob = c(1 - args$hidden_proportion, args$hidden_proportion),
+                      size = nrow(.), replace = TRUE)) %>%
+  filter(hide == 1)
+res
+gen_only
+head(res)
+dim(res)
+sum(res$hide)
+
+gen_only <- gen_only %>% as.matrix
+ii <- res %>% select(row, col) %>% as.matrix
+res$observed <- gen_only[ii]
+# Hide data
+gen_only[ii] <- NA
+hidden_bimbam <- midas_bimbam$Dat$geno %>% select(site_id, minor_allele, major_allele) %>% bind_cols(gen_only %>% as_tibble)
+
+
+imp <- mice_impute(geno = hidden_bimbam,
+                   snp = midas_bimbam$Dat$snp,
+                   outdir = file.path(args$outdir, "imputed_hidden/"),
+                   m = 1,
+                   verbose = FALSE,
+                   prefix = "imputed",
+                   return_table = TRUE,
+                   seed = 76543)
+
+
+
+
+geno_partial[c(1,3,4,5),c(1,3,4,5)]
+as.matrix(geno_partial)[c(1,2,3,4,5), c(2,3,4,5)]
+
+matrix(c(1,2,3,4,5,1,2,3,4,5), ncol = 2)
+
+geno_partial[matrix(c(1,2,3,4,5,1,2,3,4,5), ncol = 2)]
+as.matrix(geno_partial)[matrix(c(1,2,3,4,5,1,2,3,4,5), ncol = 2)]
 
 gen_only <- midas_bimbam$Dat$geno %>% select(-site_id, -minor_allele, -major_allele) %>% as.matrix
 # gen_only <- gen_only[ rowSums(is.na(gen_only)) < 20, colSums(is.na(gen_only)) < 500 ]
