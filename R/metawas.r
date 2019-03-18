@@ -237,12 +237,19 @@ tidy_mice <- function(d, m = 5, verbose = FALSE, seed = NA){
   res <- d %>%
     dplyr::select(site_id, minor_allele, major_allele)
   
+  # Remove sites that are completeley missing
+  ii <- !(d %>% dplyr::select(-site_id, -minor_allele, -major_allele) %>% is.na %>% apply(1, all))
+  d <- d %>% dplyr::filter(ii)
+  
+  if(sum(ii) == 0){
+    return(NULL)
+  }
+  
   d <- d %>%
-    dplyr::select(-site_id, -minor_allele, -major_allele) %>%
-    dplyr::filter_all(dplyr::any_vars(!is.na(.))) %>%
+    dplyr::select(-minor_allele, -major_allele) %>%
     mice::mice(m = m, printFlag = verbose, seed = seed) %>% 
     mice::complete() %>%
     dplyr::as_tibble()
   
-  res %>% dplyr::bind_cols(d)
+  res %>% dplyr::left_join(d, by = "site_id")
 }
