@@ -51,7 +51,7 @@ benchmark_imputation <- function(geno, snp, outdir, p = 0.1 ,m = 5, verbose = FA
   res$imputed <- (imp$imp %>%
                     select(-site_id, -minor_allele, -major_allele) %>%
                     as.matrix)[ii]
-  res$path <- args$outdir
+  res$path <- outdir
   
   # Calculate correlation
   r <- cor(res$observed, res$imputed, use = "complete.obs")
@@ -74,7 +74,7 @@ benchmark_imputation <- function(geno, snp, outdir, p = 0.1 ,m = 5, verbose = FA
   filename <- filepath(outdir, "alllele_freq_histograms.svg")
   ggsave(filename, p1, width = 12, height = 5)
   
-  return(list(r = r, p.imputed = p.imputed, res = res, imputed_file = imp$imputed_file))
+  return(list(r = r, p.imputed = p.imputed, res = res, imputed_geno_file = imp$imputed_file))
 }
 
 indir <- commandArgs(trailingOnly = TRUE)[1]
@@ -116,30 +116,32 @@ Files$Files$pheno_file <- midas_bimbam$filenames$pheno_file
 Files$Files$snp_file <- midas_bimbam$filenames$snp_file
 rm(map)
 
-### Hide 10% of data
+### Benchmark imputation
 Files$Dirs$data_hidden_dir <- file.path(args$outdir, "data_hidden_geno_files/")
+Res <- benchmark_imputation(geno = midas_bimbam$Dat$geno,
+                            snp = midas_bimbam$Dat$snp,
+                            outdir = Files$Dirs$data_hidden_dir,
+                            p = args$hidden_proportion,
+                            m = args$m,
+                            verbose = FALSE,
+                            seed = args$seed)
+Files$Files$imputed_geno_file <- Res$imputed_geno_file
 
 
 
 
-Res <- benchmark_imputation(geno = )
 
 
 
 
 
-
-
-
-
-
-
-# Compare
-
-hist(res$imputed)
-hist(res$observed)
-p1 <- ggplot(res, aes(x = observed, y = imputed)) +
-  geom_point() +
-  geom_smooth(method = "lm")
-p1
+# 
+# # Compare
+# 
+# hist(res$imputed)
+# hist(res$observed)
+# p1 <- ggplot(res, aes(x = observed, y = imputed)) +
+#   geom_point() +
+#   geom_smooth(method = "lm")
+# p1
 
