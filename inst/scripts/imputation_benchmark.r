@@ -64,7 +64,7 @@ benchmark_imputation <- function(geno, snp, outdir, p = 0.1 ,m = 5, verbose = FA
     geom_point() +
     geom_smooth(method = "lm") +
     AMOR::theme_blackbox()
-  filename <- filepath(outdir, "observed_vs_imputed.svg")
+  filename <- file.path(outdir, "observed_vs_imputed.svg")
   ggsave(filename, p1, width = 5, height = 5)
   
   p1 <- res %>%
@@ -73,7 +73,7 @@ benchmark_imputation <- function(geno, snp, outdir, p = 0.1 ,m = 5, verbose = FA
     facet_grid(Type ~ .) +
     geom_histogram(bins = 20) +
     AMOR::theme_blackbox()
-  filename <- filepath(outdir, "alllele_freq_histograms.svg")
+  filename <- file.path(outdir, "alllele_freq_histograms.svg")
   ggsave(filename, p1, width = 12, height = 5)
   
   return(list(r = r, p.imputed = p.imputed, res = res, imputed_geno_file = imp$imputed_file))
