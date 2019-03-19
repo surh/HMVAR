@@ -96,7 +96,7 @@ benchmark_imputation <- function(geno, snp, outdir, p = 0.1 ,m = 5, verbose = FA
   
   # Calculate correlation
   r <- cor(res$observed, res$imputed, use = "complete.obs")
-  p.imputed <- 1 - (is.na(res$imputed) / nrow(res))
+  p.imputed <- 1 - (sum(is.na(res$imputed)) / nrow(res))
   
   # Plot
   p1 <- ggplot(res, aes(x = observed, y = imputed)) +
@@ -115,7 +115,7 @@ benchmark_imputation <- function(geno, snp, outdir, p = 0.1 ,m = 5, verbose = FA
   filename <- file.path(outdir, "alllele_freq_histograms.svg")
   ggsave(filename, p1, width = 12, height = 5)
   
-  return(list(r = r, p.imputed = p.imputed, res = res, imputed_geno_file = imp$imputed_file))
+  return(list(r = r, p.imputed = p.imputed, res = res, imputed_geno_file = imp$imputed_file, t = t))
 }
 
 #' Impute genotypes with BIMBAM

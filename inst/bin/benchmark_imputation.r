@@ -62,6 +62,7 @@ process_arguments <- function(){
                     type = "integer")
   
   # Read arguments
+  cat("Processing arguments...\n")
   args <- parse_args(p)
   
   # Process arguments
@@ -88,18 +89,20 @@ process_arguments <- function(){
 args <- process_arguments()
 
 # Main output directory
+cat("Creating output directory...\n")
 dir.create(args$outdir)
 
 # Create list for filenames
 Files <- list(Dirs = list(),
               Files = list())
 
-### Read and process original data
 # Read map
+cat("Reading map...\n")
 map <- read_tsv(args$map_file, col_types = 'cc')
 map <- map %>% select(sample = ID, Group = Group)
 
 # Convert to bimbam
+cat("Converting MIDAS data to BIMBAM...\n")
 Files$Dirs$bimbam_dir <- file.path(args$outdir, "original")
 midas_bimbam <- midas_to_bimbam(midas_dir = args$midas_dir,
                                 map = map,
@@ -112,6 +115,7 @@ Files$Files$snp_file <- midas_bimbam$filenames$snp_file
 rm(map)
 
 ### Benchmark imputation
+cat("Benchmarking imputation...\n")
 Files$Dirs$data_hidden_dir <- file.path(args$outdir, "data_hidden_geno_files/")
 Res <- benchmark_imputation(geno = midas_bimbam$Dat$geno,
                             snp = midas_bimbam$Dat$snp,
@@ -121,3 +125,16 @@ Res <- benchmark_imputation(geno = midas_bimbam$Dat$geno,
                             verbose = FALSE,
                             seed = args$seed)
 Files$Files$imputed_geno_file <- Res$imputed_geno_file
+
+# Write results
+Files$Files$summary_stats_file <- file.path(args$outdir, "summary_stats.txt")
+write_tsv(tibble(path = args$midas_dir,
+                 r = Res$r,
+                 p.imputed = Res$p.imputed,
+                 t.user = Res$t[1],
+                 t.system = Res$t[2],
+                 t.elapsed = Res$t[3]),
+          Files$Files$summary_stats_file)
+Res$res$path <- args$midas_dir
+Files$Files$imputation_results_file <- file.path(args$outdir, "imputation_results.txt")
+write_tsv(Res$res, Files$Files$imputation_results_file)
