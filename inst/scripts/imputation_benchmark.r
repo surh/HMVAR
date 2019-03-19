@@ -1,84 +1,6 @@
 library(HMVAR)
 library(tidyverse)
 
-benchmark_imputation <- function(geno, snp, outdir, p = 0.1 ,m = 5, verbose = FALSE, seed = NA){
-  dir.create(outdir)
-  
-  # Select positions to impute
-  # geno <- midas_bimbam$Dat$geno
-  gen_only <- geno %>% dplyr::select(-site_id, -minor_allele, -major_allele)
-  
-  if (!is.na(seed)){
-    set.seed(seed)
-  }
-  res <- dplyr::as_tibble(which(!is.na(gen_only), arr.ind = TRUE))
-  res <- res %>%
-    dplyr::bind_cols(hide = sample(c(0,1),
-                                   prob = c(1 - p, p),
-                                   size = nrow(.), replace = TRUE)) %>%
-    filter(hide == 1)
-  
-  # Collect observations
-  gen_only <- gen_only %>% as.matrix
-  ii <- res %>%
-    dplyr::select(row, col) %>%
-    as.matrix
-  res$observed <- gen_only[ii]
-  
-  # Hide data
-  gen_only[ii] <- NA
-  geno_hidden <- geno %>%
-    dplyr::select(site_id, minor_allele, major_allele) %>%
-    dplyr::bind_cols(dplyr::as_tibble(gen_only))
-  
-  # Impute
-  t <- system.time(imp <- mice_impute(geno = geno_hidden,
-                                      snp = snp,
-                                      outdir = outdir,
-                                      m = m,
-                                      verbose = verbose,
-                                      prefix = "imputed",
-                                      return_table = TRUE,
-                                      seed = seed))
-  
-  # Check imputation output
-  if( any(imp$imp$site_id != geno_hidden$site_id)){
-    stop("ERROR")
-  }
-  if( any(colnames(imp$imp) != colnames(geno_hidden))){
-    stop("ERROR")
-  }
-  
-  # Collect imputed values
-  res$imputed <- (imp$imp %>%
-                    select(-site_id, -minor_allele, -major_allele) %>%
-                    as.matrix)[ii]
-  res$path <- outdir
-  
-  # Calculate correlation
-  r <- cor(res$observed, res$imputed, use = "complete.obs")
-  p.imputed <- 1 - (is.na(res$imputed) / nrow(res))
-  
-  # Plot
-  p1 <- ggplot(res, aes(x = observed, y = imputed)) +
-    geom_point() +
-    geom_smooth(method = "lm") +
-    AMOR::theme_blackbox()
-  filename <- file.path(outdir, "observed_vs_imputed.svg")
-  ggsave(filename, p1, width = 5, height = 5)
-  
-  p1 <- res %>%
-    gather(key = "Type", value = "allele_frequency", observed, imputed) %>%
-    ggplot(aes(x=allele_frequency)) +
-    facet_grid(Type ~ .) +
-    geom_histogram(bins = 20) +
-    AMOR::theme_blackbox()
-  filename <- file.path(outdir, "alllele_freq_histograms.svg")
-  ggsave(filename, p1, width = 12, height = 5)
-  
-  return(list(r = r, p.imputed = p.imputed, res = res, imputed_geno_file = imp$imputed_file))
-}
-
 indir <- commandArgs(trailingOnly = TRUE)[1]
 spec <- commandArgs(trailingOnly = TRUE)[2]
 indir <- "./"
@@ -128,22 +50,3 @@ Res <- benchmark_imputation(geno = midas_bimbam$Dat$geno,
                             verbose = FALSE,
                             seed = args$seed)
 Files$Files$imputed_geno_file <- Res$imputed_geno_file
-
-
-
-
-
-
-
-
-
-# 
-# # Compare
-# 
-# hist(res$imputed)
-# hist(res$observed)
-# p1 <- ggplot(res, aes(x = observed, y = imputed)) +
-#   geom_point() +
-#   geom_smooth(method = "lm")
-# p1
-

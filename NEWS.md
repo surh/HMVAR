@@ -11,7 +11,8 @@ https://github.com/surh/HMVAR/issues/4)
 7. Added functions for metawas steps: midas_to_bimbam,
 gemma_kinship, and gemma_lmm.
 8. Created util set of functions for internal utility functions.
-9. Added mice_impute
+9. Added mice_impute() function
+10. Added benchmark imputation function
 
 # 0.0-4
 1. Added ggtree import
