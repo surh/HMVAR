@@ -99,7 +99,7 @@ if(args$impute){
 # Works with both gemma v0.93b & v0.98.1
 # I am ingoring patterns since genotypes are not fixed but frequencies instead
 Files$Dirs$kinship_dir <- file.path(args$outdir, "kinship")
-Files$Files$kinship_file <- gemma_kinship(geno_file = Files$Files$imputed_geno_file,
+Files$Files$kinship_file <- gemma_kinship(geno_file = Files$Files$midas_geno_file,
                                           pheno_file = Files$Files$pheno_file,
                                           snp_file = Files$Files$snp_file,
                                           gemma = args$gemma,
@@ -109,7 +109,7 @@ Files$Files$kinship_file <- gemma_kinship(geno_file = Files$Files$imputed_geno_f
 
 # Run standard lmm
 Files$Dirs$lmm_dir <- file.path(args$outdir, "lmm")
-res <- gemma_lmm(geno_file = Files$Files$imputed_geno_file,
+res <- gemma_lmm(geno_file = Files$Files$midas_geno_file,
                  pheno_file = Files$Files$pheno_file,
                  snp_file = Files$Files$snp_file,
                  kinship_file = Files$Files$kinship_file,
