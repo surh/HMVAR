@@ -70,6 +70,10 @@ process_arguments <- function(){
   args <- parse_args(p)
   
   # Process arguments
+  # Check gemma
+  if(system(args$gemma) != 1){
+    stop("ERROR: GEMMA executable not found", call. = TRUE)
+  }
   
   return(args)
 }
