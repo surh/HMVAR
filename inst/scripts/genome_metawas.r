@@ -17,107 +17,44 @@
 
 library(HMVAR)
 library(tidyverse)
-library(bugwas)
+library(argparser)
 
-#' Function to test PCs as composite of genetic effects
-#' 
-#' From bugwas
-#' 
-#' @export
-bwt_pcs <- function(pheno, geno, x.svd, x.pca, lambda.init){
-  # NOTE: move svd and PCA inside?
-  
-  # fit.lmm <- ridge_regression(y, XX, svdX=svd.XX,
-  #                             lambda_init=as.numeric(lambda)/sum(XX.all$bippat),
-  #                             maximize=FALSE, skip.var=TRUE)
-  m1.ridge <- bugwas:::ridge_regression(y = pheno,
-                                        x = geno,
-                                        svdX = x.svd,
-                                        lambda_init = lambda.init,
-                                        maximize = FALSE,
-                                        skip.var = TRUE)
-  
-  # Fit the grand null model, why?
-  # fit.0 <- lm(y~1)
-  m0 <- lm(pheno ~ 1)
-  
-  # LRT for the LMM null vs grand null
-  # LRTnullVgrand <- -log10(pchisq(2*(fit.lmm$ML - as.numeric(logLik(fit.0))), 1, low=F)/2)
-  # cat(paste0("## LRT for the LMM null vs grand null = ", LRTnullVgrand),
-  #     file = paste0(prefix, "_logfile.txt"), sep="\n", append = TRUE)
-  lrt.pval <- pchisq(2*(m1.ridge$ML - as.numeric(logLik(m0))),
-                     df = 1, lower.tail = FALSE) / 2
-  
-  # Heritability
-  # fit.lmm.ypred <- XX %*% fit.lmm$Ebeta
-  # cat(paste0("## Heritability (R^2) = ", cor(fit.lmm.ypred,y)^2),
-  #     file=paste0(prefix, "_logfile.txt"), sep="\n", append=TRUE)
-  y.pred <- geno %*% m1.ridge$Ebeta
-  # plot(y.pred, Dat_gemma$pheno$phenotype)
-  h2 <- cor(y.pred, pheno)^2
-  # h2
-  
-  # Get full posterior covariance matrix for Bayesian Wald Test
-  # Need the full posterior covariance matrix for the Bayesian Wald test,
-  # to get the posterior uncertainty for each point estimate
-  # wald_input <- get_wald_input(fit.lmm = fit.lmm, pca = pca, svd.XX = svd.XX,
-  #                              y = y, npcs = npcs, XX = XX)
-  wald_input <- bugwas:::get_wald_input(fit.lmm = m1.ridge,
-                                        pca = x.pca,
-                                        svd.XX = x.svd,
-                                        y = pheno,
-                                        npcs = length(pheno),
-                                        XX = geno)
-  
-  
-  # Bayesian Wald Test
-  # pca.bwt <- wald_input$Ebeta^2/diag(wald_input$Vbeta)
-  # p.pca.bwt <- -log10(exp(1))*pchisq(pca.bwt, 1, low=F, log=T)
-  # cat(paste0("## Bayesian Wald Test for PCs range = ", paste(range(p.pca.bwt), collapse=" ")),
-  #     file=paste0(prefix, "_logfile.txt"), sep="\n", append=TRUE)
-  # write.table(p.pca.bwt, file = paste0(prefix, "_Bayesian_Wald_Test_negLog10.txt"),
-  #             sep="\t", row=T, col = F, quote=F)
-  bwt.pvals <- -log10(exp(1)) *
-    pchisq(wald_input$Ebeta^2 / diag(wald_input$Vbeta),
-           df = 1, lower.tail = FALSE, log.p = TRUE)
-  
-  # NOTE: write output
-  return(bwt.pvals)
-}
-
-
-# The following will be based on bugwas:
+# The steps will be performed
 # Steps
-# 1. Impute genotypes with BIMBAM
-# 2. Get kinship matrix
-# 3. Run lmm
-# 4. Perform bayesian Wald test on principal components
+# 1. Convert midas data to BIMBAM
+# 2. Impute genotypes with mice (optional)
+# 3. Get kinship matrix with gemma
+# 4. Run lmm
+# 5. Run lmm with PCs (optional)
 
 # Required in fraserv for the bugwas modified gemma
-Sys.setenv(LD_LIBRARY_PATH="/opt/modules/pkgs/eqtlbma/git/lib/")
+# Trying to move to newer GEMMA
+# Sys.setenv(LD_LIBRARY_PATH="/opt/modules/pkgs/eqtlbma/git/lib/")
 
 # Setting up options for test
 indir <- commandArgs(trailingOnly = TRUE)[1]
 spec <- commandArgs(trailingOnly = TRUE)[2]
 # indir <- "/godot/shared_data/metagenomes/hmp/midas/merge/2018-02-07.merge.snps.d.5/"
 # spec <- "Actinomyces_odontolyticus_57475"
-# indir <- "/godot/users/sur/exp/fraserv/2019/2019-02-08.test_metawas/"
-# spec <- "midas_output_small/"
+indir <- "./"
+spec <- "midas_output_small/"
 
 # Eventually replace this with argparse
 args <- list(midas_dir = file.path(indir, spec),
              map_file = "map.txt",
              outdir = "metawas",
              prefix = spec,
-             gemma = "~/bin/gemma.0.93b",
+             gemma = "~/bin/gemma-0.98.1-linux-static",
              bimbam = "~/bin/bimbam",
-             gemma_version = 'bugwas',
+             impute = TRUE,
+             # gemma_version = 'bugwas',
              pcs = "pcs.txt",
              pval_thres = 1e-6,
              focal_group = "Supragingival.plaque")
 rm(indir, spec)
 
 # Main output directory
+cat("Creating output directory...\n")
 dir.create(args$outdir)
 
 # Create list for filenames
@@ -125,10 +62,12 @@ Files <- list(Dirs = list(),
               Files = list())
 
 # Read map
+cat("Processing map...\n")
 map <- read_tsv(args$map_file, col_types = 'cc')
 map <- map %>% select(sample = ID, Group = Group)
 
 # Convert to bimbam
+cat("Converting to BIMBAM format...\n")
 Files$Dirs$bimbam_dir <- file.path(args$outdir, "bimbam")
 midas_bimbam <- midas_to_bimbam(midas_dir = args$midas_dir,
                                 map = map,
@@ -140,17 +79,21 @@ Files$Files$pheno_file <- midas_bimbam$filenames$pheno_file
 Files$Files$snp_file <- midas_bimbam$filenames$snp_file
 rm(map)
 
-# Impute
-Files$Dirs$imputed_dir <- file.path(args$outdir, "imputed")
-Files$Files$imputed_geno_file <- bimbam_impute(geno_file = midas_bimbam$filenames$geno_file,
-                                               pheno_file = midas_bimbam$filenames$pheno_file,
-                                               pos_file = midas_bimbam$filenames$snp_file,
-                                               bimbam = args$bimbam,
+
+if(args$impute){
+  # Impute
+  Files$Dirs$imputed_dir <- file.path(args$outdir, "imputed")
+  Files$Files$imputed_geno_file <- mice_impute(geno = midas_bimbam$Dat$geno,
+                                               snp = midas_bimbam$Dat$snp,
                                                outdir = Files$Dirs$imputed_dir,
-                                               em_runs = 10,
-                                               em_steps = 20,
-                                               em_clusters = 15,
-                                               prefix = "imputed")
+                                               m = 5,
+                                               verbose = FALSE,
+                                               prefix = "imputed",
+                                               return_table = FALSE,
+                                               seed = 76543)
+  Files$Files$midas_geno_file <- Files$Files$imputed_geno_file
+}
+
 
 # Get kinship matrix
 # Works with both gemma v0.93b & v0.98.1
