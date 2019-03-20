@@ -80,32 +80,21 @@ process_arguments <- function(){
 
 
 # Read arguments
-# Setting up options for test
-# indir <- commandArgs(trailingOnly = TRUE)[1]
-# spec <- commandArgs(trailingOnly = TRUE)[2]
-# indir <- "/godot/shared_data/metagenomes/hmp/midas/merge/2018-02-07.merge.snps.d.5/"
-# spec <- "Actinomyces_odontolyticus_57475"
-# indir <- "./"
-# spec <- "midas_output_small/"
-
-# commandArgs(trailingOnly = TRUE) <- c("a", "b")
-# process_arguments()
+indir <- "./"
+spec <- "midas_output_small/"
 
 # Eventually replace this with argparse
-# args <- list(midas_dir = file.path(indir, spec),
-#              map_file = "map.txt",
-#              outdir = "metawas",
-#              # prefix = spec,
-#              gemma = "~/bin/gemma-0.98.1-linux-static",
-#              # bimbam = "~/bin/bimbam",
-#              impute = TRUE,
-#              # gemma_version = 'bugwas',
-#              pcs = "pcs.txt",
-#              pval_thres = 1e-6,
-#              focal_group = "Supragingival.plaque")
-# rm(indir, spec)
-args <- process_arguments()
-print(args)
+args <- list(midas_dir = file.path(indir, spec),
+             focal_group = "Supragingival.plaque"
+             map_file = "map.txt",
+             outdir = "script_pcs_noimpute/",
+             gemma = "~/bin/gemma-0.98.1-linux-static",
+             impute = FALSE,
+             pcs = "pcs.txt",
+             pval_thres = 1e-6)
+rm(indir, spec)
+# args <- process_arguments()
+# print(args)
 
 
 # The steps will be performed
