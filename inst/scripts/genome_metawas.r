@@ -19,6 +19,91 @@ library(HMVAR)
 library(tidyverse)
 library(argparser)
 
+process_arguments <- function(){
+  p <- arg_parser(paste("Perform metawas on a genome"))
+  
+  # Positional arguments
+  p <- add_argument(p, "midas_dir",
+                    help = paste("Directory with midas merge output. Must have",
+                                 "snps_info.txt, snps_freq.txt and snps_depth.txt"),
+                    type = "character")
+  p <- add_argument(p, "focal_group",
+                    help = paste("Group that is going to be compared against the rest",
+                                 "in the LMM. It must correspond to one of the levels",
+                                 "in the Group column of the map_file"),
+                    type = "character")
+  
+  # Optional arguments
+  p <- add_argument(p, "--map_file",
+                    help = paste("Mapping file. Must be tab-delimited and have ",
+                                 "ID and Group columns."),
+                    type = "character",
+                    default = "map.txt")
+  p <- add_argument(p, "--outdir",
+                    help = paste("Directory for output"),
+                    type = "character",
+                    default = "metawas")
+  p <- add_argument(p, "--gemma",
+                    help = paste("GEMMA executable."),
+                    type = "character",
+                    default = "gemma")
+  p <- add_argument(p, "--impute",
+                    help = paste("If passed, imputation will be attempted",
+                                 "before LMM."),
+                    flag = TRUE)
+  p <- add_argument(p, "-pcs",
+                    help = paste("File with community abundance  principal",
+                                 "components. Must be tab-delimited, the first",
+                                 "column must be named 'ID' and correspond to",
+                                 "the sample IDs, and there should be one column",
+                                 "per principal component."),
+                    type = "character",
+                    default = NULL)
+  p <- add_argument(p, "--pval_thres",
+                    help = paste("p-value threshold for considering significance"),
+                    type = "numeric",
+                    default = 1e-6)
+  
+  
+  # Read arguments
+  cat("Processing arguments...\n")
+  args <- parse_args(p)
+  
+  # Process arguments
+  
+  return(args)
+}
+
+
+# Read arguments
+# Setting up options for test
+# indir <- commandArgs(trailingOnly = TRUE)[1]
+# spec <- commandArgs(trailingOnly = TRUE)[2]
+# indir <- "/godot/shared_data/metagenomes/hmp/midas/merge/2018-02-07.merge.snps.d.5/"
+# spec <- "Actinomyces_odontolyticus_57475"
+# indir <- "./"
+# spec <- "midas_output_small/"
+
+# commandArgs(trailingOnly = TRUE) <- c("a", "b")
+# process_arguments()
+
+# Eventually replace this with argparse
+# args <- list(midas_dir = file.path(indir, spec),
+#              map_file = "map.txt",
+#              outdir = "metawas",
+#              # prefix = spec,
+#              gemma = "~/bin/gemma-0.98.1-linux-static",
+#              # bimbam = "~/bin/bimbam",
+#              impute = TRUE,
+#              # gemma_version = 'bugwas',
+#              pcs = "pcs.txt",
+#              pval_thres = 1e-6,
+#              focal_group = "Supragingival.plaque")
+# rm(indir, spec)
+args <- process_arguments()
+print(args)
+
+
 # The steps will be performed
 # Steps
 # 1. Convert midas data to BIMBAM
@@ -31,27 +116,6 @@ library(argparser)
 # Trying to move to newer GEMMA
 # Sys.setenv(LD_LIBRARY_PATH="/opt/modules/pkgs/eqtlbma/git/lib/")
 
-# Setting up options for test
-indir <- commandArgs(trailingOnly = TRUE)[1]
-spec <- commandArgs(trailingOnly = TRUE)[2]
-# indir <- "/godot/shared_data/metagenomes/hmp/midas/merge/2018-02-07.merge.snps.d.5/"
-# spec <- "Actinomyces_odontolyticus_57475"
-indir <- "./"
-spec <- "midas_output_small/"
-
-# Eventually replace this with argparse
-args <- list(midas_dir = file.path(indir, spec),
-             map_file = "map.txt",
-             outdir = "metawas",
-             prefix = spec,
-             gemma = "~/bin/gemma-0.98.1-linux-static",
-             bimbam = "~/bin/bimbam",
-             impute = TRUE,
-             # gemma_version = 'bugwas',
-             pcs = "pcs.txt",
-             pval_thres = 1e-6,
-             focal_group = "Supragingival.plaque")
-rm(indir, spec)
 
 # Main output directory
 cat("Creating output directory...\n")
