@@ -122,195 +122,48 @@ Files$Files$lmm_log_file <- res[1]
 Files$Files$lmm_assoc_file <- res[2]
 rm(res)
 
-
-
-# Run lmm with pcs
-# There might be other ways to get those pcs
-if(!is.null(args$pcs)){
-  # Get covariates
-  pcs <- read_tsv(args$pcs)
-  pcs <- pcs %>% slice(match(midas_bimbam$Dat$pheno$id, ID))
-  pcs$ID <- 1
-  Files$Files$pc_covariates <- file.path(Files$Dirs$bimbam_dir, "pcs.bimbam")
-  write_tsv(pcs, Files$Files$pc_covariates, col_names = FALSE)
-}
-
-# Run lmm
-Files$Dirs$lmmpcs_dir <- file.path(args$outdir, "lmmpcs")
-res <- gemma_lmm(geno_file = Files$Files$imputed_geno_file,
-                 pheno_file = Files$Files$pheno_file,
-                 snp_file = Files$Files$snp_file,
-                 kinship_file = Files$Files$kinship_file,
-                 cov_file = Files$Files$pc_covariates,
-                 gemma = args$gemma,
-                 outdir = Files$Dirs$lmmpcs_dir,
-                 maf = 0,
-                 prefix = "lmmpcs")
-Files$Files$lmmpcs_log_file <- res[1]
-Files$Files$lmmpcs_assoc_file <- res[2]
-rm(res)
-
-# Combine results
-lmm <- read_tsv(Files$Files$lmm_assoc_file, col_types = 'ccnnnnn') %>%
-  select(-n_miss)
-lmmpcs <- read_tsv(Files$Files$lmmpcs_assoc_file, col_types = 'ccnnnnn') %>%
-  select(-n_miss)
-lmm <- lmm %>% full_join(lmmpcs, by = c("chr", "rs", "ps"), suffix = c(".lmm", ".lmmpcs"))
-lmm
-# Select interpretation using
-# args$pval_thres <- 1e-3
-res <- rep('none', nrow(lmm))
-res[ lmm$p_lrt.lmm < args$pval_thres & lmm$p_lrt.lmmpcs >= args$pval_thres ] <- "int"
-res[ lmm$p_lrt.lmm >= args$pval_thres & lmm$p_lrt.lmmpcs < args$pval_thres ] <- "env"
-res[ lmm$p_lrt.lmm < args$pval_thres & lmm$p_lrt.lmmpcs < args$pval_thres ] <- "both"
-lmm <- lmm %>% bind_cols(type = res)
-# lmm$type %>% table
+if(!is.na(args$pcs)){
+  # Run lmm with pcs
+  # There might be other ways to get those pcs
+  if(!is.null(args$pcs)){
+    # Get covariates
+    pcs <- read_tsv(args$pcs)
+    pcs <- pcs %>% slice(match(midas_bimbam$Dat$pheno$id, ID))
+    pcs$ID <- 1
+    Files$Files$pc_covariates <- file.path(Files$Dirs$bimbam_dir, "pcs.bimbam")
+    write_tsv(pcs, Files$Files$pc_covariates, col_names = FALSE)
+  }
   
-Files$Files$results <- file.path(args$outdir, "lmm.results.txt")
-write_tsv(lmm, Files$Files$results)
-
-# # Process lmm results
-# # Get lognull and lambda
-# # For newer GEMMA versions I need vg/ve from two diff lines.
-# # lognull <- scan(Files$Files$lmm_log_file,
-# #                 what = character(0),
-# #                 sep = "\n")[17] %>%
-# #   strsplit(" ") %>%
-# #   unlist %>%
-# #   last %>%
-# #   as.numeric
-# lambda <- scan(Files$Files$lmm_log_file,
-#                what = character(0),
-#                sep = "\n")[13] %>%
-#   strsplit(" ") %>%
-#   unlist %>%
-#   last %>%
-#   as.numeric
-# 
-# # Prepare data for gemma
-# Dat_gemma <- list(geno = read_table2(file.path(Files$Dirs$imputed_dir, "imputed.mean.genotype.txt"),
-#                                      col_names = colnames(midas_bimbam$Dat$geno),
-#                                      col_types = paste0('c', 'c', 'c',
-#                                                         paste(rep('n', ncol(midas_bimbam$Dat$geno) - 3),
-#                                                               collapse ="" ))) %>%
-#                     arrange(factor(site_id, levels = midas_bimbam$Dat$snp$ID)),
-#                   pheno = midas_bimbam$Dat$pheno,
-#                   snp = midas_bimbam$Dat$snp)
-# # Cleanup
-# rm(midas_bimbam, cmd, out)
-# gc()
-# 
-# # SVD & PCA
-# # Since there are no patterns all genotypes have the same weight
-# # Need to recenter genotype
-# geno <- Dat_gemma$geno %>% select(-site_id, -minor_allele, -major_allele) %>%
-#   as.matrix %>% t
-# geno <- t(t(geno) - colMeans(geno))
-# geno.svd <- svd(geno)
-# geno.pca <- prcomp(geno)
-# 
-# # Bayesian wald test on PCS
-# bwt.pvals <- bwt_pcs(pheno = Dat_gemma$pheno$phenotype,
-#                      geno = geno,
-#                      x.svd = geno.svd,
-#                      x.pca = geno.pca,
-#                      lambda.init = lambda / ncol(geno))
-# 
-# 
-# 
-# 
-# 
-# # Get a dendrogram of samples
-# # TEMPORARY. MOVE EARLIER
-# tre <- hclust(dist(dist(geno)))
-# tre <- ape::as.phylo(tre)
-# Files$Files$phylo_file <- file.path(args$outdir, "bimbam/phylo.tre")
-# ape::write.tree(phy = tre, file = Files$Files$phylo_file)
-# 
-# # Get list of all tree info
-# tree_info <- bugwas:::get_tree(phylo = Files$Files$phylo_file,
-#                                prefix = 'actino',
-#                                XX.ID = Dat_gemma$pheno$id,
-#                                pca = geno.pca,
-#                                npcs = length(Dat_gemma$pheno$id),
-#                                allBranchAndPCCor = FALSE)
-# 
-# 
-# 
-# 
-# 
-# 
-# ### Plots
-# pc_alpha <- 0.5 ## FOR TEST PURPOSES!!
-# 
-# # Get a random sample of colours to use for all plots, equal to the number of significant PCs
-# # colourPalette <- getColourPalette(p.pca.bwt = p.pca.bwt, signifCutOff = signifCutOff, pc.lim = pc.lim)
-# pc_colors <- rep("grey50", nrow(bwt.pvals))
-# ii <- bwt.pvals[,1] > -log10(pc_alpha / nrow(bwt.pvals))
-# pc_colors[ ii ] <- rep(c(RColorBrewer::brewer.pal(n=12, name = 'Paired'),
-#                          "#000000"),
-#                        length.out = sum(ii))
-# 
-# 
-# # sampleCount = length(Dat_gemphenotype)
-# # m = match(o[pc.lim], which.mtp.pc)
-# n_samples <- length(Dat_gemma$pheno$phenotype)
-# matched_lineages <- match(which(ii), tree_info$cor.tree$which.pc)
-# 
-# # pc.lim 1:n_significant_pcs or NULL if no significant
-# 
-# #Bayesian Wald test for genome-wide PCs
-# # p.genomewidepc = .testGenomeWidePCs(prefix = prefix,
-# #                                     pc.lim = pc.lim,
-# #                                     pca = pca,
-# #                                     bippat = bippat,
-# #                                     ipat = ipat,
-# #                                     o = o)
-# # message("Bayesian Wald test for genome-wide PCs has been completed successfully.")
-# # No patterns
-# bugwas:::.testGenomeWidePCs(prefix = 'testpc',
-#                             pc.lim = 1,
-#                             pca = geno.pca,
-#                             bippat = rep(1, ncol(geno)),
-#                             ipat = 1:(ncol(geno)),
-#                             o = order(bwt.pvals[,1], decreasing = TRUE))
-# 
-# 
-# 
-# 
-# #The barplot for the Bayesian wald test for genome-wide PCs
-# .BayesianWaldTestPCsBarplot(prefix = prefix,
-#                             p.pca.bwt = p.pca.bwt,
-#                             colourPalette = colourPalette,
-#                             o = o,
-#                             m = m,
-#                             p.genomewidepc = p.genomewidepc,
-#                             pc.lim = pc.lim)
-# message("The barplot for the Bayesian wald test for genome-wide PCs has been completed successfully.")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# ggplot(lmm_res, aes(x = ps, y = negLog10)) +
-#   facet_grid(~chr, space = "free_x", scales = "free_x") +
-#   geom_hline(yintercept = 8, color = "red", size = 3) +
-#   geom_point()
-# 
-# ggplot(lmm_res, aes(x = p_lrt)) +
-#   geom_histogram(bins = 20) +
-#   AMOR::theme_blackbox()
+  # Run lmm
+  Files$Dirs$lmmpcs_dir <- file.path(args$outdir, "lmmpcs")
+  res <- gemma_lmm(geno_file = Files$Files$imputed_geno_file,
+                   pheno_file = Files$Files$pheno_file,
+                   snp_file = Files$Files$snp_file,
+                   kinship_file = Files$Files$kinship_file,
+                   cov_file = Files$Files$pc_covariates,
+                   gemma = args$gemma,
+                   outdir = Files$Dirs$lmmpcs_dir,
+                   maf = 0,
+                   prefix = "lmmpcs")
+  Files$Files$lmmpcs_log_file <- res[1]
+  Files$Files$lmmpcs_assoc_file <- res[2]
+  rm(res)
+  
+  # Combine results
+  lmm <- read_tsv(Files$Files$lmm_assoc_file, col_types = 'ccnnnnn') %>%
+    select(-n_miss)
+  lmmpcs <- read_tsv(Files$Files$lmmpcs_assoc_file, col_types = 'ccnnnnn') %>%
+    select(-n_miss)
+  lmm <- lmm %>% full_join(lmmpcs, by = c("chr", "rs", "ps"), suffix = c(".lmm", ".lmmpcs"))
+  
+  # Select interpretation using
+  res <- rep('none', nrow(lmm))
+  res[ lmm$p_lrt.lmm < args$pval_thres & lmm$p_lrt.lmmpcs >= args$pval_thres ] <- "int"
+  res[ lmm$p_lrt.lmm >= args$pval_thres & lmm$p_lrt.lmmpcs < args$pval_thres ] <- "env"
+  res[ lmm$p_lrt.lmm < args$pval_thres & lmm$p_lrt.lmmpcs < args$pval_thres ] <- "both"
+  lmm <- lmm %>% bind_cols(type = res)
+  # lmm$type %>% table
+  
+  Files$Files$results <- file.path(args$outdir, "lmm.results.txt")
+  write_tsv(lmm, Files$Files$results)
+}
