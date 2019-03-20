@@ -40,7 +40,8 @@
 #' @export
 #' 
 #' @importFrom magrittr %>%
-benchmark_imputation <- function(geno, snp, outdir, p = 0.1 ,m = 5, verbose = FALSE, seed = NA){
+benchmark_imputation <- function(geno, snp, outdir, p = 0.1 ,
+                                 m = 5, verbose = FALSE, seed = NA){
   dir.create(outdir)
   
   # Select positions to impute
