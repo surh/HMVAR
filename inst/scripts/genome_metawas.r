@@ -80,21 +80,21 @@ process_arguments <- function(){
 
 
 # Read arguments
-indir <- "./"
-spec <- "midas_output_small/"
+# indir <- "./"
+# spec <- "midas_output_small/"
 
 # Eventually replace this with argparse
-args <- list(midas_dir = file.path(indir, spec),
-             focal_group = "Supragingival.plaque"
-             map_file = "map.txt",
-             outdir = "script_pcs_noimpute/",
-             gemma = "~/bin/gemma-0.98.1-linux-static",
-             impute = FALSE,
-             pcs = "pcs.txt",
-             pval_thres = 1e-6)
-rm(indir, spec)
-# args <- process_arguments()
-# print(args)
+# args <- list(midas_dir = file.path(indir, spec),
+#              focal_group = "Supragingival.plaque",
+#              map_file = "map.txt",
+#              outdir = "script_pcs_noimpute/",
+#              gemma = "~/bin/gemma-0.98.1-linux-static",
+#              impute = FALSE,
+#              pcs = "pcs.txt",
+#              pval_thres = 1e-6)
+# rm(indir, spec)
+args <- process_arguments()
+print(args)
 
 
 # The steps will be performed
@@ -108,7 +108,6 @@ rm(indir, spec)
 # Required in fraserv for the bugwas modified gemma
 # Trying to move to newer GEMMA
 # Sys.setenv(LD_LIBRARY_PATH="/opt/modules/pkgs/eqtlbma/git/lib/")
-
 
 # Main output directory
 cat("Creating output directory...\n")
@@ -151,7 +150,6 @@ if(args$impute){
   Files$Files$midas_geno_file <- Files$Files$imputed_geno_file
 }
 
-
 # Get kinship matrix
 # Works with both gemma v0.93b & v0.98.1
 # I am ingoring patterns since genotypes are not fixed but frequencies instead
@@ -181,19 +179,17 @@ rm(res)
 
 if(!is.na(args$pcs)){
   # Run lmm with pcs
-  # There might be other ways to get those pcs
-  if(!is.null(args$pcs)){
-    # Get covariates
-    pcs <- read_tsv(args$pcs)
-    pcs <- pcs %>% slice(match(midas_bimbam$Dat$pheno$id, ID))
-    pcs$ID <- 1
-    Files$Files$pc_covariates <- file.path(Files$Dirs$bimbam_dir, "pcs.bimbam")
-    write_tsv(pcs, Files$Files$pc_covariates, col_names = FALSE)
-  }
-  
-  # Run lmm
+  # Format PCs as covariates
+  pcs <- read_tsv(args$pcs, col_types = cols(ID = col_character(),
+                                             .default = col_double()))
+  pcs <- pcs %>% slice(match(midas_bimbam$Dat$pheno$id, ID))
+  pcs$ID <- 1
+  Files$Files$pc_covariates <- file.path(Files$Dirs$bimbam_dir, "pcs.bimbam")
+  write_tsv(pcs, Files$Files$pc_covariates, col_names = FALSE)
+
+  # Run lmmpcs
   Files$Dirs$lmmpcs_dir <- file.path(args$outdir, "lmmpcs")
-  res <- gemma_lmm(geno_file = Files$Files$imputed_geno_file,
+  res <- gemma_lmm(geno_file = Files$Files$midas_geno_file,
                    pheno_file = Files$Files$pheno_file,
                    snp_file = Files$Files$snp_file,
                    kinship_file = Files$Files$kinship_file,
@@ -207,13 +203,33 @@ if(!is.na(args$pcs)){
   rm(res)
   
   # Combine results
-  lmm <- read_tsv(Files$Files$lmm_assoc_file, col_types = 'ccnnnnn') %>%
-    select(-n_miss)
-  lmmpcs <- read_tsv(Files$Files$lmmpcs_assoc_file, col_types = 'ccnnnnn') %>%
-    select(-n_miss)
-  lmm <- lmm %>% full_join(lmmpcs, by = c("chr", "rs", "ps"), suffix = c(".lmm", ".lmmpcs"))
+  lmm <- read_tsv(Files$Files$lmm_assoc_file,
+                  col_types = cols(chr = col_character(),
+                                   rs = col_character(),
+                                   ps = col_integer(),
+                                   n_miss = col_integer(),
+                                   allele1 = col_character(),
+                                   allele0 = col_character(),
+                                   af = col_number(),
+                                   logl_H1 = col_number(),
+                                   l_mle = col_number(),
+                                   p_lrt = col_number()))
+  lmmpcs <- read_tsv(Files$Files$lmmpcs_assoc_file,
+                     col_types = cols(chr = col_character(),
+                                      rs = col_character(),
+                                      ps = col_integer(),
+                                      n_miss = col_integer(),
+                                      allele1 = col_character(),
+                                      allele0 = col_character(),
+                                      af = col_number(),
+                                      logl_H1 = col_number(),
+                                      l_mle = col_number(),
+                                      p_lrt = col_number())) %>%
+    select(-n_miss, -allele1, -allele0, - af)
+  lmm <- lmm %>% full_join(lmmpcs, by = c("chr", "rs", "ps"),
+                           suffix = c(".lmm", ".lmmpcs"))
   
-  # Select interpretation using
+  # Select interpretation
   res <- rep('none', nrow(lmm))
   res[ lmm$p_lrt.lmm < args$pval_thres & lmm$p_lrt.lmmpcs >= args$pval_thres ] <- "int"
   res[ lmm$p_lrt.lmm >= args$pval_thres & lmm$p_lrt.lmmpcs < args$pval_thres ] <- "env"
@@ -221,6 +237,7 @@ if(!is.na(args$pcs)){
   lmm <- lmm %>% bind_cols(type = res)
   # lmm$type %>% table
   
+  # Write results
   Files$Files$results <- file.path(args$outdir, "lmm.results.txt")
   write_tsv(lmm, Files$Files$results)
 }
