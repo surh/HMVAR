@@ -51,7 +51,7 @@ process_arguments <- function(){
                     help = paste("If passed, imputation will be attempted",
                                  "before LMM."),
                     flag = TRUE)
-  p <- add_argument(p, "-pcs",
+  p <- add_argument(p, "--pcs",
                     help = paste("File with community abundance  principal",
                                  "components. Must be tab-delimited, the first",
                                  "column must be named 'ID' and correspond to",
@@ -71,7 +71,7 @@ process_arguments <- function(){
   
   # Process arguments
   # Check gemma
-  if(system(args$gemma) != 1){
+  if(system(paste(args$gemma, "-v")) != 1){
     stop("ERROR: GEMMA executable not found", call. = TRUE)
   }
   
