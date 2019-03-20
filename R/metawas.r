@@ -363,7 +363,7 @@ tidy_mice <- function(d, m = 5, verbose = FALSE, seed = NA){
   d <- d %>% dplyr::filter(ii)
   
   if(sum(ii) == 0){
-    return(NULL)
+    return(res %>% dplyr::left_join(d, by = "site_id"))
   }
   
   d <- d %>%
