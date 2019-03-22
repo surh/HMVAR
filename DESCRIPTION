@@ -1,7 +1,7 @@
 Package: HMVAR
 Type: Package
 Title: Human Microbiome Variant Analysis in R
-Version: 0.0-4
+Version: 0.1-0
 Depends: R (>= 3.4.3),
 	AMOR (>= 0.0-15)
 Imports:
@@ -11,10 +11,13 @@ Imports:
 	ggtree (>= 1.8.2),
 	reshape2 (>= 1.4.3),
 	tidyverse (>= 1.2.1),
-	argparser (>= 0.4)
+	argparser (>= 0.4),
+	grid (>= 3.5.1),
+	mice (>= 3.4.0),
+	bugwas
 Recomends:
   svglite
-Date: 2018-03-07
+Date: 2019-03-22
 Authors@R: c(person("Sur", "Herrera Paredes", role = c("aut", "cre"), email = "surh@stanford.edu"))
 License: GPL-3
 RoxygenNote: 6.1.1

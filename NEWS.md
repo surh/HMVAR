@@ -1,3 +1,20 @@
+# 0.1-0
+1. Added exectuable script to perform mktest.
+2. determine_snp_effect can handle non-coding loci.
+3. Added executable to calculate and plot the number of
+variable and fixed positions within sample (Issue
+https://github.com/surh/HMVAR/issues/4)
+4. Added executable to subset SNPs from MIDAS after merging 
+(Issue https://github.com/surh/HMVAR/issues/3).
+6. read_midas_data now can keep non CDS positions.
+(Issue https://github.com/surh/HMVAR/issues/7)
+7. Added functions for metawas steps: midas_to_bimbam,
+gemma_kinship, and gemma_lmm.
+8. Created util set of functions for internal utility functions.
+9. Added mice_impute() function
+10. Added benchmark imputation function and executable script.
+11. Added genome_metawas.r executable script.
+
 # 0.0-4
 1. Added ggtree import
 2. Changed name to HMVAR

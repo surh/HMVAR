@@ -1,3 +1,20 @@
+# (C) Copyright 2019 Sur Herrera Paredes
+# 
+# This file is part of HMVAR.
+# 
+# HMVAR is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# HMVAR is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with HMVAR.  If not, see <http://www.gnu.org/licenses/>.
+
 library(GO.db)
 # library(topGO)
 library(HMVAR)
@@ -27,10 +44,12 @@ get_go_enrichment <- function(Genes, outfile,
   # Test for enrichment
   go_enrichments <- Genes %>% split(.$Annotation) %>%
     map_dfr(go_enrichment,
-            m = sum(Genes$q.value < threshold),
-            n = sum(Genes$q.value >= threshold)) %>%
+            m = length(unique(Genes$gene_id[ Genes$q.value < threshold])),
+            n = length(unique(Genes$gene_id[ Genes$q.value >= threshold]))) %>%
     mutate(q.value = p.adjust(p.value, 'fdr'))
   # go_enrichments
+  
+  
   
   # get GO annotations
   go_annots <- go_enrichments$Annotation %>% map_dfr(function(x, GOTERM){
@@ -74,6 +93,12 @@ args <- list(dir.genes = "hmp.vmwa.pvals.genes/",
              outdir = "hmp.vmwa.genes.GO/",
              outfile = "hmp.vmwa.genes.GO.all.txt")
 
+args <- list(dir.genes = "../2018-10-19.vmwa_enriched_genes/hmp.vmwa.pvals.genes/",
+             dir.annots = "./",
+             threshold = 0.01,
+             outdir = "hmp.vmwa.genes.GO/",
+             outfile = "hmp.vmwa.genes.GO.all.txt")
+
 if(!dir.exists(args$outdir))
   dir.create(args$outdir)
 
@@ -82,6 +107,7 @@ files
 
 Res <- NULL
 for(f in files){
+  # f <- files[24]
   name <- str_replace(string = f, pattern = "_vmwa.genes.txt$", replacement = "")
   cat("\t", name, "\n")
   
