@@ -73,7 +73,8 @@ process_arguments <- function(){
   
   # Process arguments
   # Check gemma
-  if(system(paste(args$gemma, "-v")) != 1){
+  o <- HMVAR:::run_command(paste(args$gemma, '-v'))
+  if(o != 1){
     stop("ERROR: GEMMA executable not found", call. = TRUE)
   }
   
