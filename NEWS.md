@@ -1,4 +1,4 @@
-# 0.0-5
+# 0.1-0
 1. Added exectuable script to perform mktest.
 2. determine_snp_effect can handle non-coding loci.
 3. Added executable to calculate and plot the number of
