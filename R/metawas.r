@@ -40,7 +40,8 @@
 #' @export
 #' 
 #' @importFrom magrittr %>%
-benchmark_imputation <- function(geno, snp, outdir, p = 0.1 ,m = 5, verbose = FALSE, seed = NA){
+benchmark_imputation <- function(geno, snp, outdir, p = 0.1 ,
+                                 m = 5, verbose = FALSE, seed = NA){
   dir.create(outdir)
   
   # Select positions to impute
@@ -362,7 +363,7 @@ tidy_mice <- function(d, m = 5, verbose = FALSE, seed = NA){
   d <- d %>% dplyr::filter(ii)
   
   if(sum(ii) == 0){
-    return(NULL)
+    return(res %>% dplyr::left_join(d, by = "site_id"))
   }
   
   d <- d %>%

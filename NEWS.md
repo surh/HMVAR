@@ -12,7 +12,8 @@ https://github.com/surh/HMVAR/issues/4)
 gemma_kinship, and gemma_lmm.
 8. Created util set of functions for internal utility functions.
 9. Added mice_impute() function
-10. Added benchmark imputation function
+10. Added benchmark imputation function and executable script.
+11. Added genome_metawas.r executable script.
 
 # 0.0-4
 1. Added ggtree import
