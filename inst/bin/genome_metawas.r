@@ -1,3 +1,5 @@
+#!/usr/bin/env Rscript
+
 # (C) Copyright 2019 Sur Herrera Paredes
 # 
 # This file is part of HMVAR.
