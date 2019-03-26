@@ -1,3 +1,7 @@
+# 0.1-1
+1. Flipping mice imputation matrix. Added support for blocks.
+NEED TO DOCUMENT block_size
+
 # 0.1-0
 1. Added exectuable script to perform mktest.
 2. determine_snp_effect can handle non-coding loci.
