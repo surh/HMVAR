@@ -131,11 +131,6 @@ midas_to_bimbam <- function(midas_dir, map, outdir, focal_group = NULL,
                          genes = NULL,
                          cds_only = FALSE)
   
-  # Keep only full covered
-  # Dat$freq <- Dat$freq %>% filter(rowSums(Dat$depth[,-1] == 0) == 0)
-  # Dat$info <- Dat$info %>% filter(rowSums(Dat$depth[,-1] == 0) == 0)
-  # Dat$depth <- Dat$depth %>% filter(rowSums(Dat$depth[,-1] == 0) == 0)
-  
   # Match freqs and depth
   Dat$depth <- Dat$depth %>% gather(key = "sample", value = 'depth', -site_id)
   Dat$freq <- Dat$freq %>% gather(key = "sample", value = 'freq', -site_id)
@@ -167,8 +162,9 @@ midas_to_bimbam <- function(midas_dir, map, outdir, focal_group = NULL,
       select(id = sample, phenotype)
   }
   
-  snp <- Dat$info %>% select(ID = site_id, pos = ref_pos, chr = ref_id)  %>%
-    mutate(chr = as.numeric(factor(chr)))
+  snp <- Dat$info %>% select(ID = site_id, pos = ref_pos, chr = ref_id)
+  # snp <- Dat$info %>% select(ID = site_id, pos = ref_pos, chr = ref_id)  %>%
+  #   mutate(chr = as.numeric(factor(chr)))
   
   # Write bimbam tables
   if(!dir.exists(outdir)){
@@ -177,18 +173,13 @@ midas_to_bimbam <- function(midas_dir, map, outdir, focal_group = NULL,
   
   gen_file <- file.path(outdir, paste(c(prefix, 'geno.bimbam'), collapse = "_"))
   write_tsv(geno, path = gen_file, col_names = FALSE)
-  # write_csv(geno, path = gen_file, col_names = FALSE, na = '??')
-  # write.table(geno, gen_file, sep = ", ", na = 'NA', col.names = FALSE, quote = FALSE, row.names = FALSE)
   
   phen_file <- file.path(outdir, paste(c(prefix, 'pheno.bimbam'), collapse = "_"))
-  # write_tsv(pheno, path = phen_file)
   write_tsv(pheno %>% select(phenotype),
             path = phen_file, col_names = FALSE)
   
   snp_file <- file.path(outdir, paste(c(prefix, 'snp.bimbam'), collapse = "_"))
   write_tsv(snp, path = snp_file, col_names = FALSE)
-  # write_csv(snp, path = snp_file, col_names = FALSE)
-  
   
   return(list(filenames = list(geno_file = gen_file,
                                pheno_file = phen_file,

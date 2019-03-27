@@ -1,6 +1,8 @@
 # 0.1-1
 1. Flipping mice imputation matrix. Added support for blocks.
 NEED TO DOCUMENT block_size
+2. Reverting to standard alphanumeric names for chromosomes
+in BIMBAM format.
 
 # 0.1-0
 1. Added exectuable script to perform mktest.
