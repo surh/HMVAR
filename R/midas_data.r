@@ -30,11 +30,16 @@
 #' @importFrom readr read_tsv
 read_midas_abun <- function(file){
   abun <- readr::read_tsv(file,
-                          na = 'NA', n_max = 10)
-  abun <- readr::read_tsv(file,
-                          na = 'NA',
-                          col_types = paste(c('c',rep('n', ncol(abun) - 1)),
-                                            collapse = ''))
+                          na = 'NA', 
+                          col_types = readr::cols(site_id = readr::col_character(),
+                                                  .default = readr::col_double()))
+  
+  # abun <- readr::read_tsv(file,
+  #                         na = 'NA', n_max = 10)
+  # abun <- readr::read_tsv(file,
+  #                         na = 'NA',
+  #                         col_types = paste(c('c',rep('n', ncol(abun) - 1)),
+  #                                           collapse = ''))
   
   return(abun)
 }
