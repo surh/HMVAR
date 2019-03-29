@@ -122,8 +122,10 @@ read_midas_data <- function(midas_dir, map, genes, cds_only = TRUE){
 #' second contains tibbles with the data written to those files
 #' 
 #' @export
-#' 
-#' 
+#' @importFrom tidyr gather spread
+#' @importFrom dplyr select inner_join left_join filter arrange mutate
+#' @importFrom magrittr %>%
+#' @importFrom readr write_tsv
 midas_to_bimbam <- function(midas_dir, map, outdir, focal_group = NULL,
                             prefix = NULL){
   Dat <- read_midas_data(midas_dir = midas_dir,
@@ -131,44 +133,38 @@ midas_to_bimbam <- function(midas_dir, map, outdir, focal_group = NULL,
                          genes = NULL,
                          cds_only = FALSE)
   
-  # Keep only full covered
-  # Dat$freq <- Dat$freq %>% filter(rowSums(Dat$depth[,-1] == 0) == 0)
-  # Dat$info <- Dat$info %>% filter(rowSums(Dat$depth[,-1] == 0) == 0)
-  # Dat$depth <- Dat$depth %>% filter(rowSums(Dat$depth[,-1] == 0) == 0)
-  
   # Match freqs and depth
-  Dat$depth <- Dat$depth %>% gather(key = "sample", value = 'depth', -site_id)
-  Dat$freq <- Dat$freq %>% gather(key = "sample", value = 'freq', -site_id)
-  Dat$info <- Dat$info %>% select(site_id, ref_id, ref_pos, major_allele, minor_allele)
+  Dat$depth <- Dat$depth %>% tidyr::gather(key = "sample", value = 'depth', -site_id)
+  Dat$freq <- Dat$freq %>% tidyr::gather(key = "sample", value = 'freq', -site_id)
+  Dat$info <- Dat$info %>% dplyr::select(site_id, ref_id, ref_pos, major_allele, minor_allele)
   
   # Set sites without coverage to NA
   dat <- Dat$depth %>%
-    inner_join(Dat$freq, by = c("site_id", "sample"))
+    dplyr::inner_join(Dat$freq, by = c("site_id", "sample"))
   dat$freq[ dat$depth < 1 ] <- NA
-  Dat$freq <- dat %>% select(-depth) %>% spread(sample, freq)
+  Dat$freq <- dat %>% dplyr::select(-depth) %>% tidyr::spread(sample, freq)
   
   # Create BIMBAM tables
   geno <- Dat$info %>%
-    select(site_id, minor_allele, major_allele) %>%
-    left_join(Dat$freq, by = "site_id")  
+    dplyr::select(site_id, minor_allele, major_allele) %>%
+    dplyr::left_join(Dat$freq, by = "site_id")  
   
   pheno <- map %>%
-    filter(sample %in% colnames(geno)) %>%
-    arrange(factor(sample, levels = colnames(geno)[-(1:3)]))
+    dplyr::filter(sample %in% colnames(geno)) %>%
+    dplyr::arrange(factor(sample, levels = colnames(geno)[-(1:3)]))
   if(is.null(focal_group)){
     pheno <- pheno %>%
-      # mutate(phenotype = 1*(Group == "Supragingival.plaque")) %>%
-      mutate(phenotype = as.numeric(factor(Group)) - 1) %>%
-      select(id = sample, phenotype)
+      dplyr::mutate(phenotype = as.numeric(factor(Group)) - 1) %>%
+      dplyr::select(id = sample, phenotype)
   }else{
     pheno <- pheno %>%
-      mutate(phenotype = 1*(Group == focal_group)) %>%
-      # mutate(phenotype = as.numeric(factor(Group)) - 1) %>%
-      select(id = sample, phenotype)
+      dplyr::mutate(phenotype = 1*(Group == focal_group)) %>%
+      dplyr::select(id = sample, phenotype)
   }
   
-  snp <- Dat$info %>% select(ID = site_id, pos = ref_pos, chr = ref_id)  %>%
-    mutate(chr = as.numeric(factor(chr)))
+  snp <- Dat$info %>%
+    dplyr::select(ID = site_id, pos = ref_pos, chr = ref_id)  %>%
+    dplyr::mutate(chr = as.numeric(factor(chr)))
   
   # Write bimbam tables
   if(!dir.exists(outdir)){
@@ -176,19 +172,15 @@ midas_to_bimbam <- function(midas_dir, map, outdir, focal_group = NULL,
   }
   
   gen_file <- file.path(outdir, paste(c(prefix, 'geno.bimbam'), collapse = "_"))
-  write_tsv(geno, path = gen_file, col_names = FALSE)
-  # write_csv(geno, path = gen_file, col_names = FALSE, na = '??')
-  # write.table(geno, gen_file, sep = ", ", na = 'NA', col.names = FALSE, quote = FALSE, row.names = FALSE)
+  readr::write_tsv(geno, path = gen_file, col_names = FALSE)
   
   phen_file <- file.path(outdir, paste(c(prefix, 'pheno.bimbam'), collapse = "_"))
-  # write_tsv(pheno, path = phen_file)
-  write_tsv(pheno %>% select(phenotype),
-            path = phen_file, col_names = FALSE)
+  readr::write_tsv(pheno %>%
+                     dplyr::select(phenotype),
+                   path = phen_file, col_names = FALSE)
   
   snp_file <- file.path(outdir, paste(c(prefix, 'snp.bimbam'), collapse = "_"))
-  write_tsv(snp, path = snp_file, col_names = FALSE)
-  # write_csv(snp, path = snp_file, col_names = FALSE)
-  
+  readr::write_tsv(snp, path = snp_file, col_names = FALSE)
   
   return(list(filenames = list(geno_file = gen_file,
                                pheno_file = phen_file,
