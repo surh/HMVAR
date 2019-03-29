@@ -1,4 +1,4 @@
-# (C) Copyright 2018 Sur Herrera Paredes
+# (C) Copyright 2018-2019 Sur Herrera Paredes
 # 
 # This file is part of HMVAR.
 # 
@@ -409,6 +409,10 @@ mkvalues <- function(info){
 #' The value represents the distance from 0 or 1, for a site to be
 #' assigned to the major or minor allele respectively. It must be
 #' a value in [0,1].
+#' @param focal_group A string indicating the group that should
+#' be compared to everything else. If different from NA, all values
+#' in the 'Group' column of the mapping file will be converted to
+#' "non.<focal_group>", ensuring a dichotomous grouping.
 #'
 #' @return A data table containing the McDonald-Kreitman
 #' contingency table per gene.
@@ -417,17 +421,26 @@ mkvalues <- function(info){
 #' 
 #' @importFrom magrittr %>%
 #' @importFrom readr read_tsv
-#' @importFrom dplyr select
+#' @importFrom dplyr select mutate
 #' @importFrom purrr map_dfr
 midas_mktest <- function(midas_dir, map_file,
                          genes = NULL,
                          depth_thres = 1,
-                         freq_thres = 0.5){
+                         freq_thres = 0.5,
+                         focal_group = NA){
   # Read and process map
   map <- readr::read_tsv(map_file)
   # Rename map columns
   map <- map %>% 
-    dplyr::select(sample = ID, Group) 
+    dplyr::select(sample = ID, Group)
+  
+  # Compare everything to focal_group
+  if(!is.na(focal_group)){
+    map <- map %>%
+      dplyr::mutate(Group = replace(Group,
+                                    Group != focal_group,
+                                    paste0("non.", focal_group)))
+  }
   
   # Read data
   Dat <- read_midas_data(midas_dir = midas_dir,

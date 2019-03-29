@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-# (C) Copyright 2018 Sur Herrera Paredes
+# (C) Copyright 2018-2019 Sur Herrera Paredes
 # 
 # This file is part of HMVAR.
 # 
@@ -75,6 +75,15 @@ process_arguments <- function(){
                                   "It must be a value in [0,1]."),
                     default = 0.5,
                     type = "double")
+  p <- add_argument(p, "--focal_group",
+                    help = paste("Group to use as a focal group to compare against all other.",
+                                 "If passed, the script will convert all values in the Group",
+                                 "column of map into 'non.<focal_group>', effectiveley",
+                                 "ensuring a dichotomous grouping. If not passed, the script",
+                                 "will expect only two levels in the Group column of map and it",
+                                 "will fail if more than one group is found."),
+                    default = NULL,
+                    type = "character")
   p <- add_argument(p, '--test',
                     help = paste0("If passed, the Fisher's exact test will be performed ",
                                   "on the McDonald-Kreitman contingency table."),
@@ -110,7 +119,8 @@ mktest <- midas_mktest(midas_dir = args$midas_dir,
                        map_file = args$map_file,
                        genes = genes,
                        depth_thres = args$depth_thres,
-                       freq_thres = args$freq_thres)
+                       freq_thres = args$freq_thres,
+                       focal_group = args$focal_group)
 
 # Merge
 if(args$merge){

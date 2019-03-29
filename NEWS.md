@@ -1,5 +1,7 @@
 # 0.1-1
 1. Overall cleaning and NAMESPACE update
+2. Adding focal group map pre-processing option for
+midas_mktest function and mktest,r executable script.
 
 # 0.1-0
 1. Added exectuable script to perform mktest.
