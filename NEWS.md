@@ -1,3 +1,6 @@
+# 0.1-1
+1. Overall cleaning and NAMESPACE update
+
 # 0.1-0
 1. Added exectuable script to perform mktest.
 2. determine_snp_effect can handle non-coding loci.
