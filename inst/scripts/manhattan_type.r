@@ -18,7 +18,7 @@
 
 library(tidyverse)
 
-indir <- "../today5/output/"
+indir <- "lmmres/"
 outdir <- "manhattans/"
 dir.create(outdir)
 
@@ -27,8 +27,17 @@ for(lmm_file in files){
   # lmm_file <- "Actinomyces_odontolyticus_57475_lmm.results.txt"
   genome <- basename(lmm_file) %>% str_replace("_lmm.results.txt$", "")
   cat(genome, "\n")
+  # lmm <- read_tsv(file.path(indir,lmm_file),
+  #                 col_types = 'ccnnnnnnnc')
+
   lmm <- read_tsv(file.path(indir,lmm_file),
-                  col_types = 'ccnnnnnnnc')
+		  col_types = cols(chr = col_character(),
+				   rs = col_character(),
+				   allele1 = col_character(),
+				   allele0 = col_character(),
+				   type = col_character(),
+				   .default = col_double()))
+
   # lmm
   
   p1 <- ggplot(lmm,

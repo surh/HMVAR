@@ -60,6 +60,10 @@ process_arguments <- function(){
                                  "and imputation."),
                     default = 76543,
                     type = "integer")
+  p <- add_argument(p, "--block_size",
+                    help = paste("Number of block size for imputation"),
+                    default = 100,
+                    type = "integer")
   
   # Read arguments
   cat("Processing arguments...\n")
@@ -123,7 +127,8 @@ Res <- benchmark_imputation(geno = midas_bimbam$Dat$geno,
                             p = args$hidden_proportion,
                             m = args$m,
                             verbose = FALSE,
-                            seed = args$seed)
+                            seed = args$seed,
+                            block_size = args$block_size)
 Files$Files$imputed_geno_file <- Res$imputed_geno_file
 
 # Write results
