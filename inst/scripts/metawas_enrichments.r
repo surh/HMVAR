@@ -66,7 +66,8 @@ args <- list(lmmres = "../2019-03-29.hmp_metawas_data/Supragingival.plaque/metaw
              annotations = "../2019-04-01.hmp_subsite_annotations/hmp.subsite_annotations/Porphyromonas_sp_57899.emapper.annotations",
              dist_thres = 500,
              count_thres = 3,
-             outdir = "metawas_enrichments")
+             outdir = "metawas_enrichments",
+             prefix = NULL)
 
 dir.create(args$outdir)
 
@@ -80,10 +81,10 @@ dir.create(args$outdir)
 # genomes <- read_tsv(genomes_file, col_names = FALSE, col_types = 'c')
 # genomes <- genomes$X1
 # 
-# GENES <- NULL
-# OG_bg <- NULL
-# GO_bg <- NULL
-# KO_bg <- NULL
+GENES <- NULL
+OG_bg <- NULL
+GO_bg <- NULL
+KO_bg <- NULL
 
 for(spec in genomes){
   
@@ -124,42 +125,55 @@ for(spec in genomes){
   
   
     
-  SNP to genes
-  cat("\tReading snp to genes...\n")
-  snp_file <- paste0(snp_dir, "/", spec, ".closest")
-  snp <- read_tsv(snp_file, col_names = FALSE, col_types = 'cnncnncn')
-  if(nrow(snp) > 0){
-    genes <- snp %>%
-      filter(X8 <= dist_thres) %>%
-      select(chr = X1, ps = X2, gene.id = X7) %>%
-      left_join(metawas) %>%
-      select(chr, ps, rs, gene.id, type) %>%
-      filter(type %in% snp_groups) %>%
-      select(gene.id) %>%
-      table %>%
-      as.tibble %>%
-      arrange(desc(n))
-    colnames(genes) <- c("gene_id", "n")
-  }else{
-    genes <- tibble()
-  }
+  # SNP to genes
+  # cat("\tReading snp to genes...\n")
+  # snp_file <- paste0(snp_dir, "/", spec, ".closest")
+  # snp <- read_tsv(snp_file, col_names = FALSE, col_types = 'cnncnncn')
+  # if(nrow(snp) > 0){
+  #   genes <- snp %>%
+  #     filter(X8 <= dist_thres) %>%
+  #     select(chr = X1, ps = X2, gene.id = X7) %>%
+  #     left_join(metawas) %>%
+  #     select(chr, ps, rs, gene.id, type) %>%
+  #     filter(type %in% snp_groups) %>%
+  #     select(gene.id) %>%
+  #     table %>%
+  #     as.tibble %>%
+  #     arrange(desc(n))
+  #   colnames(genes) <- c("gene_id", "n")
+  # }else{
+  #   genes <- tibble()
+  # }
   
-  if(nrow(genes) > 0){
+  # if(nrow(genes) > 0){
     # Annots
     cat("\tReading annot file...\n")
-    annot_file <- paste0(annot_dir, "/", spec, ".emapper.annotations")
-    annot <- read_tsv(annot_file, comment = "#", col_names = FALSE)
-    colnames(annot) <- c("query_name", "seed_eggNOG_ortholog", "seed_ortholog_evalue",
-                         "seed_ortholog_score",	"predicted_gene_name", "GO_terms",
-                         "KEGG_KOs", "BiGG_reactions", "Annotation_tax_scope", "OGs",
-                         "bestOG|evalue|score", "COG cat", "eggNOG annot")
+    # annot <- read_tsv(annot_file, comment = "#", col_names = FALSE)
+    annot <- read_tsv(args$annotations,
+                      comment = "#",
+                      col_names = c("query_name", "seed_eggNOG_ortholog", "seed_ortholog_evalue",
+                                    "seed_ortholog_score",	"predicted_gene_name", "GO_terms",
+                                    "KEGG_KOs", "BiGG_reactions", "Annotation_tax_scope", "OGs",
+                                    "bestOG|evalue|score", "COG cat", "eggNOG annot"),
+                      col_types = cols(.default = col_character(),
+                                       seed_ortholog_score = col_double(),
+                                       seed_ortholog_evalue = col_double()))
+    annot
+    
+    # Reformat gene name
     annot <- annot %>%
       mutate(gene_id = str_replace(string = query_name,
                                    pattern = "\\([+-]\\)_[0-9]",
                                    replacement = "")) %>%
       select(gene_id, everything(), -query_name, -seed_ortholog_evalue, -seed_ortholog_score,
              -Annotation_tax_scope)
-    # annot
+    annot
+    
+    # Select onl tested genes
+    # Only these will be considered in the universe background
+    annot <- annot %>% filter(gene_id %in% genes_tested$gene_id)
+    
+    # Get background
     og_bg <- annot$OGs %>% map(str_split, pattern = ",") %>% unlist %>% table
     go_bg <- annot$GO_terms %>% map(str_split, pattern = ",") %>% unlist %>% table
     ko_bg <- annot$KEGG_KOs %>% map(str_split, pattern = ",") %>% unlist %>% table
@@ -169,9 +183,10 @@ for(spec in genomes){
     KO_bg <- sum_vecs(KO_bg, ko_bg)
     
     # Match genes and annotations
-    genes <- genes %>% left_join(annot)
-    filename <- paste0(genes_dir, "/", spec, "_genes.annot")
-    write_tsv(genes, filename)
+    genes <- sig_genes %>% left_join(annot)
+    genes
+    # filename <- paste0(genes_dir, "/", spec, "_genes.annot")
+    # write_tsv(genes, filename)
     GENES <- GENES %>% bind_rows(genes)
     
     # Calculate enrichment
@@ -181,11 +196,11 @@ for(spec in genomes){
     gos <- genes$GO_terms
     gos <- gos[ !is.na(gos) ]
     gos <- gos %>% map(str_split, pattern = ',') %>% unlist %>% table
-    gos <- gos[ gos >= count_thres ]
+    gos <- gos[ gos >= args$count_thres ]
     kos <- genes$KEGG_KOs
     kos <- kos[ !is.na(kos) ]
     kos <- kos %>% map(str_split, pattern = ',') %>% unlist %>% table
-    kos <- kos[ kos >= count_thres ]
+    kos <- kos[ kos >= args$count_thres ]
     
     if(length(gos) > 0){
       gos <- tibble(term = names(gos), n = gos)
@@ -198,7 +213,16 @@ for(spec in genomes){
         tibble(term = term, n = n, OR = OR, p.value = p.value)
       }) %>% mutate(q.value = p.adjust(p.value, 'fdr')) %>%
         arrange(q.value)
-      filename <- paste0(enrich_dir, "/", spec, "_go.enrich.txt")
+      
+      gos_res <- gos_res %>%
+        bind_cols(gos_res %>%
+                    select(term) %>%
+                    unlist %>%
+                    AnnotationDbi::select(GO.db::GO.db, .,
+                                          columns = c("ONTOLOGY","TERM","DEFINITION")))
+      
+      filename <- paste0(args$prefix, "go_enrichments.txt", collapse = ".")
+      filename <- file.path(args$outdir, filename)
       write_tsv(gos_res, filename)
     }
     
