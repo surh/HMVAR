@@ -20,9 +20,7 @@
 # Performs functional enrichment on metawas hits from eggnog annotations
 # Based on script from /home/sur/micropopgen/exp/2019/2019-01-29.metawas_enrichment/
 
-library(ggplot2)
 library(tidyverse)
-
 
 #' Sums named vectors by name
 #'
@@ -54,17 +52,23 @@ sum_vecs <- function(a, b){
 
 
 # spec <- "Actinomyces_odontolyticus_57475"
-genomes_file <- "hmp_genomes.txt"
-lmm_dir <- "2019-02-19.hmp_metawas/"
-snp_dir <- "metawas_closest/"
-annot_dir <- "annotations/"
-dist_thres <- 500
-count_thres <- 3
-snp_groups <- c("env", "both")
+# genomes_file <- "hmp_genomes.txt"
+# lmm_dir <- "2019-02-19.hmp_metawas/"
+# snp_dir <- "metawas_closest/"
+# annot_dir <- "annotations/"
+# dist_thres <- 500
+# count_thres <- 3
+# snp_groups <- c("env", "both")
+# outdir <- "outptut_env_both"
 
-outdir <- "outptut_env_both"
+args <- list(lmmres = "../2019-03-29.hmp_metawas_data/Supragingival.plaque/metawas/lmm/Porphyromonas_sp_57899_lmm.assoc.txt",
+             closest = "../2019-03-29.hmp_metawas_data/Supragingival.plaque/closest/Porphyromonas_sp_57899.closest",
+             annotations = "../2019-04-01.hmp_subsite_annotations/hmp.subsite_annotations/Porphyromonas_sp_57899.emapper.annotations",
+             dist_thres = 500,
+             count_thres = 3,
+             outdir = "metawas_enrichments")
 
-dir.create(outdir)
+dir.create(args$outdir)
 
 manhat_dir <- paste0(outdir, "/manhattan")
 dir.create(manhat_dir)
