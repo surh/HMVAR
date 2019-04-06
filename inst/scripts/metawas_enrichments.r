@@ -61,7 +61,7 @@ sum_vecs <- function(a, b){
 # snp_groups <- c("env", "both")
 # outdir <- "outptut_env_both"
 
-args <- list(lmmres = "../2019-03-29.hmp_metawas_data/Supragingival.plaque/metawas/lmm/Porphyromonas_sp_57899_lmm.assoc.txt",
+args <- list(lmmres = "../2019-03-29.hmp_metawas_data/Supragingival.plaque/metawas/lmmpcs/Porphyromonas_sp_57899_lmm.results.txt",
              closest = "../2019-03-29.hmp_metawas_data/Supragingival.plaque/closest/Porphyromonas_sp_57899.closest",
              annotations = "../2019-04-01.hmp_subsite_annotations/hmp.subsite_annotations/Porphyromonas_sp_57899.emapper.annotations",
              dist_thres = 500,
@@ -70,46 +70,61 @@ args <- list(lmmres = "../2019-03-29.hmp_metawas_data/Supragingival.plaque/metaw
 
 dir.create(args$outdir)
 
-manhat_dir <- paste0(outdir, "/manhattan")
-dir.create(manhat_dir)
-genes_dir <- paste0(outdir, "/genes/")
-dir.create(genes_dir)
-enrich_dir <- paste0(outdir, "/enrich/")
-dir.create(enrich_dir)
-
-genomes <- read_tsv(genomes_file, col_names = FALSE, col_types = 'c')
-genomes <- genomes$X1
-
-GENES <- NULL
-OG_bg <- NULL
-GO_bg <- NULL
-KO_bg <- NULL
+# manhat_dir <- paste0(outdir, "/manhattan")
+# dir.create(manhat_dir)
+# genes_dir <- paste0(outdir, "/genes/")
+# dir.create(genes_dir)
+# enrich_dir <- paste0(outdir, "/enrich/")
+# dir.create(enrich_dir)
+# 
+# genomes <- read_tsv(genomes_file, col_names = FALSE, col_types = 'c')
+# genomes <- genomes$X1
+# 
+# GENES <- NULL
+# OG_bg <- NULL
+# GO_bg <- NULL
+# KO_bg <- NULL
 
 for(spec in genomes){
-  # spec <- genomes[1]
   
-  cat(spec, "\n")
-  # Manhattan
-  # lmm_file <- paste0(lmm_dir, "", spec, "_lmm.assoc.txt")
-  lmm_file <- paste0(lmm_dir, "", spec, "_lmm.results.txt")
-  metawas <- read_tsv(file = lmm_file, col_types = cols(rs = 'c'))
-  # metawas
+  # cat(spec, "\n")
+  # # Manhattan
+  # # lmm_file <- paste0(lmm_dir, "", spec, "_lmm.assoc.txt")
+  # lmm_file <- paste0(lmm_dir, "", spec, "_lmm.results.txt")
+  # metawas <- read_tsv(file = lmm_file, col_types = cols(rs = 'c'))
+  metawas <- read_tsv(args$lmmres,
+                      col_types = cols(.default = col_double(),
+                                       chr = col_character(),
+                                       rs = col_character(),
+                                       allele1 = col_character(),
+                                       allele0 = col_character(),
+                                       type = col_character()))
+  metawas
   
-  # Will move manhattan elsewhere
-  # p1 <- ggplot(metawas, aes(x = ps, y = -log10(p_lrt))) +
-  #   facet_grid( ~ chr, scales = "free_x", space = "free_x") +
-  #   geom_point() +
-  #   geom_hline(yintercept = 8, col = "red", alpha = 0.5) +
-  #   theme(panel.background = element_blank(),
-  #         panel.grid = element_blank(),
-  #         axis.text = element_text(color = "black", size = 14),
-  #         axis.title = element_text(color = "black", face = 'bold', size = 18))
-  # # p1
-  # filename <- paste0(manhat_dir, "/", spec, "_manhattan.png")
-  # ggsave(filename, p1, width = 15, height = 5, dpi = 200)
+  closest <- read_tsv(args$closest,
+                      col_names = c("chr", "ps", "ps2", "chr2", "start", "end", "gene_id", "dist"),
+                      col_types = cols(.default = col_number(),
+                                       chr = col_character(),
+                                       chr2 = col_character(),
+                                       gene_id = col_character()))
+  closest
+  
+  genes_tested <- closest %>%
+    filter(abs(dist) <= args$dist_thres) %>%
+    select(gene_id) %>% unique()
+  sig_genes <- closest %>%
+    left_join(metawas %>%
+                filter(type %in% c("int", "both")) %>%
+                select(chr, rs, ps),
+              by = c("chr", "ps")) %>%
+    filter(!is.na(rs)) %>%
+    filter(abs(dist) <= args$dist_thres) %>%
+    select(gene_id) %>%
+    unique()
   
   
-  # SNP to genes
+    
+  SNP to genes
   cat("\tReading snp to genes...\n")
   snp_file <- paste0(snp_dir, "/", spec, ".closest")
   snp <- read_tsv(snp_file, col_names = FALSE, col_types = 'cnncnncn')
