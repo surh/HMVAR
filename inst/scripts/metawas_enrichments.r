@@ -30,18 +30,21 @@ expand_annot <- function(gene_id, annot){
 }
 
 process_annotation <- function(annot,
+                               sig_genes,
                                annotation = "GO_terms",
                                outdir = "./",
                                prefix = NULL,
                                test = TRUE,
                                count_thres= 3,
                                match_go = TRUE){
+  
   # Create background
   BG <- annot %>%
     select(gene_id, annot = annotation) %>%
     pmap_dfr(expand_annot) %>%
-    filter(!is.na(term)) %>%
-    mutate(sig_gene = gene_id %in% sig_genes$gene_id)
+    mutate(sig_gene = gene_id %in% sig_genes) %>%
+    filter(!is.na(term))
+    
   
   if(test){
     res <- test_annotation(BG = BG,
@@ -133,6 +136,7 @@ metawas_gene_counts <- function(metawas, closest, annot, outdir = "./", prefix =
   # Match everything per gene
   all <- metawas %>% full_join(closest, by = c("chr", "ps"))
   
+  cat("\tCleaning annotation...\n")
   annot <- annot %>%
     select(gene_id, predicted_gene_name, eggNOG_annot)
   
@@ -178,17 +182,6 @@ sum_vecs <- function(a, b){
   return(vec)
 }
 
-
-# spec <- "Actinomyces_odontolyticus_57475"
-# genomes_file <- "hmp_genomes.txt"
-# lmm_dir <- "2019-02-19.hmp_metawas/"
-# snp_dir <- "metawas_closest/"
-# annot_dir <- "annotations/"
-# dist_thres <- 500
-# count_thres <- 3
-# snp_groups <- c("env", "both")
-# outdir <- "outptut_env_both"
-
 process_arguments <- function(){
   p <- arg_parser(paste(""))
   
@@ -231,6 +224,13 @@ process_arguments <- function(){
 #              count_thres = 3,
 #              outdir = "metawas_enrichments",
 #              prefix = NULL)
+# args <- list(lmmres = "Streptococcus_sp_60488_lmm.results.txt",
+#              closest = "Streptococcus_sp_60488.closest",
+#              annotations = "Streptococcus_sp_60488.emapper.annotations",
+#              dist_thres = 500,
+#              count_thres = 3,
+#              outdir = "metawas_enrichments",
+#              prefix = NULL)
 args <- process_arguments()
 
 dir.create(args$outdir)
@@ -245,12 +245,13 @@ dir.create(args$outdir)
 # genomes <- read_tsv(genomes_file, col_names = FALSE, col_types = 'c')
 # genomes <- genomes$X1
 # 
-GENES <- NULL
-OG_bg <- NULL
-GO_bg <- NULL
-KO_bg <- NULL
+# GENES <- NULL
+# OG_bg <- NULL
+# GO_bg <- NULL
+# KO_bg <- NULL
 
 # Read data
+cat("Reading lmm...\n")
 metawas <- read_tsv(args$lmmres,
                     col_types = cols(.default = col_double(),
                                      chr = col_character(),
@@ -260,6 +261,7 @@ metawas <- read_tsv(args$lmmres,
                                      type = col_character())) %>%
   select(-starts_with("logl_H1"), -starts_with("l_mle"))
 # metawas
+cat("Reading closest...\n")
 closest <- read_tsv(args$closest,
                     col_names = c("chr", "ps", "ps2", "chr2", "start", "end", "gene_id", "dist"),
                     col_types = cols(.default = col_number(),
@@ -270,6 +272,7 @@ closest <- read_tsv(args$closest,
 # closest
 
 # Get genes
+cat("Getting gene lists...\n")
 genes_tested <- closest %>%
   filter(abs(dist) <= args$dist_thres) %>%
   select(gene_id) %>% unique()
@@ -281,9 +284,10 @@ sig_genes <- closest %>%
   filter(!is.na(rs)) %>%
   filter(abs(dist) <= args$dist_thres) %>%
   select(gene_id) %>%
-  unique()
+  unique() %>%
+  unlist()
 
-cat("\tReading annot file...\n")
+cat("Reading annot file...\n")
 # annot <- read_tsv(annot_file, comment = "#", col_names = FALSE)
 annot <- read_tsv(args$annotations,
                   comment = "#",
@@ -296,6 +300,7 @@ annot <- read_tsv(args$annotations,
                                    seed_ortholog_evalue = col_double()))
 # annot
 # Reformat gene name
+cat("Reformatting annotation...\n")
 annot <- annot %>%
   mutate(gene_id = str_replace(string = query_name,
                                pattern = "\\([+-]\\)_[0-9]",
@@ -306,9 +311,12 @@ annot <- annot %>%
 
 # Select onl tested genes
 # Only these will be considered in the universe background
+cat("Selecting annotations from tested genes...\n")
 annot <- annot %>% filter(gene_id %in% genes_tested$gene_id)
 
+
 # Metawas gene counts
+cat("Counting genes...\n")
 metawas_gene_counts(metawas = metawas,
                     closest = closest,
                     annot = annot,
@@ -316,26 +324,34 @@ metawas_gene_counts(metawas = metawas,
                     prefix = args$prefix)
 
 # Test GO
-process_annotation(annot = annot,
-                   annotation = "GO_terms",
-                   outdir = args$outdir,
-                   prefix = args$prefix,
-                   test = TRUE,
-                   count_thres = args$count_thres,
-                   match_go = TRUE)
-# Test KO
-process_annotation(annot = annot,
-                   annotation = "KEGG_KOs",
-                   outdir = args$outdir,
-                   prefix = args$prefix,
-                   test = TRUE,
-                   count_thres = args$count_thres,
-                   match_go = FALSE)
-# Test eggNOG
-process_annotation(annot = annot,
-                   annotation = "OGs",
-                   outdir = args$outdir,
-                   prefix = args$prefix,
-                   test = TRUE,
-                   count_thres = args$count_thres,
-                   match_go = FALSE)
+if(nrow(annot) > 0){
+  cat("Test GO...\n")
+  process_annotation(annot = annot,
+                     sig_genes = sig_genes,
+                     annotation = "GO_terms",
+                     outdir = args$outdir,
+                     prefix = args$prefix,
+                     test = TRUE,
+                     count_thres = args$count_thres,
+                     match_go = TRUE)
+  # Test KO
+  cat("Test KO...\n")
+  process_annotation(annot = annot,
+                     sig_genes = sig_genes,
+                     annotation = "KEGG_KOs",
+                     outdir = args$outdir,
+                     prefix = args$prefix,
+                     test = TRUE,
+                     count_thres = args$count_thres,
+                     match_go = FALSE)
+  # Test eggNOG
+  cat("Test OG...\n")
+  process_annotation(annot = annot,
+                     sig_genes = sig_genes,
+                     annotation = "OGs",
+                     outdir = args$outdir,
+                     prefix = args$prefix,
+                     test = TRUE,
+                     count_thres = args$count_thres,
+                     match_go = FALSE)
+}
