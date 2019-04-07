@@ -196,19 +196,19 @@ process_arguments <- function(){
   p <- add_argument(p, "lmmres",
                     help = paste(""),
                     type = "character")
-  p <- add_argument(p, "closest")
-  p <- add_argument(p, "annotations")
+  p <- add_argument(p, "closest", help = "")
+  p <- add_argument(p, "annotations", help = "")
   
   # Optional arguments
   p <- add_argument(p, "--dist_thres",
                      help = paste(""),
                      type = "numeric",
                      default = 500)
-  p <- add_argument(p, "--count_thres",
+  p <- add_argument(p, "--count_thres", help = "",
                     default = 3)
-  p <- add_argument(p, "--outdir",
+  p <- add_argument(p, "--outdir", help = "",
                     default = "output")
-  p <- add_arguments(p, "--prefix",
+  p <- add_argument(p, "--prefix", help = "",
                      default = NULL,
                      type = "character")
                      
