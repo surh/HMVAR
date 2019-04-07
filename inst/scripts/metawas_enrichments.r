@@ -230,19 +230,16 @@ test_res <- to_test %>%
            n.bg = n.bg,
            OR = res$estimate,
            p.value = res$p.value)
-  }, selection.size = sum(to_test$n.sig), bg.size = nrow(BG)) %>%
+  }, selection.size = nrow(sig_genes), bg.size = nrow(BG)) %>%
   mutate(q.value = p.adjust(p.value, 'fdr')) %>%
   arrange(q.value)
-
 test_res <- test_res %>%
   bind_cols(test_res %>%
               select(term) %>%
               unlist %>%
               AnnotationDbi::select(GO.db::GO.db, .,
                                     columns = c("ONTOLOGY","TERM","DEFINITION")))
-
-
-
+test_res
 
 
 
