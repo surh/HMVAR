@@ -21,6 +21,7 @@
 # Based on script from /home/sur/micropopgen/exp/2019/2019-01-29.metawas_enrichment/
 
 library(tidyverse)
+library(argparser)
 
 expand_annot <- function(gene_id, annot){
   annot <- str_split(string = annot, pattern = ",") %>% unlist
@@ -188,13 +189,49 @@ sum_vecs <- function(a, b){
 # snp_groups <- c("env", "both")
 # outdir <- "outptut_env_both"
 
-args <- list(lmmres = "../2019-03-29.hmp_metawas_data/Supragingival.plaque/metawas/lmmpcs/Porphyromonas_sp_57899_lmm.results.txt",
-             closest = "../2019-03-29.hmp_metawas_data/Supragingival.plaque/closest/Porphyromonas_sp_57899.closest",
-             annotations = "../2019-04-01.hmp_subsite_annotations/hmp.subsite_annotations/Porphyromonas_sp_57899.emapper.annotations",
-             dist_thres = 500,
-             count_thres = 3,
-             outdir = "metawas_enrichments",
-             prefix = NULL)
+process_arguments <- function(){
+  p <- arg_parser(paste(""))
+  
+  # Positional arguments
+  p <- add_argument(p, "lmmres",
+                    help = paste(""),
+                    type = "character")
+  p <- add_argument(p, "closest")
+  p <- add_argument(p, "annotations")
+  
+  # Optional arguments
+  p <- add_argument(p, "--dist_thres",
+                     help = paste(""),
+                     type = "numeric",
+                     default = 500)
+  p <- add_argument(p, "--count_thres",
+                    default = 3,)
+  p <- add_argument(p, "--outdir",
+                    default = "output")
+  p <- add_arguments(p, "--prefix",
+                     default = NULL,
+                     type = "character")
+                     
+  # Read arguments
+  cat("Processing arguments...\n")
+  args <- parse_args(p)
+  
+  # Process arguments
+  if(is.na(args$prefix)){
+    args$prefix <- NULL
+  }
+  
+  return(args)
+}
+
+# args <- list(lmmres = "../2019-03-29.hmp_metawas_data/Supragingival.plaque/metawas/lmmpcs/Porphyromonas_sp_57899_lmm.results.txt",
+#              closest = "../2019-03-29.hmp_metawas_data/Supragingival.plaque/closest/Porphyromonas_sp_57899.closest",
+#              annotations = "../2019-04-01.hmp_subsite_annotations/hmp.subsite_annotations/Porphyromonas_sp_57899.emapper.annotations",
+#              dist_thres = 500,
+#              count_thres = 3,
+#              outdir = "metawas_enrichments",
+#              prefix = NULL)
+args <- process_arguments()
 
 dir.create(args$outdir)
 
