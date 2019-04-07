@@ -205,7 +205,7 @@ process_arguments <- function(){
                      type = "numeric",
                      default = 500)
   p <- add_argument(p, "--count_thres",
-                    default = 3,)
+                    default = 3)
   p <- add_argument(p, "--outdir",
                     default = "output")
   p <- add_arguments(p, "--prefix",
