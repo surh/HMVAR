@@ -22,6 +22,93 @@
 
 library(tidyverse)
 
+expand_annot <- function(gene_id, annot){
+  annot <- str_split(string = annot, pattern = ",") %>% unlist
+  tibble(gene_id = gene_id,
+         term = annot)
+}
+
+process_annotation <- function(annot,
+                               annotation = "GO_terms",
+                               outdir = "./",
+                               prefix = NULL,
+                               test = TRUE,
+                               count_thres= 3,
+                               match_go = TRUE){
+  # Create background
+  BG <- annot %>%
+    select(gene_id, annot = annotation) %>%
+    pmap_dfr(expand_annot) %>%
+    filter(!is.na(term)) %>%
+    mutate(sig_gene = gene_id %in% sig_genes$gene_id)
+  
+  if(test){
+    res <- test_annotation(BG = BG,
+                           count_thres = count_thres,
+                           match_go = match_go)
+    filename <- paste0(c(prefix, annotation, "enrichments.txt"), collapse = ".")
+    filename <- file.path(outdir, filename)
+    write_tsv(BG, filename)
+  }
+  
+  # Write background
+  filename <- paste0(c(prefix, annotation, "BG.txt"), collapse = ".")
+  filename <- file.path(outdir, filename)
+  write_tsv(BG, filename)
+  
+  
+  return(filename)
+}
+
+test_annotation <- function(BG, count_thres = 3, match_go = TRUE){
+  # Get list to test
+  to_test <- BG %>%
+    filter(sig_gene) %>%
+    count(term) %>%
+    filter(n >= count_thres) %>%
+    select(term, n.sig = n)
+  
+  # Get BG counts
+  bg_counts <- BG %>%
+    filter(term %in% to_test$term) %>%
+    count(term) %>%
+    select(term, n.bg = n)
+  
+  selection.size <- BG %>%
+    filter(sig_gene) %>%
+    select(gene_id) %>%
+    unique() %>%
+    nrow()
+  
+  bg.size <- BG$gene_id %>% unique %>% length
+  
+  # Test
+  test_res <- to_test %>%
+    left_join(bg_counts, by = "term") %>%
+    pmap_dfr(function(term, n.sig, n.bg, selection.size, bg.size){
+      mat <- matrix(c(n.sig, n.bg, selection.size, bg.size), ncol = 2)
+      res <- fisher.test(mat)
+      tibble(term = term,
+             n.sig = n.sig,
+             n.bg = n.bg,
+             OR = res$estimate,
+             p.value = res$p.value)
+    }, selection.size = selection.size, bg.size = bg.size) %>%
+    mutate(q.value = p.adjust(p.value, 'fdr')) %>%
+    arrange(q.value)
+  
+  if(match_go){
+    # Match metadata
+    test_res <- test_res %>%
+      bind_cols(test_res %>%
+                  select(term) %>%
+                  unlist %>%
+                  AnnotationDbi::select(GO.db::GO.db, .,
+                                        columns = c("ONTOLOGY","TERM","DEFINITION")))
+  }
+  
+  return(test_res)
+}
 
 count_vars <- function(d){
   n.variants <- nrow(d)
@@ -187,60 +274,19 @@ metawas_gene_counts(metawas = metawas,
 
 
 ######
+
 # Create gene-annot table
 annotation <- "GO_terms"
 
-expand_annot <- function(gene_id, annot){
-  annot <- str_split(string = annot, pattern = ",") %>% unlist
-  tibble(gene_id = gene_id,
-         term = annot)
-}
 
-BG <- annot %>%
-  select(gene_id, annot = annotation) %>%
-  pmap_dfr(expand_annot) %>%
-  filter(!is.na(term)) %>%
-  mutate(sig_gene = gene_id %in% sig_genes$gene_id)
-BG
+test_annotation(BG = BG)
 
-filename <- paste0(c(args$prefix, annotation, "BG.txt"), collapse = ".")
+
+
+
+filename <- paste0(c(args$prefix, annotation, "enrichments.txt"), collapse = ".")
 filename <- file.path(args$outdir, filename)
-write_tsv(BG, filename)
-
-# Test
-to_test <- BG %>%
-  filter(sig_gene) %>%
-  count(term) %>%
-  filter(n >= args$count_thres) %>%
-  select(term, n.sig = n)
-
-bg_counts <- BG %>%
-  filter(term %in% to_test$term) %>%
-  count(term) %>%
-  select(term, n.bg = n)
-
-
-test_res <- to_test %>%
-  left_join(bg_counts, by = "term") %>%
-  pmap_dfr(function(term, n.sig, n.bg, selection.size, bg.size){
-    mat <- matrix(c(n.sig, n.bg, selection.size, bg.size), ncol = 2)
-    res <- fisher.test(mat)
-    tibble(term = term,
-           n.sig = n.sig,
-           n.bg = n.bg,
-           OR = res$estimate,
-           p.value = res$p.value)
-  }, selection.size = nrow(sig_genes), bg.size = nrow(BG)) %>%
-  mutate(q.value = p.adjust(p.value, 'fdr')) %>%
-  arrange(q.value)
-test_res <- test_res %>%
-  bind_cols(test_res %>%
-              select(term) %>%
-              unlist %>%
-              AnnotationDbi::select(GO.db::GO.db, .,
-                                    columns = c("ONTOLOGY","TERM","DEFINITION")))
-test_res
-
+write_tsv(test_res, filename)
 
 
 
