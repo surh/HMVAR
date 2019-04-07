@@ -22,6 +22,40 @@
 
 library(tidyverse)
 
+
+count_vars <- function(d){
+  n.variants <- nrow(d)
+  n.sig <- sum(d$type %in% c("int", "both"))
+  n.outside <- sum(d$dist > 0)
+  tibble(chr = unique(d$chr),
+         start = unique(d$start),
+         end = unique(d$end),
+         n.variants = n.variants,
+         n.sig = n.sig,
+         n.outside = n.outside)
+}
+
+metawas_gene_counts <- function(metawas, closest, annot, outdir = "./", prefix = NULL){
+  # Match everything per gene
+  all <- metawas %>% full_join(closest, by = c("chr", "ps"))
+  
+  annot <- annot %>%
+    select(gene_id, predicted_gene_name, eggNOG_annot)
+  
+  
+  Genes <- all %>%
+    split(.$gene_id) %>%
+    map_dfr(~count_vars(.), .id = "gene_id") %>%
+    arrange(chr, start) %>%
+    left_join(annot, by = "gene_id")
+  
+  filename <- paste0(c(prefix, "gene_metawas_counts.txt"), collapse = ".")
+  filename <- file.path(outdir, filename)
+  write_tsv(Genes, filename)
+  
+  return(filename)
+}
+
 #' Sums named vectors by name
 #'
 #' @param a A named vector.
@@ -86,101 +120,146 @@ OG_bg <- NULL
 GO_bg <- NULL
 KO_bg <- NULL
 
-for(spec in genomes){
-  
-  # cat(spec, "\n")
-  # # Manhattan
-  # # lmm_file <- paste0(lmm_dir, "", spec, "_lmm.assoc.txt")
-  # lmm_file <- paste0(lmm_dir, "", spec, "_lmm.results.txt")
-  # metawas <- read_tsv(file = lmm_file, col_types = cols(rs = 'c'))
-  metawas <- read_tsv(args$lmmres,
-                      col_types = cols(.default = col_double(),
-                                       chr = col_character(),
-                                       rs = col_character(),
-                                       allele1 = col_character(),
-                                       allele0 = col_character(),
-                                       type = col_character()))
-  metawas
-  
-  closest <- read_tsv(args$closest,
-                      col_names = c("chr", "ps", "ps2", "chr2", "start", "end", "gene_id", "dist"),
-                      col_types = cols(.default = col_number(),
-                                       chr = col_character(),
-                                       chr2 = col_character(),
-                                       gene_id = col_character()))
-  closest
-  
-  genes_tested <- closest %>%
-    filter(abs(dist) <= args$dist_thres) %>%
-    select(gene_id) %>% unique()
-  sig_genes <- closest %>%
-    left_join(metawas %>%
-                filter(type %in% c("int", "both")) %>%
-                select(chr, rs, ps),
-              by = c("chr", "ps")) %>%
-    filter(!is.na(rs)) %>%
-    filter(abs(dist) <= args$dist_thres) %>%
-    select(gene_id) %>%
-    unique()
-  
-  
+# Read data
+metawas <- read_tsv(args$lmmres,
+                    col_types = cols(.default = col_double(),
+                                     chr = col_character(),
+                                     rs = col_character(),
+                                     allele1 = col_character(),
+                                     allele0 = col_character(),
+                                     type = col_character())) %>%
+  select(-starts_with("logl_H1"), -starts_with("l_mle"))
+# metawas
+closest <- read_tsv(args$closest,
+                    col_names = c("chr", "ps", "ps2", "chr2", "start", "end", "gene_id", "dist"),
+                    col_types = cols(.default = col_number(),
+                                     chr = col_character(),
+                                     chr2 = col_character(),
+                                     gene_id = col_character())) %>%
+  select(-ps2, -chr2)
+# closest
+
+# Get genes
+genes_tested <- closest %>%
+  filter(abs(dist) <= args$dist_thres) %>%
+  select(gene_id) %>% unique()
+sig_genes <- closest %>%
+  left_join(metawas %>%
+              filter(type %in% c("int", "both")) %>%
+              select(chr, rs, ps),
+            by = c("chr", "ps")) %>%
+  filter(!is.na(rs)) %>%
+  filter(abs(dist) <= args$dist_thres) %>%
+  select(gene_id) %>%
+  unique()
+
+cat("\tReading annot file...\n")
+# annot <- read_tsv(annot_file, comment = "#", col_names = FALSE)
+annot <- read_tsv(args$annotations,
+                  comment = "#",
+                  col_names = c("query_name", "seed_eggNOG_ortholog", "seed_ortholog_evalue",
+                                "seed_ortholog_score",	"predicted_gene_name", "GO_terms",
+                                "KEGG_KOs", "BiGG_reactions", "Annotation_tax_scope", "OGs",
+                                "bestOG|evalue|score", "COG_cat", "eggNOG_annot"),
+                  col_types = cols(.default = col_character(),
+                                   seed_ortholog_score = col_double(),
+                                   seed_ortholog_evalue = col_double()))
+# annot
+# Reformat gene name
+annot <- annot %>%
+  mutate(gene_id = str_replace(string = query_name,
+                               pattern = "\\([+-]\\)_[0-9]",
+                               replacement = "")) %>%
+  select(gene_id, everything(), -query_name, -seed_ortholog_evalue, -seed_ortholog_score,
+         -Annotation_tax_scope)
+# annot
+
+# Select onl tested genes
+# Only these will be considered in the universe background
+annot <- annot %>% filter(gene_id %in% genes_tested$gene_id)
+
+# Metawas gene counts
+metawas_gene_counts(metawas = metawas,
+                    closest = closest,
+                    annot = annot,
+                    outdir = args$outdir,
+                    prefix = args$prefix)
+
+
+######
+# Create gene-annot table
+annotation <- "GO_terms"
+
+expand_annot <- function(gene_id, annot){
+  annot <- str_split(string = annot, pattern = ",") %>% unlist
+  tibble(gene_id = gene_id,
+         term = annot)
+}
+
+BG <- annot %>%
+  select(gene_id, annot = annotation) %>%
+  pmap_dfr(expand_annot) %>%
+  filter(!is.na(term)) %>%
+  mutate(sig_gene = gene_id %in% sig_genes$gene_id)
+BG
+
+filename <- paste0(c(args$prefix, annotation, "BG.txt"), collapse = ".")
+filename <- file.path(args$outdir, filename)
+write_tsv(BG, filename)
+
+# Test
+to_test <- BG %>%
+  filter(sig_gene) %>%
+  count(term) %>%
+  filter(n >= args$count_thres) %>%
+  select(term, n.sig = n)
+
+bg_counts <- BG %>%
+  filter(term %in% to_test$term) %>%
+  count(term) %>%
+  select(term, n.bg = n)
+
+
+test_res <- to_test %>%
+  left_join(bg_counts, by = "term") %>%
+  pmap_dfr(function(term, n.sig, n.bg, selection.size, bg.size){
+    mat <- matrix(c(n.sig, n.bg, selection.size, bg.size), ncol = 2)
+    res <- fisher.test(mat)
+    tibble(term = term,
+           n.sig = n.sig,
+           n.bg = n.bg,
+           OR = res$estimate,
+           p.value = res$p.value)
+  }, selection.size = sum(to_test$n.sig), bg.size = nrow(BG)) %>%
+  mutate(q.value = p.adjust(p.value, 'fdr')) %>%
+  arrange(q.value)
+
+test_res <- test_res %>%
+  bind_cols(test_res %>%
+              select(term) %>%
+              unlist %>%
+              AnnotationDbi::select(GO.db::GO.db, .,
+                                    columns = c("ONTOLOGY","TERM","DEFINITION")))
+
+
+
+
+
+
+
+
+#####
+# Get background
+og_bg <- annot$OGs %>% map(str_split, pattern = ",") %>% unlist %>% table
+go_bg <- annot$GO_terms %>% map(str_split, pattern = ",") %>% unlist %>% table
+ko_bg <- annot$KEGG_KOs %>% map(str_split, pattern = ",") %>% unlist %>% table
+
+OG_bg <- sum_vecs(OG_bg, og_bg)
+GO_bg <- sum_vecs(GO_bg, go_bg)
+KO_bg <- sum_vecs(KO_bg, ko_bg)
+
     
-  # SNP to genes
-  # cat("\tReading snp to genes...\n")
-  # snp_file <- paste0(snp_dir, "/", spec, ".closest")
-  # snp <- read_tsv(snp_file, col_names = FALSE, col_types = 'cnncnncn')
-  # if(nrow(snp) > 0){
-  #   genes <- snp %>%
-  #     filter(X8 <= dist_thres) %>%
-  #     select(chr = X1, ps = X2, gene.id = X7) %>%
-  #     left_join(metawas) %>%
-  #     select(chr, ps, rs, gene.id, type) %>%
-  #     filter(type %in% snp_groups) %>%
-  #     select(gene.id) %>%
-  #     table %>%
-  #     as.tibble %>%
-  #     arrange(desc(n))
-  #   colnames(genes) <- c("gene_id", "n")
-  # }else{
-  #   genes <- tibble()
-  # }
-  
-  # if(nrow(genes) > 0){
-    # Annots
-    cat("\tReading annot file...\n")
-    # annot <- read_tsv(annot_file, comment = "#", col_names = FALSE)
-    annot <- read_tsv(args$annotations,
-                      comment = "#",
-                      col_names = c("query_name", "seed_eggNOG_ortholog", "seed_ortholog_evalue",
-                                    "seed_ortholog_score",	"predicted_gene_name", "GO_terms",
-                                    "KEGG_KOs", "BiGG_reactions", "Annotation_tax_scope", "OGs",
-                                    "bestOG|evalue|score", "COG cat", "eggNOG annot"),
-                      col_types = cols(.default = col_character(),
-                                       seed_ortholog_score = col_double(),
-                                       seed_ortholog_evalue = col_double()))
-    annot
     
-    # Reformat gene name
-    annot <- annot %>%
-      mutate(gene_id = str_replace(string = query_name,
-                                   pattern = "\\([+-]\\)_[0-9]",
-                                   replacement = "")) %>%
-      select(gene_id, everything(), -query_name, -seed_ortholog_evalue, -seed_ortholog_score,
-             -Annotation_tax_scope)
-    annot
-    
-    # Select onl tested genes
-    # Only these will be considered in the universe background
-    annot <- annot %>% filter(gene_id %in% genes_tested$gene_id)
-    
-    # Get background
-    og_bg <- annot$OGs %>% map(str_split, pattern = ",") %>% unlist %>% table
-    go_bg <- annot$GO_terms %>% map(str_split, pattern = ",") %>% unlist %>% table
-    ko_bg <- annot$KEGG_KOs %>% map(str_split, pattern = ",") %>% unlist %>% table
-    
-    OG_bg <- sum_vecs(OG_bg, og_bg)
-    GO_bg <- sum_vecs(GO_bg, go_bg)
-    KO_bg <- sum_vecs(KO_bg, ko_bg)
     
     # Match genes and annotations
     genes <- sig_genes %>% left_join(annot)
@@ -221,7 +300,7 @@ for(spec in genomes){
                     AnnotationDbi::select(GO.db::GO.db, .,
                                           columns = c("ONTOLOGY","TERM","DEFINITION")))
       
-      filename <- paste0(args$prefix, "go_enrichments.txt", collapse = ".")
+      filename <- paste0(c(args$prefix, "go_enrichments.txt"), collapse = ".")
       filename <- file.path(args$outdir, filename)
       write_tsv(gos_res, filename)
     }
