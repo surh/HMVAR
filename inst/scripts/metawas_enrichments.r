@@ -48,7 +48,7 @@ process_annotation <- function(annot,
                            match_go = match_go)
     filename <- paste0(c(prefix, annotation, "enrichments.txt"), collapse = ".")
     filename <- file.path(outdir, filename)
-    write_tsv(BG, filename)
+    write_tsv(res, filename)
   }
   
   # Write background
@@ -84,7 +84,13 @@ test_annotation <- function(BG, count_thres = 3, match_go = TRUE){
   
   # Test
   test_res <- to_test %>%
-    left_join(bg_counts, by = "term") %>%
+    left_join(bg_counts, by = "term") 
+  
+  if(nrow(test_res) == 0){
+    return(test_res)
+  }
+  
+  test_res <- test_res %>%
     pmap_dfr(function(term, n.sig, n.bg, selection.size, bg.size){
       mat <- matrix(c(n.sig, n.bg, selection.size, bg.size), ncol = 2)
       res <- fisher.test(mat)
@@ -272,165 +278,27 @@ metawas_gene_counts(metawas = metawas,
                     outdir = args$outdir,
                     prefix = args$prefix)
 
-
-######
-
-# Create gene-annot table
-annotation <- "GO_terms"
-
-
-test_annotation(BG = BG)
-
-
-
-
-filename <- paste0(c(args$prefix, annotation, "enrichments.txt"), collapse = ".")
-filename <- file.path(args$outdir, filename)
-write_tsv(test_res, filename)
-
-
-
-
-#####
-# Get background
-og_bg <- annot$OGs %>% map(str_split, pattern = ",") %>% unlist %>% table
-go_bg <- annot$GO_terms %>% map(str_split, pattern = ",") %>% unlist %>% table
-ko_bg <- annot$KEGG_KOs %>% map(str_split, pattern = ",") %>% unlist %>% table
-
-OG_bg <- sum_vecs(OG_bg, og_bg)
-GO_bg <- sum_vecs(GO_bg, go_bg)
-KO_bg <- sum_vecs(KO_bg, ko_bg)
-
-    
-    
-    
-    # Match genes and annotations
-    genes <- sig_genes %>% left_join(annot)
-    genes
-    # filename <- paste0(genes_dir, "/", spec, "_genes.annot")
-    # write_tsv(genes, filename)
-    GENES <- GENES %>% bind_rows(genes)
-    
-    # Calculate enrichment
-    # ogs <- genes$OGs
-    # ogs <- ogs[ !is.na(ogs) ]
-    # ogs <- ogs %>% map(str_split, pattern = ',') %>% unlist %>% table
-    gos <- genes$GO_terms
-    gos <- gos[ !is.na(gos) ]
-    gos <- gos %>% map(str_split, pattern = ',') %>% unlist %>% table
-    gos <- gos[ gos >= args$count_thres ]
-    kos <- genes$KEGG_KOs
-    kos <- kos[ !is.na(kos) ]
-    kos <- kos %>% map(str_split, pattern = ',') %>% unlist %>% table
-    kos <- kos[ kos >= args$count_thres ]
-    
-    if(length(gos) > 0){
-      gos <- tibble(term = names(gos), n = gos)
-      gos_res <- gos %>% pmap_dfr(function(term,n,bg = go_bg, total = sum(gos$n)){
-        term_bg <- bg[term]
-        mat <- matrix(c(n, total, term_bg, sum(bg)), ncol = 2)
-        res <- fisher.test(mat)
-        p.value <- res$p.value
-        OR <- res$estimate
-        tibble(term = term, n = n, OR = OR, p.value = p.value)
-      }) %>% mutate(q.value = p.adjust(p.value, 'fdr')) %>%
-        arrange(q.value)
-      
-      gos_res <- gos_res %>%
-        bind_cols(gos_res %>%
-                    select(term) %>%
-                    unlist %>%
-                    AnnotationDbi::select(GO.db::GO.db, .,
-                                          columns = c("ONTOLOGY","TERM","DEFINITION")))
-      
-      filename <- paste0(c(args$prefix, "go_enrichments.txt"), collapse = ".")
-      filename <- file.path(args$outdir, filename)
-      write_tsv(gos_res, filename)
-    }
-    
-    if(length(kos) > 0){
-      kos <- tibble(term = names(kos), n = kos)
-      kos_res <- kos %>% pmap_dfr(function(term,n,bg = ko_bg, total = sum(kos$n)){
-        term_bg <- bg[term]
-        mat <- matrix(c(n, total, term_bg, sum(bg)), ncol = 2)
-        res <- fisher.test(mat)
-        p.value <- res$p.value
-        OR <- res$estimate
-        tibble(term = term, n = n, OR = OR, p.value = p.value)
-      }) %>% mutate(q.value = p.adjust(p.value, 'fdr')) %>%
-        arrange(q.value)
-      filename <- paste0(enrich_dir, "/", spec, "_ko.enrich.txt")
-      write_tsv(kos_res, filename)
-    }
-  }
-  
-  rm(genes,kos, gos, annot, metawas)
-}
-
-
-
-rm(og_bg, go_bg, ko_bg)
-
-
-
-ogs <- GENES$OGs
-ogs <- ogs[ !is.na(ogs) ]
-ogs <- ogs %>% map(str_split, pattern = ',') %>% unlist %>% table
-ogs <- ogs[ ogs >= count_thres ]
-gos <- GENES$GO_terms
-gos <- gos[ !is.na(gos) ]
-gos <- gos %>% map(str_split, pattern = ',') %>% unlist %>% table
-gos <- gos[ gos >= count_thres ]
-kos <- GENES$KEGG_KOs
-kos <- kos[ !is.na(kos) ]
-kos <- kos %>% map(str_split, pattern = ',') %>% unlist %>% table
-kos <- kos[ kos >= count_thres ]
-
-
-
-if(length(gos) > 0){
-  gos <- tibble(term = names(gos), n = gos)
-  gos_res <- gos %>% pmap_dfr(function(term,n,bg = GO_bg, total = sum(gos$n)){
-    term_bg <- bg[term]
-    mat <- matrix(c(n, total, term_bg, sum(bg)), ncol = 2)
-    res <- fisher.test(mat)
-    p.value <- res$p.value
-    OR <- res$estimate
-    tibble(term = term, n = n, OR = OR, p.value = p.value)
-  }) %>% mutate(q.value = p.adjust(p.value, 'fdr')) %>%
-    arrange(q.value)
-  filename <- paste0(outdir, "/overall_go.enrich.txt")
-  write_tsv(gos_res, filename)
-}
-
-
-if(length(kos) > 0){
-  kos <- tibble(term = names(kos), n = kos)
-  kos_res <- kos %>% pmap_dfr(function(term,n,bg = KO_bg, total = sum(kos$n)){
-    term_bg <- bg[term]
-    mat <- matrix(c(n, total, term_bg, sum(bg)), ncol = 2)
-    res <- fisher.test(mat)
-    p.value <- res$p.value
-    OR <- res$estimate
-    tibble(term = term, n = n, OR = OR, p.value = p.value)
-  }) %>% mutate(q.value = p.adjust(p.value, 'fdr')) %>%
-    arrange(q.value)
-  filename <- paste0(outdir, "/overall_ko.enrich.txt")
-  write_tsv(kos_res, filename)
-}
-
-
-if(length(ogs) > 0){
-  ogs <- tibble(term = names(ogs), n = ogs)
-  ogs_res <- ogs %>% pmap_dfr(function(term,n,bg = OG_bg, total = sum(ogs$n)){
-    term_bg <- bg[term]
-    mat <- matrix(c(n, total, term_bg, sum(bg)), ncol = 2)
-    res <- fisher.test(mat)
-    p.value <- res$p.value
-    OR <- res$estimate
-    tibble(term = term, n = n, OR = OR, p.value = p.value)
-  }) %>% mutate(q.value = p.adjust(p.value, 'fdr')) %>%
-    arrange(q.value)
-  filename <- paste0(outdir, "/overall_og.enrich.txt")
-  write_tsv(ogs_res, filename)
-}
+# Test GO
+process_annotation(annot = annot,
+                   annotation = "GO_terms",
+                   outdir = args$outdir,
+                   prefix = args$prefix,
+                   test = TRUE,
+                   count_thres = args$count_thres,
+                   match_go = TRUE)
+# Test KO
+process_annotation(annot = annot,
+                   annotation = "KEGG_KOs",
+                   outdir = args$outdir,
+                   prefix = args$prefix,
+                   test = TRUE,
+                   count_thres = args$count_thres,
+                   match_go = FALSE)
+# Test eggNOG
+process_annotation(annot = annot,
+                   annotation = "OGs",
+                   outdir = args$outdir,
+                   prefix = args$prefix,
+                   test = TRUE,
+                   count_thres = args$count_thres,
+                   match_go = FALSE)
