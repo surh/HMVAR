@@ -51,7 +51,7 @@ p1 <- means %>%
   ggplot(aes(x = site, y = spec)) +
   geom_tile(aes(fill = log10(mean))) +
   scale_fill_continuous(low = "white", high = "darkred")
-filename <- paste0(c(g, "mean_abundances.png"), collapse = ".")
+filename <- paste0(c("mean_abundances.png"), collapse = ".")
 filename <- file.path(args$outdir, filename)
 ggsave(filename, p1, width = 6, height = 15, dpi = 200)
 
@@ -60,11 +60,9 @@ p1 <- medians %>%
   ggplot(aes(x = site, y = spec)) +
   geom_tile(aes(fill = log10(median))) +
   scale_fill_continuous(low = "white", high = "darkred")
-filename <- paste0(c(g, "median_abundances.png"), collapse = ".")
+filename <- paste0(c("median_abundances.png"), collapse = ".")
 filename <- file.path(args$outdir, filename)
 ggsave(filename, p1, width = 6, height = 15, dpi = 200)
-
-
 
 Freqs <- means %>%
   full_join(medians, by = "spec", suffix = c(".mean", ".median")) %>%
