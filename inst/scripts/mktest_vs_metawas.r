@@ -53,8 +53,8 @@ match_metawas_mktest <- function(spec, mktest, genes, outdir){
   ggsave(filename, p1, width = 6, height = 5, dpi = 200)
   
   if(sum(Genes$n.sig > 0) > 0){
-    test <- wilcox.test(Genes$kaks[Genes$n.sig == 0],
-                        Genes$kaks[Genes$n.sig > 0],
+    test <- wilcox.test(Genes$mkratio[Genes$n.sig == 0],
+                        Genes$mkratio[Genes$n.sig > 0],
                         alternative = "less")
   }else{
     test <- list(p.value = 1)
@@ -98,7 +98,8 @@ match_metawas_mktest <- function(spec, mktest, genes, outdir){
 
 args <- list(mkdir = "../2019-04-02.hmp_mktest_data/Buccal.mucosa/results/",
              metawasdir = "../today3/Buccal.mucosa/enrichments/enrichments/",
-             outdir = "results/")
+             outdir = "results/",
+             overall_out = "overall/")
 # args <- list(mkdir = opts[1],
 #              metawasdir = opts[2],
 #              outdir = opts[3])
@@ -135,10 +136,64 @@ Full <- files[1:4,] %>%
 
 
 
+dir.create(args$overall_out)
 
 
 
+test <- wilcox.test(Full$kaks[Full$n.sig == 0],
+                    Full$kaks[Full$n.sig > 0],
+                    alternative = "less")
+p1 <- Full %>%
+  ggplot(aes(x = n.sig > 0, y = kaks)) +
+  geom_violin(draw_quantiles = 0.5) +
+  geom_point(aes(col = spec), 
+             position = position_jitter(width = 0.2),
+             size = 0.1) +
+  scale_y_log10() +
+  ggtitle(label = "", subtitle = test$p.value) +
+  AMOR::theme_blackbox()
+p1
+filename <- paste0(c("overall","nsig_vs_kaks.png"), collapse = ".")
+filename <- file.path(args$overall_out, filename)
+ggsave(filename, p1, width = 8, height = 5, dpi = 200)
 
+test <- wilcox.test(Full$mkratio[Full$n.sig == 0],
+                    Full$mkratio[Full$n.sig > 0],
+                    alternative = "less")
+p1 <- Full %>%
+  ggplot(aes(x = n.sig > 0, y = mkratio)) +
+  geom_violin(draw_quantiles = 0.5) +
+  geom_point(aes(col = spec), 
+             position = position_jitter(width = 0.2),
+             size = 0.1) +
+  scale_y_log10() +
+  ggtitle(label = "", subtitle = test$p.value) +
+  AMOR::theme_blackbox()
+p1
+filename <- paste0(c("overall","nsig_vs_mkratio.png"), collapse = ".")
+filename <- file.path(args$overall_out, filename)
+ggsave(filename, p1, width = 6, height = 5, dpi = 200)
 
+p1 <- Full %>%
+  filter(n.sig > 0) %>%
+  ggplot(aes(x = n.sig / n.variants, y = kaks)) +
+  geom_point(aes(col = spec)) +
+  geom_smooth(method = "lm") +
+  AMOR::theme_blackbox()
+p1
+filename <- paste0(c("overall","sigprop_vs_kaks.png"), collapse = ".")
+filename <- file.path(outdir, filename)
+ggsave(filename, p1, width = 6, height = 5, dpi = 200)
+
+p1 <- Full %>%
+  filter(n.sig > 0) %>%
+  ggplot(aes(x = n.sig / n.variants, y = mkratio)) +
+  geom_point(aes(col = spec)) +
+  geom_smooth(method = "lm") +
+  AMOR::theme_blackbox()
+p1
+filename <- paste0(c("overall","sigprop_vs_mkratio.png"), collapse = ".")
+filename <- file.path(outdir, filename)
+ggsave(filename, p1, width = 6, height = 5, dpi = 200)
 
 
