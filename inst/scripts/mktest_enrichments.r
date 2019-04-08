@@ -4,7 +4,7 @@ process_annotation <- function(mkres, sig_genes,
                                annotation = "GO_terms",
                                count_thres = 3,
                                match_go = TRUE){
-  annotation <- "KEGG_KOs"
+  # annotation <- "KEGG_KOs"
   
   BG <- mkres %>%
     select(gene_id, annot = annotation) %>%
@@ -125,9 +125,9 @@ process_mkres <- function(spec, mktest, annots){
 }
 
 
-args <- list(mkdir = "../2019-04-02.hmp_mktest_data/Buccal.mucosa/results/",
-             annotdir = "../2019-04-01.hmp_subsite_annotations/hmp.subsite_annotations/",
-             outdir = "Buccal.mucosa/")
+# args <- list(mkdir = "../2019-04-02.hmp_mktest_data/Buccal.mucosa/results/",
+#              annotdir = "../2019-04-01.hmp_subsite_annotations/hmp.subsite_annotations/",
+#              outdir = "Buccal.mucosa/")
 args <- list(mkdir = opts[1],
              annotdir = opts[2],
              outdir = opts[3])
