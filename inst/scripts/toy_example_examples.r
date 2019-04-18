@@ -63,28 +63,14 @@ mktable
 ############
 
 m <- dplyr::tibble(sample = letters[1:6], Group = rep(LETTERS[1:2], each = 3))
-m
-info
 i <- dplyr::tibble(site_id = 's1')
-i
-
 d <- dplyr::tibble(site_id = i$site_id, a = 1, b = 1, c = 1 , d = 1, e = 1, f = 1)
-d
-
 f <- dplyr::tibble(site_id = i$site_id, a = 0, b = 0, c = 0, d = 1, e = 1, f = 1)
-f
-
-
 r <- determine_snp_dist(info = i, freq = f, depth = d, map = m, depth_thres = 1, freq_thres = 0.5)
-
 e <- tibble(site_id = i$site_id, distribution = factor("Fixed", levels = c("Fixed", "Invariant", "Polymorphic")))
-e
 
-
-f <- dplyr::tibble(site_id = i$site_id,
-                   a = 0.1, b = 0.1, c = 0.1,
-                   d = 0, e = 0, f = 0)
-e <- tibble(site_id = i$site_id,
-            distribution = factor("Invariant", levels = c("Fixed", "Invariant", "Polymorphic")))
-e
-determine_snp_dist(info = i, freq = f, depth = d, map = m, depth_thres = 1, freq_thres = 0.9)
+i <- dplyr::tibble(site_id = 's1', major_allele = 'A', minor_allele = 'C', amino_acids = 'A,A,A,A')
+i
+i <- dplyr::tibble(site_id = 's1', major_allele = 'A', minor_allele = 'C', amino_acids = 'A,A,A,A',
+                   snp_effect = 'synonymous')
+determine_snp_effect(info = i)
