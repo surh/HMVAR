@@ -1,4 +1,4 @@
-# (C) Copyright 2018 Sur Herrera Paredes
+# (C) Copyright 2018-2019 Sur Herrera Paredes
 # 
 # This file is part of HMVAR.
 # 
@@ -484,6 +484,10 @@ mkvalues <- function(info){
 #' The value represents the distance from 0 or 1, for a site to be
 #' assigned to the major or minor allele respectively. It must be
 #' a value in [0,1].
+#' @param focal_group A string indicating the group that should
+#' be compared to everything else. If different from NA, all values
+#' in the 'Group' column of the mapping file will be converted to
+#' "non.<focal_group>", ensuring a dichotomous grouping.
 #'
 #' @return A data table containing the McDonald-Kreitman
 #' contingency table per gene.
@@ -492,7 +496,7 @@ mkvalues <- function(info){
 #' 
 #' @importFrom magrittr %>%
 #' @importFrom readr read_tsv
-#' @importFrom dplyr select
+#' @importFrom dplyr select mutate
 #' @importFrom purrr map_dfr
 #' 
 #' @examples 
@@ -516,7 +520,8 @@ midas_mktest <- function(midas_dir, map,
                          map_file,
                          genes = NULL,
                          depth_thres = 1,
-                         freq_thres = 0.5){
+                         freq_thres = 0.5,
+                         focal_group = NA){
   
   # Backwards compatibility with map_file.
   if(missing(map) && !missing(map_file)){
@@ -528,7 +533,6 @@ midas_mktest <- function(midas_dir, map,
     # Read and process map
     map <- readr::read_tsv(map,
                            col_types = readr::cols(.default = readr::col_character()))
-    
     # Rename map columns
     map <- map %>% 
       dplyr::select(sample = ID, Group) 
@@ -538,6 +542,14 @@ midas_mktest <- function(midas_dir, map,
     }
   }else{
     stop("ERROR: map must be a file path or a data.frame/tibble")
+  }
+  
+  # Compare everything to focal_group
+  if(!is.na(focal_group)){
+    map <- map %>%
+      dplyr::mutate(Group = replace(Group,
+                                    Group != focal_group,
+                                    paste0("non.", focal_group)))
   }
   
   # Read data

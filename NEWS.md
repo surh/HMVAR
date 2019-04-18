@@ -1,16 +1,19 @@
 # 0.1-1
-1. Flipping mice imputation matrix. Added support for blocks.
+1. Overall cleaning and NAMESPACE update
+2. Adding focal group map pre-processing option for
+midas_mktest function and mktest,r executable script.
+3. Flipping mice imputation matrix. Added support for blocks.
 NEED TO DOCUMENT block_size
-2. Reverting to standard alphanumeric names for chromosomes
+4. Reverting to standard alphanumeric names for chromosomes
 in BIMBAM format.
-3. Eliminating annoying messages from read_midas_abun.
-4. Adding toy example in MIDAS format (Issue
+5. Eliminating annoying messages from read_midas_abun.
+6. Adding toy example in MIDAS format (Issue
 https://github.com/surh/HMVAR/issues/6).
-5. Updating `read_midas_data` function, and adding examples.
-6. Function `midas_mktest` now accepts either a file path to map
+7. Updating `read_midas_data` function, and adding examples.
+8. Function `midas_mktest` now accepts either a file path to map
 or a data frame witht the map. It also has examples.
-7. Examples for functions that calculate MK contingency table.
-8. Added unit testing support via testhat (Issue
+9. Examples for functions that calculate MK contingency table.
+10. Added unit testing support via testhat (Issue
 https://github.com/surh/HMVAR/issues/25).
 
 # 0.1-0
