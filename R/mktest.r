@@ -388,9 +388,10 @@ determine_snp_dist <- function(info, freq, depth, map,
     dplyr::inner_join(freq, by = c("site_id", "sample")) %>%
     dplyr::left_join(map, by = "sample") %>%
     dplyr::filter(depth >= depth_thres) %>%
-    dplyr::mutate(allele = replace(freq, freq < freq_thres, 'major')) %>%
+    dplyr::filter(freq != 0.5) %>%
+    dplyr::mutate(allele = replace(freq, freq <= freq_thres, 'major')) %>%
     dplyr::mutate(allele = replace(allele, freq >= (1 - freq_thres), 'minor')) %>%
-    dplyr::mutate(allele = replace(allele, (freq >= freq_thres) & (freq < (1 - freq_thres)), NA)) %>%
+    dplyr::mutate(allele = replace(allele, (freq > freq_thres) & (freq < (1 - freq_thres)), NA)) %>%
     dplyr::filter(!is.na(allele))
   
   site_dist <- dat %>%
