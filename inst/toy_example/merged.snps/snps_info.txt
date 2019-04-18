@@ -3,7 +3,7 @@ snv1	contig1	1	A	A	C	9	1	1	1	1	CDS	GENE1	bi	4D	T,T,T,T
 snv2	contig1	2	A	C	T	9	1	1	1	1	CDS	GENE1	bi	1D	N,H,D,Y
 snv3	contig1	3	A	G	A	9	1	1	1	1	CDS	GENE1	bi	4D	T,T,T,T
 snv4	contig1	4	A	T	G	9	1	1	1	1	CDS	GENE1	bi	4D	T,T,T,T
-snv5	contig1	5	A	A	C	8	1	1	1	1			bi		
+snv5	contig1	5	A	A	C	8	1	1	1	1	IGR	NA	bi	NA	NA
 snv6	contig1	6	A	C	T	10	1	1	1	1	CDS	GENE2	bi	1D	N,H,D,Y
 snv7	contig1	7	A	G	A	9	1	1	1	1	CDS	GENE2	bi	1D	N,H,D,Y
 snv8	contig1	8	A	T	G	10	1	1	1	1	CDS	GENE2	bi	1D	N,H,D,Y
@@ -15,13 +15,13 @@ snv13	contig1	13	A	A	C	10	1	1	1	1	CDS	GENE2	bi	4D	T,T,T,T
 snv14	contig1	14	A	C	T	10	1	1	1	1	CDS	GENE2	bi	1D	N,H,D,Y
 snv15	contig1	15	A	G	A	9	1	1	1	1	CDS	GENE2	bi	4D	T,T,T,T
 snv16	contig1	16	A	T	G	9	1	1	1	1	CDS	GENE2	bi	4D	T,T,T,T
-snv17	contig1	17	A	A	C	8	1	1	1	1	rRNA	RNA1	bi		
-snv18	contig1	18	A	C	T	10	1	1	1	1	rRNA	RNA1	bi		
-snv19	contig1	19	A	G	A	10	1	1	1	1	rRNA	RNA1	bi		
-snv20	contig1	20	A	T	G	9	1	1	1	1	rRNA	RNA1	bi		
-snv21	contig1	21	A	A	C	8	1	1	1	1	rRNA	RNA1	bi		
-snv22	contig1	22	A	C	T	8	1	1	1	1	rRNA	RNA1	bi		
-snv23	contig1	23	A	G	A	9	1	1	1	1	rRNA	RNA1	bi		
+snv17	contig1	17	A	A	C	8	1	1	1	1	rRNA	RNA1	bi	NA	NA
+snv18	contig1	18	A	C	T	10	1	1	1	1	rRNA	RNA1	bi	NA	NA
+snv19	contig1	19	A	G	A	10	1	1	1	1	rRNA	RNA1	bi	NA	NA
+snv20	contig1	20	A	T	G	9	1	1	1	1	rRNA	RNA1	bi	NA	NA
+snv21	contig1	21	A	A	C	8	1	1	1	1	rRNA	RNA1	bi	NA	NA
+snv22	contig1	22	A	C	T	8	1	1	1	1	rRNA	RNA1	bi	NA	NA
+snv23	contig1	23	A	G	A	9	1	1	1	1	rRNA	RNA1	bi	NA	NA
 snv24	contig1	24	A	T	G	10	1	1	1	1	CDS	GENE3	bi	4D	T,T,T,T
 snv25	contig1	25	A	A	C	9	1	1	1	1	CDS	GENE3	bi	4D	T,T,T,T
 snv26	contig1	26	A	C	T	10	1	1	1	1	CDS	GENE3	bi	4D	T,T,T,T
@@ -98,4 +98,4 @@ snv96	contig2	57	A	T	G	10	1	1	1	1	CDS	GENE11	bi	4D	T,T,T,T
 snv97	contig2	58	A	A	C	10	1	1	1	1	CDS	GENE11	bi	1D	N,H,D,Y
 snv98	contig2	59	A	C	T	10	1	1	1	1	CDS	GENE11	bi	4D	T,T,T,T
 snv99	contig2	60	A	G	A	10	1	1	1	1	CDS	GENE11	bi	1D	N,H,D,Y
-snv100	contig2	61	A	T	G	10	1	1	1	1			bi		
+snv100	contig2	61	A	T	G	10	1	1	1	1	IGR	NA	bi	NA	
