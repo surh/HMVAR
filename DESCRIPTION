@@ -17,6 +17,8 @@ Imports:
 	bugwas
 Recomends:
   svglite
+Suggests: 
+    testthat
 Date: 2019-03-22
 Authors@R: c(person("Sur", "Herrera Paredes", role = c("aut", "cre"), email = "surh@stanford.edu"))
 License: GPL-3
