@@ -9,6 +9,7 @@ https://github.com/surh/HMVAR/issues/6).
 5. Updating `read_midas_data` function, and adding examples.
 6. Function `midas_mktest` now accepts either a file path to map
 or a data frame witht the map. It also has examples.
+7. Examples for functions that calculate MK contingency table.
 
 # 0.1-0
 1. Added exectuable script to perform mktest.
