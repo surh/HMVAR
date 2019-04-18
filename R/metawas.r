@@ -41,7 +41,8 @@
 #' 
 #' @importFrom magrittr %>%
 benchmark_imputation <- function(geno, snp, outdir, p = 0.1 ,
-                                 m = 5, verbose = FALSE, seed = NA){
+                                 m = 5, verbose = FALSE, seed = NA,
+                                 block_size = 100){
   dir.create(outdir)
   
   # Select positions to impute
@@ -79,7 +80,8 @@ benchmark_imputation <- function(geno, snp, outdir, p = 0.1 ,
                                       verbose = verbose,
                                       prefix = "imputed",
                                       return_table = TRUE,
-                                      seed = seed))
+                                      seed = seed,
+                                      block_size = block_size))
   
   # Check imputation output
   if( any(imp$imp$site_id != geno_hidden$site_id)){
@@ -316,7 +318,8 @@ mice_impute <- function(geno, snp,
                         verbose = FALSE,
                         prefix = "imputed",
                         return_table = FALSE,
-                        seed = NA){
+                        seed = NA,
+                        block_size = 100){
   
   if(any(geno$site_id != snp$ID)){
     stop("ERROR: geno and snp tables do not match", call. = TRUE)
@@ -324,7 +327,7 @@ mice_impute <- function(geno, snp,
   
   imp <- geno %>%
     split(snp$chr) %>%
-    purrr::map_dfr(~tidy_mice(.), m1 = m, verbose = verbose, seed = seed) %>%
+    purrr::map_dfr(~tidy_mice(.), m1 = m, verbose = verbose, seed = seed, block_size = block_size) %>%
     dplyr::arrange(match(site_id, snp$ID))
   
   # Write results
@@ -354,7 +357,8 @@ mice_impute <- function(geno, snp,
 #' @return A tibble with imputed results
 #' 
 #' @importFrom magrittr %>%
-tidy_mice <- function(d, m = 5, verbose = FALSE, seed = NA){
+tidy_mice <- function(d, m = 5, verbose = FALSE, seed = NA, block_size = 100){
+  cat("Welcome to tidy...\n")
   res <- d %>%
     dplyr::select(site_id, minor_allele, major_allele)
   
@@ -366,11 +370,41 @@ tidy_mice <- function(d, m = 5, verbose = FALSE, seed = NA){
     return(res %>% dplyr::left_join(d, by = "site_id"))
   }
   
+  if(block_size > 0){
+    pred <- sapply(1:nrow(d), create_blocks, block_size = block_size, total_pos = nrow(d))
+    diag(pred) <- 0
+  }else{
+    pred <- matrix(1, nrow = nrow(d), ncol = nrow(10))
+    diag(pred) <- 0
+  }
+  
+  ids <- d$site_id
+  samples <- colnames(d)[-(1:3)]
   d <- d %>%
-    dplyr::select(-minor_allele, -major_allele) %>%
-    mice::mice(m = m, printFlag = verbose, seed = seed) %>% 
+    dplyr::select(-site_id, -minor_allele, -major_allele) %>%
+    t %>% mice::mice(m = m, printFlag = verbose, seed = seed, method = "pmm", predictorMatrix = pred) %>%
     mice::complete() %>%
-    dplyr::as_tibble()
+    t
+  colnames(d) <- samples
+  d <- bind_cols(tibble(site_id = ids), as_tibble(d))
+  # d <- d %>%
+  #   dplyr::select(-minor_allele, -major_allele) %>%
+  #   mice::mice(m = m, printFlag = verbose, seed = seed) %>% 
+  #   mice::complete() %>%
+  #   dplyr::as_tibble()
   
   res %>% dplyr::left_join(d, by = "site_id")
+}
+
+
+create_blocks <- function(i, block_size=3, total_pos=10){
+  start <- i - ceiling(block_size / 2) + 1
+  end <- start + block_size - 1
+  start <- max(start, 1)
+  end <- min(total_pos, end)
+  
+  v <- rep(0, length.out = total_pos)
+  v[start:end] <- 1
+  
+  v
 }

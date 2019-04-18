@@ -5,7 +5,7 @@
 \title{Benchmark mice imputation}
 \usage{
 benchmark_imputation(geno, snp, outdir, p = 0.1, m = 5,
-  verbose = FALSE, seed = NA)
+  verbose = FALSE, seed = NA, block_size = 100)
 }
 \arguments{
 \item{geno}{A data table in BIMBAM format. Must contain

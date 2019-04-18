@@ -167,6 +167,30 @@ select_samples_from_abun <- function(abun, map){
 #' @importFrom stringr str_split
 #' @importFrom magrittr %>%
 #' @importFrom tibble add_column
+#' 
+#' @examples
+#' library(HMVAR)
+#' 
+#' # Get file paths
+#' midas_dir <- system.file("toy_example/merged.snps/", package = "HMVAR")
+#' map <- readr::read_tsv(system.file("toy_example/map.txt", package = "HMVAR"),
+#'                        col_types = readr::cols(.default = readr::col_character())) %>%
+#'   dplyr::select(sample = ID, Group)
+#' 
+#' # Read data
+#' midas_data <- read_midas_data(midas_dir = midas_dir, map = map, cds_only = TRUE)
+#' 
+#' info <- determine_snp_effect(midas_data$info) %>%
+#'   determine_snp_dist(freq = midas_data$freq,
+#'                      depth = midas_data$depth, map = map,
+#'                      depth_thres = 1, freq_thres = 0.5)
+#' info
+#' 
+#' mktable <- info %>%
+#'   split(.$gene_id) %>%
+#'   purrr::map_dfr(mkvalues,
+#'                  .id = "gene_id")
+#' mktable
 determine_snp_effect <- function(info, nucleotides=c(A = 1, C = 2, G = 3, T = 4)){
   snp_effect <- info %>%
     dplyr::select(site_id, major_allele, minor_allele, amino_acids) %>%
@@ -319,6 +343,30 @@ get_site_dist <- function(d, group_thres = 2){
 #' @importFrom dplyr inner_join left_join filter mutate
 #' @importFrom purrr map_chr
 #' @importFrom tibble tibble
+#' 
+#' @examples
+#' library(HMVAR)
+#' 
+#' # Get file paths
+#' midas_dir <- system.file("toy_example/merged.snps/", package = "HMVAR")
+#' map <- readr::read_tsv(system.file("toy_example/map.txt", package = "HMVAR"),
+#'                        col_types = readr::cols(.default = readr::col_character())) %>%
+#'   dplyr::select(sample = ID, Group)
+#' 
+#' # Read data
+#' midas_data <- read_midas_data(midas_dir = midas_dir, map = map, cds_only = TRUE)
+#' 
+#' info <- determine_snp_effect(midas_data$info) %>%
+#'   determine_snp_dist(freq = midas_data$freq,
+#'                      depth = midas_data$depth, map = map,
+#'                      depth_thres = 1, freq_thres = 0.5)
+#' info
+#' 
+#' mktable <- info %>%
+#'   split(.$gene_id) %>%
+#'   purrr::map_dfr(mkvalues,
+#'                  .id = "gene_id")
+#' mktable
 determine_snp_dist <- function(info, freq, depth, map,
                                depth_thres = 1,
                                freq_thres = 0.5){
@@ -374,6 +422,30 @@ determine_snp_dist <- function(info, freq, depth, map,
 #' 
 #' @importFrom dplyr select
 #' @importFrom magrittr %>%
+#' 
+#' @examples
+#' library(HMVAR)
+#' 
+#' # Get file paths
+#' midas_dir <- system.file("toy_example/merged.snps/", package = "HMVAR")
+#' map <- readr::read_tsv(system.file("toy_example/map.txt", package = "HMVAR"),
+#'                        col_types = readr::cols(.default = readr::col_character())) %>%
+#'   dplyr::select(sample = ID, Group)
+#' 
+#' # Read data
+#' midas_data <- read_midas_data(midas_dir = midas_dir, map = map, cds_only = TRUE)
+#' 
+#' info <- determine_snp_effect(midas_data$info) %>%
+#'   determine_snp_dist(freq = midas_data$freq,
+#'                      depth = midas_data$depth, map = map,
+#'                      depth_thres = 1, freq_thres = 0.5)
+#' info
+#' 
+#' mktable <- info %>%
+#'   split(.$gene_id) %>%
+#'   purrr::map_dfr(mkvalues,
+#'                  .id = "gene_id")
+#' mktable
 mkvalues <- function(info){
   
   tab <- info %>% 
@@ -395,9 +467,12 @@ mkvalues <- function(info){
 #' @param midas_dir Directory where the output from
 #' midas_merge.py is located. It must include files:
 #' 'snps_info.txt', 'snps_depth.txt' and 'snps_freq.txt'.
-#' @param map_file A mapping file associating samples
+#' @param map Either  a file path or a tibble. If a path,
+#' it mos point to a mapping file associating samples
 #' in the MIDAS otput to groups. It must have an 'ID'
-#' and a 'Group' column.
+#' and a 'Group' column. If a tibble. It must have columns
+#' 'sample' and 'Group'.
+#' @param map_file Same as map. Present for backwards compatibility.
 #' @param genes The list of genes that are to be tested.
 #' Must correspond to entries in the 'genes_id' column
 #' of the 'snps_info.txt' file. If NULL, all genes will
@@ -423,16 +498,51 @@ mkvalues <- function(info){
 #' @importFrom readr read_tsv
 #' @importFrom dplyr select mutate
 #' @importFrom purrr map_dfr
-midas_mktest <- function(midas_dir, map_file,
+#' 
+#' @examples 
+#' library(HMVAR)
+#' 
+#' # Get paths
+#' midas_dir <- system.file("toy_example/merged.snps/", package = "HMVAR")
+#' map_file <- system.file("toy_example/map.txt", package = "HMVAR")
+#' 
+#' # Process map yourself
+#' map <- readr::read_tsv(map_file,
+#'                        col_types = readr::cols(.default = readr::col_character())) %>%
+#'   dplyr::select(sample = ID, Group)
+#' midas_mktest(midas_dir = midas_dir,
+#'              map = map)
+#' 
+#' # Give a map file path to midas_mktest
+#' midas_mktest(midas_dir = midas_dir,
+#'              map = map_file)
+midas_mktest <- function(midas_dir, map,
+                         map_file,
                          genes = NULL,
                          depth_thres = 1,
                          freq_thres = 0.5,
                          focal_group = NA){
-  # Read and process map
-  map <- readr::read_tsv(map_file)
-  # Rename map columns
-  map <- map %>% 
-    dplyr::select(sample = ID, Group)
+  
+  # Backwards compatibility with map_file.
+  if(missing(map) && !missing(map_file)){
+    map <- map_file
+  }
+  
+  # Process map
+  if(is.character(map) && length(map) == 1){
+    # Read and process map
+    map <- readr::read_tsv(map,
+                           col_types = readr::cols(.default = readr::col_character()))
+    # Rename map columns
+    map <- map %>% 
+      dplyr::select(sample = ID, Group) 
+  }else if(is.data.frame(map)){
+    if(!all(c("sample", "Group")  %in% colnames(map))){
+      stop("ERROR: map must contain sample and Group columns", call. = TRUE)
+    }
+  }else{
+    stop("ERROR: map must be a file path or a data.frame/tibble")
+  }
   
   # Compare everything to focal_group
   if(!is.na(focal_group)){
