@@ -395,9 +395,11 @@ mkvalues <- function(info){
 #' @param midas_dir Directory where the output from
 #' midas_merge.py is located. It must include files:
 #' 'snps_info.txt', 'snps_depth.txt' and 'snps_freq.txt'.
-#' @param map_file A mapping file associating samples
+#' @param map Either  a file path or a tibble. If a path,
+#' it mos point to a mapping file associating samples
 #' in the MIDAS otput to groups. It must have an 'ID'
-#' and a 'Group' column.
+#' and a 'Group' column. If a tibble. It must have columns
+#' 'sample' and 'Group'.
 #' @param genes The list of genes that are to be tested.
 #' Must correspond to entries in the 'genes_id' column
 #' of the 'snps_info.txt' file. If NULL, all genes will
@@ -419,15 +421,27 @@ mkvalues <- function(info){
 #' @importFrom readr read_tsv
 #' @importFrom dplyr select
 #' @importFrom purrr map_dfr
-midas_mktest <- function(midas_dir, map_file,
+midas_mktest <- function(midas_dir, map,
                          genes = NULL,
                          depth_thres = 1,
                          freq_thres = 0.5){
-  # Read and process map
-  map <- readr::read_tsv(map_file)
-  # Rename map columns
-  map <- map %>% 
-    dplyr::select(sample = ID, Group) 
+  
+  # Process map
+  if(is.character(map) && length(map) == 1){
+    # Read and process map
+    map <- readr::read_tsv(map_file,
+                           col_types = readr::cols(.default = readr::col_character()))
+    
+    # Rename map columns
+    map <- map %>% 
+      dplyr::select(sample = ID, Group) 
+  }else if(is.data.frame(map)){
+    if(!all(c("sample", "Group")  %in% colnames(map))){
+      stop("ERROR: map must contain sample and Group columns", call. = TRUE)
+    }
+  }else{
+    stop("ERROR: map must be a file path or a data.frame/tibble")
+  }
   
   # Read data
   Dat <- read_midas_data(midas_dir = midas_dir,

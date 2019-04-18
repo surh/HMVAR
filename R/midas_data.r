@@ -83,7 +83,7 @@ read_midas_abun <- function(file){
 #'   select(sample = ID, Group)
 #' 
 #' # Read data
-#' midas_data <- read_midas_data(midas_dir = midas_dir, map = map, cds_only = TRUE, genes = NULL)
+#' midas_data <- read_midas_data(midas_dir = midas_dir, map = map, cds_only = TRUE)
 #' midas_data
 read_midas_data <- function(midas_dir, map, genes = NULL, cds_only = TRUE){
   # Read data

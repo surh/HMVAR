@@ -8,7 +8,7 @@ map <- read_tsv(system.file("toy_example/map.txt", package = "HMVAR"),
   select(sample = ID, Group)
 
 # Read data
-midas_data <- read_midas_data(midas_dir = midas_dir, map = map, cds_only = TRUE, genes = NULL)
+midas_data <- read_midas_data(midas_dir = midas_dir, map = map, cds_only = TRUE)
 midas_data
 
 ########################
@@ -24,4 +24,4 @@ map <- read_tsv(system.file("toy_example/map.txt", package = "HMVAR"),
 
 # mktest
 midas_mktest(midas_dir = midas_dir,
-             map_file = system.file("toy_example/map.txt", package = "HMVAR"))
+             map = map)
