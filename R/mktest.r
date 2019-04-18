@@ -422,6 +422,24 @@ mkvalues <- function(info){
 #' @importFrom readr read_tsv
 #' @importFrom dplyr select
 #' @importFrom purrr map_dfr
+#' 
+#' @examples 
+#' library(HMVAR)
+#' 
+#' # Get paths
+#' midas_dir <- system.file("toy_example/merged.snps/", package = "HMVAR")
+#' map_file <- system.file("toy_example/map.txt", package = "HMVAR")
+#' 
+#' # Process map yourself
+#' map <- readr::read_tsv(map_file,
+#'                        col_types = readr::cols(.default = readr::col_character())) %>%
+#'   dplyr::select(sample = ID, Group)
+#' midas_mktest(midas_dir = midas_dir,
+#'              map = map)
+#' 
+#' # Give a map file path to midas_mktest
+#' midas_mktest(midas_dir = midas_dir,
+#'              map = map_file)
 midas_mktest <- function(midas_dir, map,
                          map_file,
                          genes = NULL,
@@ -436,7 +454,7 @@ midas_mktest <- function(midas_dir, map,
   # Process map
   if(is.character(map) && length(map) == 1){
     # Read and process map
-    map <- readr::read_tsv(map_file,
+    map <- readr::read_tsv(map,
                            col_types = readr::cols(.default = readr::col_character()))
     
     # Rename map columns

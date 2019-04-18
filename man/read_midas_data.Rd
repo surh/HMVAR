@@ -4,7 +4,7 @@
 \alias{read_midas_data}
 \title{Read midas snp merge data}
 \usage{
-read_midas_data(midas_dir, map, genes, cds_only = TRUE)
+read_midas_data(midas_dir, map, genes = NULL, cds_only = TRUE)
 }
 \arguments{
 \item{midas_dir}{Directory where the output from
@@ -31,4 +31,18 @@ MIDAS
 }
 \description{
 Reads the output of midas_merge.py
+}
+\examples{
+library(HMVAR)
+library(tidyverse)
+
+# Get file paths
+midas_dir <- system.file("toy_example/merged.snps/", package = "HMVAR")
+map <- read_tsv(system.file("toy_example/map.txt", package = "HMVAR"),
+                col_types = cols(.default = col_character())) \%>\%
+  select(sample = ID, Group)
+
+# Read data
+midas_data <- read_midas_data(midas_dir = midas_dir, map = map, cds_only = TRUE)
+midas_data
 }
