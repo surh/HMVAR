@@ -400,6 +400,7 @@ mkvalues <- function(info){
 #' in the MIDAS otput to groups. It must have an 'ID'
 #' and a 'Group' column. If a tibble. It must have columns
 #' 'sample' and 'Group'.
+#' @param map_file Same as map. Present for backwards compatibility.
 #' @param genes The list of genes that are to be tested.
 #' Must correspond to entries in the 'genes_id' column
 #' of the 'snps_info.txt' file. If NULL, all genes will
@@ -422,9 +423,14 @@ mkvalues <- function(info){
 #' @importFrom dplyr select
 #' @importFrom purrr map_dfr
 midas_mktest <- function(midas_dir, map,
+                         map_file,
                          genes = NULL,
                          depth_thres = 1,
                          freq_thres = 0.5){
+  
+  # Backwards compatibility with map_file.
+  a = match.call()
+  map = a[[match.arg(names(a),c("map","map_file"),several.ok = FALSE)]]
   
   # Process map
   if(is.character(map) && length(map) == 1){
