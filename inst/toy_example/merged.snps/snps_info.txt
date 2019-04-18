@@ -1,0 +1,101 @@
+site_id	ref_id	ref_pos	ref_allele	major_allele	minor_allele	count_samples	count_a	count_c	count_g	count_t	locus_type	gene_id	snp_type	amino_acids
+snv1	contig1	1	A	A	C	9	1	1	1	1	CDS	GENE1	bi	T,T,T,T
+snv2	contig1	2	A	C	T	9	1	1	1	1	CDS	GENE1	bi	N,H,D,Y
+snv3	contig1	3	A	G	A	9	1	1	1	1	CDS	GENE1	bi	T,T,T,T
+snv4	contig1	4	A	T	G	9	1	1	1	1	CDS	GENE1	bi	T,T,T,T
+snv5	contig1	5	A	A	C	8	1	1	1	1			bi	
+snv6	contig1	6	A	C	T	10	1	1	1	1	CDS	GENE2	bi	N,H,D,Y
+snv7	contig1	7	A	G	A	9	1	1	1	1	CDS	GENE2	bi	N,H,D,Y
+snv8	contig1	8	A	T	G	10	1	1	1	1	CDS	GENE2	bi	N,H,D,Y
+snv9	contig1	9	A	A	C	10	1	1	1	1	CDS	GENE2	bi	T,T,T,T
+snv10	contig1	10	A	C	T	10	1	1	1	1	CDS	GENE2	bi	T,T,T,T
+snv11	contig1	11	A	G	A	9	1	1	1	1	CDS	GENE2	bi	T,T,T,T
+snv12	contig1	12	A	T	G	9	1	1	1	1	CDS	GENE2	bi	T,T,T,T
+snv13	contig1	13	A	A	C	10	1	1	1	1	CDS	GENE2	bi	T,T,T,T
+snv14	contig1	14	A	C	T	10	1	1	1	1	CDS	GENE2	bi	N,H,D,Y
+snv15	contig1	15	A	G	A	9	1	1	1	1	CDS	GENE2	bi	T,T,T,T
+snv16	contig1	16	A	T	G	9	1	1	1	1	CDS	GENE2	bi	T,T,T,T
+snv17	contig1	17	A	A	C	8	1	1	1	1	rRNA	RNA1	bi	
+snv18	contig1	18	A	C	T	10	1	1	1	1	rRNA	RNA1	bi	
+snv19	contig1	19	A	G	A	10	1	1	1	1	rRNA	RNA1	bi	
+snv20	contig1	20	A	T	G	9	1	1	1	1	rRNA	RNA1	bi	
+snv21	contig1	21	A	A	C	8	1	1	1	1	rRNA	RNA1	bi	
+snv22	contig1	22	A	C	T	8	1	1	1	1	rRNA	RNA1	bi	
+snv23	contig1	23	A	G	A	9	1	1	1	1	rRNA	RNA1	bi	
+snv24	contig1	24	A	T	G	10	1	1	1	1	CDS	GENE3	bi	T,T,T,T
+snv25	contig1	25	A	A	C	9	1	1	1	1	CDS	GENE3	bi	T,T,T,T
+snv26	contig1	26	A	C	T	10	1	1	1	1	CDS	GENE3	bi	T,T,T,T
+snv27	contig1	27	A	G	A	5	1	1	1	1	CDS	GENE3	bi	T,T,T,T
+snv28	contig1	28	A	T	G	10	1	1	1	1	CDS	GENE3	bi	N,H,D,Y
+snv29	contig1	29	A	A	C	10	1	1	1	1	CDS	GENE3	bi	N,H,D,Y
+snv30	contig1	30	A	C	T	9	1	1	1	1	CDS	GENE3	bi	T,T,T,T
+snv31	contig1	31	A	G	A	10	1	1	1	1	CDS	GENE3	bi	T,T,T,T
+snv32	contig1	32	A	T	G	10	1	1	1	1	CDS	GENE4	bi	T,T,T,T
+snv33	contig1	33	A	A	C	9	1	1	1	1	CDS	GENE4	bi	T,T,T,T
+snv34	contig1	34	A	C	T	10	1	1	1	1	CDS	GENE4	bi	N,H,D,Y
+snv35	contig1	35	A	G	A	8	1	1	1	1	CDS	GENE4	bi	N,H,D,Y
+snv36	contig1	36	A	T	G	9	1	1	1	1	CDS	GENE4	bi	T,T,T,T
+snv37	contig1	37	A	A	C	8	1	1	1	1	CDS	GENE4	bi	N,H,D,Y
+snv38	contig1	38	A	C	T	10	1	1	1	1	CDS	GENE4	bi	N,H,D,Y
+snv39	contig1	39	A	G	A	9	1	1	1	1	CDS	GENE4	bi	T,T,T,T
+snv40	contig2	1	A	T	G	6	1	1	1	1	CDS	GENE5	bi	N,H,D,Y
+snv41	contig2	2	A	A	C	6	1	1	1	1	CDS	GENE5	bi	T,T,T,T
+snv42	contig2	3	A	C	T	5	1	1	1	1	CDS	GENE5	bi	N,H,D,Y
+snv43	contig2	4	A	G	A	5	1	1	1	1	CDS	GENE5	bi	T,T,T,T
+snv44	contig2	5	A	T	G	1	1	1	1	1	CDS	GENE5	bi	N,H,D,Y
+snv45	contig2	6	A	A	C	0	1	1	1	1	CDS	GENE5	bi	T,T,T,T
+snv46	contig2	7	A	C	T	0	1	1	1	1	CDS	GENE5	bi	N,H,D,Y
+snv47	contig2	8	A	G	A	0	1	1	1	1	CDS	GENE5	bi	T,T,T,T
+snv48	contig2	9	A	T	G	1	1	1	1	1	CDS	GENE5	bi	N,H,D,Y
+snv49	contig2	10	A	A	C	2	1	1	1	1	CDS	GENE5	bi	T,T,T,T
+snv50	contig2	11	A	C	T	1	1	1	1	1	CDS	GENE5	bi	N,H,D,Y
+snv51	contig2	12	A	G	A	10	1	1	1	1	CDS	GENE6	bi	N,H,D,Y
+snv52	contig2	13	A	T	G	10	1	1	1	1	CDS	GENE6	bi	N,H,D,Y
+snv53	contig2	14	A	A	C	10	1	1	1	1	CDS	GENE6	bi	T,T,T,T
+snv54	contig2	15	A	C	T	10	1	1	1	1	CDS	GENE6	bi	T,T,T,T
+snv55	contig2	16	A	G	A	10	1	1	1	1	CDS	GENE6	bi	T,T,T,T
+snv56	contig2	17	A	T	G	10	1	1	1	1	CDS	GENE6	bi	T,T,T,T
+snv57	contig2	18	A	A	C	10	1	1	1	1	CDS	GENE6	bi	T,T,T,T
+snv58	contig2	19	A	C	T	10	1	1	1	1	CDS	GENE6	bi	N,H,D,Y
+snv59	contig2	20	A	G	A	10	1	1	1	1	CDS	GENE7	bi	N,H,D,Y
+snv60	contig2	21	A	T	G	10	1	1	1	1	CDS	GENE7	bi	T,T,T,T
+snv61	contig2	22	A	A	C	10	1	1	1	1	CDS	GENE7	bi	N,H,D,Y
+snv62	contig2	23	A	C	T	10	1	1	1	1	CDS	GENE7	bi	T,T,T,T
+snv63	contig2	24	A	G	A	10	1	1	1	1	CDS	GENE7	bi	T,T,T,T
+snv64	contig2	25	A	T	G	10	1	1	1	1	CDS	GENE7	bi	T,T,T,T
+snv65	contig2	26	A	A	C	10	1	1	1	1	CDS	GENE7	bi	T,T,T,T
+snv66	contig2	27	A	C	T	10	1	1	1	1	CDS	GENE7	bi	T,T,T,T
+snv67	contig2	28	A	G	A	10	1	1	1	1	CDS	GENE7	bi	T,T,T,T
+snv68	contig2	29	A	T	G	10	1	1	1	1	CDS	GENE8	bi	N,H,D,Y
+snv69	contig2	30	A	A	C	10	1	1	1	1	CDS	GENE8	bi	T,T,T,T
+snv70	contig2	31	A	C	T	10	1	1	1	1	CDS	GENE8	bi	N,H,D,Y
+snv71	contig2	32	A	G	A	10	1	1	1	1	CDS	GENE8	bi	T,T,T,T
+snv72	contig2	33	A	T	G	10	1	1	1	1	CDS	GENE8	bi	N,H,D,Y
+snv73	contig2	34	A	A	C	10	1	1	1	1	CDS	GENE8	bi	T,T,T,T
+snv74	contig2	35	A	C	T	10	1	1	1	1	CDS	GENE8	bi	N,H,D,Y
+snv75	contig2	36	A	G	A	10	1	1	1	1	CDS	GENE8	bi	T,T,T,T
+snv76	contig2	37	A	T	G	10	1	1	1	1	CDS	GENE9	bi	N,H,D,Y
+snv77	contig2	38	A	A	C	10	1	1	1	1	CDS	GENE9	bi	T,T,T,T
+snv78	contig2	39	A	C	T	10	1	1	1	1	CDS	GENE9	bi	N,H,D,Y
+snv79	contig2	40	A	G	A	10	1	1	1	1	CDS	GENE9	bi	T,T,T,T
+snv80	contig2	41	A	T	G	10	1	1	1	1	CDS	GENE9	bi	T,T,T,T
+snv81	contig2	42	A	A	C	10	1	1	1	1	CDS	GENE9	bi	N,H,D,Y
+snv82	contig2	43	A	C	T	10	1	1	1	1	CDS	GENE9	bi	T,T,T,T
+snv83	contig2	44	A	G	A	10	1	1	1	1	CDS	GENE9	bi	N,H,D,Y
+snv84	contig2	45	A	T	G	10	1	1	1	1	CDS	GENE10	bi	N,H,D,Y
+snv85	contig2	46	A	A	C	10	1	1	1	1	CDS	GENE10	bi	T,T,T,T
+snv86	contig2	47	A	C	T	10	1	1	1	1	CDS	GENE10	bi	N,H,D,Y
+snv87	contig2	48	A	G	A	10	1	1	1	1	CDS	GENE10	bi	N,H,D,Y
+snv88	contig2	49	A	T	G	10	1	1	1	1	CDS	GENE10	bi	N,H,D,Y
+snv89	contig2	50	A	A	C	10	1	1	1	1	CDS	GENE10	bi	N,H,D,Y
+snv90	contig2	51	A	C	T	10	1	1	1	1	CDS	GENE10	bi	N,H,D,Y
+snv91	contig2	52	A	G	A	10	1	1	1	1	CDS	GENE10	bi	T,T,T,T
+snv92	contig2	53	A	T	G	10	1	1	1	1	CDS	GENE10	bi	T,T,T,T
+snv93	contig2	54	A	A	C	10	1	1	1	1	CDS	GENE11	bi	N,H,D,Y
+snv94	contig2	55	A	C	T	10	1	1	1	1	CDS	GENE11	bi	T,T,T,T
+snv95	contig2	56	A	G	A	10	1	1	1	1	CDS	GENE11	bi	N,H,D,Y
+snv96	contig2	57	A	T	G	10	1	1	1	1	CDS	GENE11	bi	T,T,T,T
+snv97	contig2	58	A	A	C	10	1	1	1	1	CDS	GENE11	bi	N,H,D,Y
+snv98	contig2	59	A	C	T	10	1	1	1	1	CDS	GENE11	bi	T,T,T,T
+snv99	contig2	60	A	G	A	10	1	1	1	1	CDS	GENE11	bi	N,H,D,Y
+snv100	contig2	61	A	T	G	10	1	1	1	1			bi	
