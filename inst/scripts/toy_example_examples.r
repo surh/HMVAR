@@ -23,5 +23,10 @@ map <- read_tsv(system.file("toy_example/map.txt", package = "HMVAR"),
   select(sample = ID, Group)
 
 # mktest
+mkres <- midas_mktest(midas_dir = midas_dir,
+                      map = map)
+mkres
+
+
 midas_mktest(midas_dir = midas_dir,
-             map = map)
+             map_file = map)

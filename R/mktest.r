@@ -429,8 +429,9 @@ midas_mktest <- function(midas_dir, map,
                          freq_thres = 0.5){
   
   # Backwards compatibility with map_file.
-  a = match.call()
-  map = a[[match.arg(names(a),c("map","map_file"),several.ok = FALSE)]]
+  if(missing(map) && !missing(map_file)){
+    map <- map_file
+  }
   
   # Process map
   if(is.character(map) && length(map) == 1){
