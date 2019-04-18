@@ -4,7 +4,10 @@ NEED TO DOCUMENT block_size
 2. Reverting to standard alphanumeric names for chromosomes
 in BIMBAM format.
 3. Eliminating annoying messages from read_midas_abun.
-4. Adding toy example
+4. Adding toy example in MIDAS format (Issue
+https://github.com/surh/HMVAR/issues/6).
+5. Updating `read_midas_data` function.
+6. Added examples to `read_midas_data`.
 
 # 0.1-0
 1. Added exectuable script to perform mktest.

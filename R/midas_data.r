@@ -71,10 +71,30 @@ read_midas_abun <- function(file){
 #' @importFrom readr read_tsv
 #' @importFrom dplyr select filter
 #' @importFrom tidyselect starts_with
-read_midas_data <- function(midas_dir, map, genes, cds_only = TRUE){
+#' 
+#' @examples 
+#' library(HMVAR)
+#' library(tidyverse)
+#' 
+#' # Get file paths
+#' midas_dir <- system.file("toy_example/merged.snps/", package = "HMVAR")
+#' map <- read_tsv(system.file("toy_example/map.txt", package = "HMVAR"),
+#'                 col_types = cols(.default = col_character())) %>%
+#'   select(sample = ID, Group)
+#' 
+#' # Read data
+#' midas_data <- read_midas_data(midas_dir = midas_dir, map = map, cds_only = TRUE, genes = NULL)
+#' midas_data
+read_midas_data <- function(midas_dir, map, genes = NULL, cds_only = TRUE){
   # Read data
   info <- readr::read_tsv(paste0(midas_dir, "/snps_info.txt"),
-                          col_types = 'ccncccnnnnnccccc',
+                          col_types = readr::cols(.default = readr::col_character(),
+                                                  ref_pos = readr::col_number(),
+                                                  count_samples = readr::col_number(),
+                                                  count_a = readr::col_number(),
+                                                  count_c = readr::col_number(),
+                                                  count_g = readr::col_number(),
+                                                  count_t = readr::col_number()),
                           na = 'NA')
   depth <- read_midas_abun(paste0(midas_dir, "/snps_depth.txt"))
   freq <- read_midas_abun(paste0(midas_dir, "/snps_freq.txt"))
@@ -82,7 +102,7 @@ read_midas_data <- function(midas_dir, map, genes, cds_only = TRUE){
   # Process data
   # Clean info
   info <- info %>% 
-    dplyr::select(-locus_type, -tidyselect::starts_with("count_"))
+    dplyr::select(-tidyselect::starts_with("count_"))
   # Clean depth and freq
   depth <- select_samples_from_abun(depth, map)
   freq <- select_samples_from_abun(freq, map)
@@ -96,8 +116,10 @@ read_midas_data <- function(midas_dir, map, genes, cds_only = TRUE){
       dplyr::filter(gene_id %in% genes)
   }else if(cds_only){
     info <- info %>% 
-      dplyr::filter(!is.na(gene_id))
+      dplyr::filter(locus_type == 'CDS')
   }
+  info <- info %>% select(-locus_type)
+  
   freq <- freq %>% 
     dplyr::filter(site_id %in% info$site_id)
   depth <- depth %>% 
