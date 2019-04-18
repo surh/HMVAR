@@ -15,6 +15,8 @@ or a data frame witht the map. It also has examples.
 9. Examples for functions that calculate MK contingency table.
 10. Added unit testing support via testhat (Issue
 https://github.com/surh/HMVAR/issues/25).
+11. Fixed allele asignment by `determine_site_dist` (Issue
+https://github.com/surh/HMVAR/issues/1).
 
 # 0.1-0
 1. Added exectuable script to perform mktest.

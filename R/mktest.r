@@ -377,11 +377,9 @@ determine_snp_dist <- function(info, freq, depth, map,
   
   freq_thres <- min(freq_thres, 1 - freq_thres)
   
-  
   # Reformat
   depth <- depth %>% tidyr::gather(key = "sample", value = 'depth', -site_id)
   freq <- freq %>% tidyr::gather(key = "sample", value = 'freq', -site_id)
-  # meta <- info %>% select(site_id, ref_pos, snp_effect)
   
   # Last lines can be re-written for speed!!
   dat <- depth %>%
