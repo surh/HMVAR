@@ -4,6 +4,7 @@ NEED TO DOCUMENT block_size
 2. Reverting to standard alphanumeric names for chromosomes
 in BIMBAM format.
 3. Eliminating annoying messages from read_midas_abun.
+4. Adding toy example
 
 # 0.1-0
 1. Added exectuable script to perform mktest.
