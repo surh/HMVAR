@@ -26,3 +26,27 @@ Takes an table corresponding to the contents of the snp_info.txt
 file from midas_merge.py and adds a column indicating whether
 the variant is synonymous or non-synonymous
 }
+\examples{
+library(HMVAR)
+
+# Get file paths
+midas_dir <- system.file("toy_example/merged.snps/", package = "HMVAR")
+map <- readr::read_tsv(system.file("toy_example/map.txt", package = "HMVAR"),
+                       col_types = readr::cols(.default = readr::col_character())) \%>\%
+  dplyr::select(sample = ID, Group)
+
+# Read data
+midas_data <- read_midas_data(midas_dir = midas_dir, map = map, cds_only = TRUE)
+
+info <- determine_snp_effect(midas_data$info) \%>\%
+  determine_snp_dist(freq = midas_data$freq,
+                     depth = midas_data$depth, map = map,
+                     depth_thres = 1, freq_thres = 0.5)
+info
+
+mktable <- info \%>\%
+  split(.$gene_id) \%>\%
+  purrr::map_dfr(mkvalues,
+                 .id = "gene_id")
+mktable
+}
