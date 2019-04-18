@@ -35,6 +35,7 @@ midas_mktest(midas_dir = midas_dir,
 ############################
 # determine_snp_effect, determine_snp_dist, mkvalues
 library(HMVAR)
+library(magrittr)
 
 # Get file paths
 midas_dir <- system.file("toy_example/merged.snps/", package = "HMVAR")
@@ -56,4 +57,25 @@ mktable <- info %>%
   purrr::map_dfr(mkvalues,
                  .id = "gene_id")
 mktable
-                 
+
+
+
+############
+
+m <- dplyr::tibble(sample = letters[1:4], Group = rep(LETTERS[1:2], each = 2))
+m
+info
+i <- dplyr::tibble(site_id = 's1')
+i
+
+d <- dplyr::tibble(site_id = i$site_id, a = 1, b = 1, c = 1 , d = 1)
+d
+
+f <- dplyr::tibble(site_id = i$site_id, a = 0, b = 0, c = 1, d = 1)
+f
+
+
+determine_snp_dist(info = i, freq = f, depth = d, map = m, depth_thres = 1, freq_thres = 0.5)
+
+e <- tibble(site_id = i$site_id, distribution = "Fixed")
+e
