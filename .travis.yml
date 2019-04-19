@@ -15,6 +15,7 @@ apt_packages:
 bioc_packages:
   - qvalue
   - GO.db
+  - ggtree
 r_packages:
   - covr
   - ape
