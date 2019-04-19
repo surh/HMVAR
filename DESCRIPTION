@@ -3,14 +3,23 @@ Type: Package
 Title: Human Microbiome Variant Analysis in R
 Version: 0.1-0
 Depends: R (>= 3.4.3),
-	AMOR (>= 0.0-15)
+	AMOR (>= 0.0-15),
+	magrittr
 Imports:
-	ggplot2 (>= 2.2.1),
 	qvalue (>= 2.8.0),
 	GO.db (>= 3.4.1),
 	ggtree (>= 1.8.2),
 	reshape2 (>= 1.4.3),
 	tidyverse (>= 1.2.1),
+	ggplot2 (>= 2.2.1),
+	dplyr,
+	tidyr,
+	readr,
+	purrr,
+	tibble,
+	stringr,
+	forcats,
+	tidyselect,
 	argparser (>= 0.4),
 	grid (>= 3.5.1),
 	mice (>= 3.4.0),
