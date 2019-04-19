@@ -20,18 +20,28 @@ library(HMVAR)
 
 test_that("Substitution type",{
   i <- dplyr::tibble(major_allele = 'A', minor_allele = 'C')
-  e <- i %>% dplyr::bind_cols(substitution = "transvertion")
+  e <- i %>% dplyr::bind_cols(substitution = "transversion")
   expect_identical(determine_substitution_type(i), e,
-                   info = "Test transvertion")
+                   info = "Test transversion")
   
   i <- dplyr::tibble(major_allele = 'A', minor_allele = 'G')
+  e <- i %>% dplyr::bind_cols(substitution = "transition")
+  expect_identical(determine_substitution_type(i), e,
+                   info = "Test transition")
+  
+  i <- dplyr::tibble(major_allele = 'A', minor_allele = 'g')
   e <- i %>% dplyr::bind_cols(substitution = NA) %>%
     filter(!is.na(substitution))
   expect_identical(determine_substitution_type(i), e,
-                   info = "Test transition")
+                   info = "Test NA cleaned")
   
-  i <- dplyr::tibble(major_allele = 'A', minor_allele = 'G')
+  i <- dplyr::tibble(major_allele = 'A', minor_allele = 'g')
   e <- i %>% dplyr::bind_cols(substitution = NA)
   expect_identical(determine_substitution_type(i, clean = FALSE), e,
-                   info = "Test transition")
+                   info = "Test NA not cleaned")
+  
+  i <- dplyr::tibble(major_allele = 'A', minor_allele = NA)
+  e <- i %>% dplyr::bind_cols(substitution = NA)
+  expect_error(determine_substitution_type(i), e,
+               info = "Error when NA allele")
 })
