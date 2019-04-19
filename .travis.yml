@@ -18,6 +18,8 @@ bioc_packages:
   - GO.db
 r_packages:
   - covr
+  - ape
+  - phangorn
 r_github_packages:
   - surh/AMOR
   - sgearle/bugwas/bugwas
