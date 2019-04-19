@@ -193,22 +193,21 @@ midas_data$info <- determine_substitution_type(midas_data$info, clean = FALSE)
 
 # Match freqs and depth
 cat("Matching all data...\n")
-depth <- depth %>% gather(key = "sample", value = 'depth', -site_id)
-freq <- freq %>% gather(key = "sample", value = 'freq', -site_id)
+depth <- midas_data$depth %>% gather(key = "sample", value = 'depth', -site_id)
+freq <- midas_data$freq %>% gather(key = "sample", value = 'freq', -site_id)
 
 dat <- depth %>%
   inner_join(freq, by = c("site_id", "sample")) %>%
   left_join(map, by = "sample") %>%
   filter(depth >= args$depth_thres) %>%
-  left_join(info, by = "site_id") %>%
-  filter(distribution != "Invariant")
-# dat
+  left_join(midas_data$info, by = "site_id")
+dat
 
-# Prepare output dir
-if(!dir.exists(args$outdir)){
-  cat("Preparing output directory...\n")
-  dir.create(args$outdir)
-}
+# # Prepare output dir
+# if(!dir.exists(args$outdir)){
+#   cat("Preparing output directory...\n")
+#   dir.create(args$outdir)
+# }
 
 # Count number of sites and number of variable per sample
 cat("Calcuating variable sites...\n")
