@@ -260,4 +260,35 @@ test_that("SNP effects",{
                    info = "non- synonymous")
 })
 
-# test_that("MK table")
+test_that("MK table", {
+  # Prepare data
+  i <- tibble(distribution = factor(c("Fixed", "Fixed", "Fixed"),
+                                    levels = c("Fixed", "Invariant", "Polymorphic")),
+              snp_effect = factor(c('synonymous', "synonymous", "synonymous"),
+                                  levels = c("synonymous", "non-synonymous")))
+  e <- tibble(Dn = as.integer(0), Ds = as.integer(3), Pn = as.integer(0), Ps = as.integer(0))
+  expect_identical(mkvalues(i), e,
+                   info = "Count one present")
+  
+  i <- tibble(distribution = factor(c("Fixed", "Fixed", "Fixed"),
+                                    levels = c("Fixed", "Invariant", "Polymorphic")),
+              snp_effect = factor(c('synonymous', NA, "synonymous"),
+                                  levels = c("synonymous", "non-synonymous")))
+  e <- tibble(Dn = as.integer(0), Ds = as.integer(2), Pn = as.integer(0), Ps = as.integer(0))
+  expect_identical(mkvalues(i), e,
+                   info = "Count one missing")
+  
+  i <- tibble(distribution = factor(c(NA, "Fixed", NA),
+                                    levels = c("Fixed", "Invariant", "Polymorphic")),
+              snp_effect = factor(c('synonymous', NA, "synonymous"),
+                                  levels = c("synonymous", "non-synonymous")))
+  e <- tibble(Dn = as.integer(0), Ds = as.integer(0), Pn = as.integer(0), Ps = as.integer(0))
+  expect_identical(mkvalues(i), e,
+                   info = "Count all missing")
+  
+  i <- tibble(snp_distribution = factor(c("Fixed", "Fixed", "Fixed"),
+                                        levels = c("Fixed", "Invariant", "Polymorphic")),
+              snp_effect = factor(c('synonymous', "synonymous", "synonymous"),
+                                  levels = c("synonymous", "non-synonymous")))
+  expect_error(mkvalues(i), info = "Missing column")
+})
