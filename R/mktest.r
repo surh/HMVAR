@@ -136,7 +136,6 @@ check_pvalues <- function(estimates, pvals, plot = TRUE){
 #' @return A data table
 #'
 #' @importFrom magrittr %>%
-#' @importFrom dplyr select intersect
 select_samples_from_abun <- function(abun, map){
   abun <- abun %>% dplyr::select(site_id, dplyr::intersect(map$sample, colnames(abun)) )
   
@@ -162,11 +161,7 @@ select_samples_from_abun <- function(abun, map){
 #' 'snp_effect' added.
 #' @export
 #'
-#' @importFrom dplyr select
-#' @importFrom purrr pmap_chr
-#' @importFrom stringr str_split
 #' @importFrom magrittr %>%
-#' @importFrom tibble add_column
 #' 
 #' @examples
 #' library(HMVAR)
@@ -423,7 +418,6 @@ determine_snp_dist <- function(info, freq, depth, map,
 #' of each substitution type.
 #' @export 
 #' 
-#' @importFrom dplyr select
 #' @importFrom magrittr %>%
 #' 
 #' @examples
@@ -498,9 +492,6 @@ mkvalues <- function(info){
 #' @export
 #' 
 #' @importFrom magrittr %>%
-#' @importFrom readr read_tsv
-#' @importFrom dplyr select mutate
-#' @importFrom purrr map_dfr
 #' 
 #' @examples 
 #' library(HMVAR)
