@@ -30,18 +30,19 @@ test_that("Substitution type",{
                    info = "Test transition")
   
   i <- dplyr::tibble(major_allele = 'A', minor_allele = 'g')
-  e <- i %>% dplyr::bind_cols(substitution = NA) %>%
-    filter(!is.na(substitution))
+  e <- i %>% dplyr::bind_cols(substitution = as.character(NA)) %>%
+    dplyr::filter(!is.na(substitution))
   expect_identical(determine_substitution_type(i), e,
                    info = "Test NA cleaned")
   
   i <- dplyr::tibble(major_allele = 'A', minor_allele = 'g')
-  e <- i %>% dplyr::bind_cols(substitution = NA)
+  e <- i %>% dplyr::bind_cols(substitution = as.character(NA))
   expect_identical(determine_substitution_type(i, clean = FALSE), e,
                    info = "Test NA not cleaned")
   
   i <- dplyr::tibble(major_allele = 'A', minor_allele = NA)
-  e <- i %>% dplyr::bind_cols(substitution = NA)
-  expect_error(determine_substitution_type(i), e,
-               info = "Error when NA allele")
+  e <- i %>% dplyr::bind_cols(substitution = as.character(NA)) %>%
+    dplyr::filter(!is.na(substitution))
+  expect_identical(determine_substitution_type(i), e,
+                   info = "Ambiguous when NA allele")
 })
