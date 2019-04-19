@@ -5,7 +5,7 @@
 \title{SNP distribution between sites}
 \usage{
 determine_snp_dist(info, freq, depth, map, depth_thres = 1,
-  freq_thres = 0.5)
+  freq_thres = 0.5, clean = TRUE)
 }
 \arguments{
 \item{info}{Data table corresponding to the 'snps_info.txt'
@@ -31,6 +31,9 @@ a sample to be considered.}
 The value represents the distance from 0 or 1, for a site to be
 assigned to the major or minor allele respectively. It must be
 a value in [0,1].}
+
+\item{clean}{Whether to remove sites that had no valid
+distribution.}
 }
 \value{
 A data table which is the same and info bnut with

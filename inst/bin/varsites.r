@@ -103,74 +103,87 @@ process_arguments <- function(){
 #              plot_position = TRUE,
 #              prefix = "Granulicatella_adiacens_61980",
 #              outdir = "results/")
-args <- process_arguments()
+# args <- process_arguments()
+
+args <- list(midas_dir = system.file("toy_example/merged.snps/", package = "HMVAR"),
+             map_file = system.file("toy_example/map.txt", package = "HMVAR"),
+             genes = NA,
+             depth_thres = 1,
+             freq_thres = 0.5,
+             cds_only = FALSE,
+             plot_position = TRUE,
+             prefix = "toyprefix",
+             outdir = "results/")
 
 # Read genes
 if(is.na(args$genes)){
-  genes <- NULL
+  args$genes <- NULL
 }else{
   cat("Reading list of genes...\n")
-  genes <- read_tsv(args$genes, col_names = FALSE, col_types = 'c')
-  genes <- genes$X1
+  args$genes <- read_tsv(args$genes, col_names = FALSE, col_types = 'c')
+  args$genes <- genes$X1
 }
 
 # Read map
 cat("Reading map...\n")
-map <- read_tsv(args$map_file)
-map <- map %>%
+map <- read_tsv(args$map_file,
+                col_types = cols(ID = col_character(),
+                                 Group = col_character())) %>%
   select(sample = ID,
          everything())
 
-# Read MIDAS data
-cat("Reading MIDAS output...\n")
-info <- read_tsv(paste0(args$midas_dir, "/snps_info.txt"),
-                 col_types = 'ccncccnnnnnccccc',
-                 na = 'NA')
-depth <- read_midas_abun(paste0(args$midas_dir, "/snps_depth.txt"))
-freq <- read_midas_abun(paste0(args$midas_dir, "/snps_freq.txt"))
+# # Read MIDAS data
+# cat("Reading MIDAS output...\n")
+# info <- read_tsv(paste0(args$midas_dir, "/snps_info.txt"),
+#                  col_types = 'ccncccnnnnnccccc',
+#                  na = 'NA')
+# depth <- read_midas_abun(paste0(args$midas_dir, "/snps_depth.txt"))
+# freq <- read_midas_abun(paste0(args$midas_dir, "/snps_freq.txt"))
+# 
+# # Process data
+# cat("Processing MIDAS data...\n")
+# # Clean info
+# info <- info %>% 
+#   select(-locus_type, -starts_with("count_"), -ref_allele)
+# # Clean depth and freq
+# depth <- depth %>%
+#   select(site_id, intersect(map$sample, colnames(depth)) )
+# freq <- freq %>%
+#   select(site_id, intersect(map$sample, colnames(freq)) )
+# # Clean map
+# map <- map %>% 
+#   filter(sample %in% colnames(depth))
+# 
+# # Select gene/cds data
+# if(args$cds_only){
+#   cat("Selecting CDS only...\n")
+#   info <- info %>% 
+#     filter(!is.na(gene_id))
+# }
+# if(!is.null(genes)){
+#   cat("Selecting chosen genes...\n")
+#   info <- info %>%
+#     filter(gene_id %in% genes)
+# }
+# freq <- freq %>% 
+#   filter(site_id %in% info$site_id)
+# depth <- depth %>% 
+#   filter(site_id %in% info$site_id)
 
-# Process data
-cat("Processing MIDAS data...\n")
-# Clean info
-info <- info %>% 
-  select(-locus_type, -starts_with("count_"), -ref_allele)
-# Clean depth and freq
-depth <- depth %>%
-  select(site_id, intersect(map$sample, colnames(depth)) )
-freq <- freq %>%
-  select(site_id, intersect(map$sample, colnames(freq)) )
-# Clean map
-map <- map %>% 
-  filter(sample %in% colnames(depth))
-
-# Select gene/cds data
-if(args$cds_only){
-  cat("Selecting CDS only...\n")
-  info <- info %>% 
-    filter(!is.na(gene_id))
-}
-if(!is.null(genes)){
-  cat("Selecting chosen genes...\n")
-  info <- info %>%
-    filter(gene_id %in% genes)
-}
-freq <- freq %>% 
-  filter(site_id %in% info$site_id)
-depth <- depth %>% 
-  filter(site_id %in% info$site_id)
-
-
-# Calcualate snp effect
+# Read and process midas sites
+midas_data <- read_midas_data(midas_dir = args$midas_dir,
+                              map = map, genes = args$genes,
+                              cds_only = FALSE)
 cat("Determining snp effect...\n")
-info <- determine_snp_effect(info)
-# # Calculate snp dist
+midas_data$info <- determine_snp_effect(midas_data$info)
 cat("Determining snp distribution...\n")
-info <- determine_snp_dist(info = info,
-                           freq = freq,
-                           depth = depth,
-                           map = map,
-                           depth_thres = args$depth_thres,
-                           freq_thres = args$freq_thres)
+midas_data$info <- determine_snp_dist(info = midas_data$info,
+                                      freq = midas_data$freq,
+                                      depth = midas_data$depth,
+                                      map = map,
+                                      depth_thres = args$depth_thres,
+                                      freq_thres = args$freq_thres,
+                                      clean = FALSE)
 
 # Subsitution type
 cat("Determining substitution type...\n")

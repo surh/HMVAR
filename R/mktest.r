@@ -332,17 +332,15 @@ get_site_dist <- function(d, group_thres = 2){
 #' The value represents the distance from 0 or 1, for a site to be
 #' assigned to the major or minor allele respectively. It must be
 #' a value in [0,1].
+#' @param clean Whether to remove sites that had no valid
+#' distribution.
 #'
 #' @return A data table which is the same and info bnut with
 #' a 'distribution' column indicating the allele distribution
 #' between sites in the  given samples.
 #' @export
 #' 
-#' @importFrom tidyr gather
 #' @importFrom magrittr %>%
-#' @importFrom dplyr inner_join left_join filter mutate
-#' @importFrom purrr map_chr
-#' @importFrom tibble tibble
 #' 
 #' @examples
 #' library(HMVAR)
@@ -369,7 +367,8 @@ get_site_dist <- function(d, group_thres = 2){
 #' mktable
 determine_snp_dist <- function(info, freq, depth, map,
                                depth_thres = 1,
-                               freq_thres = 0.5){
+                               freq_thres = 0.5,
+                               clean = TRUE){
   
   # Process freq_thres
   if(freq_thres < 0 || freq_thres > 1)
@@ -399,7 +398,12 @@ determine_snp_dist <- function(info, freq, depth, map,
                               distribution = factor(site_dist,
                                                     levels = c('Fixed', 'Invariant', 'Polymorphic')))
   info <- info %>%
-    dplyr::inner_join(site_dist, by = "site_id")
+    dplyr::left_join(site_dist, by = "site_id")
+  
+  if(clean){
+    info <- info %>%
+      dplyr::filter(!is.na(distribution))
+  }
   
   return(info)
 }
