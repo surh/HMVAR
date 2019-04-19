@@ -4,7 +4,7 @@
 
 ## Development version
 
-[![Build Status](https://travis-ci.org/surh/HMVAR.svg?branch=dev)](https://travis-ci.org/surh/HMVAR) [![codecov](https://codecov.io/gh/surh/HMVAR/branch/dev/graph/badge.svg)](https://codecov.io/gh/surh/HMVAR)
+[![Build Status](https://travis-ci.com/surh/HMVAR.svg?branch=dev)](https://travis-ci.com/surh/HMVAR) [![codecov](https://codecov.io/gh/surh/HMVAR/branch/dev/graph/badge.svg)](https://codecov.io/gh/surh/HMVAR)
 
 ## LICENCE
 
