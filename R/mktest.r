@@ -37,7 +37,7 @@ get_mk_results_files <- function(d, pattern = "^mk_results"){
   
   if(length(chosen) > 0)
     chosen <- paste(d, chosen, sep = "/")
-
+  
   return(chosen)
 }
 
@@ -449,10 +449,10 @@ mkvalues <- function(info){
     dplyr::select(snp_effect, distribution) %>%
     table(exclude = NULL, useNA = 'always')
   
-  return(tibble(Dn = tab['non-synonymous', 'Fixed'],
-                Ds = tab['synonymous', 'Fixed'],
-                Pn = tab['non-synonymous', 'Polymorphic'],
-                Ps = tab['synonymous', 'Polymorphic']))
+  return(dplyr::tibble(Dn = tab['non-synonymous', 'Fixed'],
+                       Ds = tab['synonymous', 'Fixed'],
+                       Pn = tab['non-synonymous', 'Polymorphic'],
+                       Ps = tab['synonymous', 'Polymorphic']))
 }
 
 #' Perform McDonald-Kreitman test on MIDAS SNPs

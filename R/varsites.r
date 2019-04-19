@@ -49,16 +49,16 @@
 #' determine_substitution_type(midas_data$info, clean = FALSE)
 determine_substitution_type <- function(info, clean = TRUE){
   info <- info %>%
-    add_column(substitution = info %>%
-                 pmap_chr(function(major_allele, minor_allele, ...){
-                   base_type <- c(A = "purine", C = "pyrimidine", G = "purine", T = "pyrimidine")
-                   if(base_type[major_allele] == base_type[minor_allele]){
-                     substitution <- "transition" 
-                   }else{
-                     substitution <- "transversion"
-                   }
-                   return(substitution)
-                 }))
+    dplyr::bind_cols(substitution = info %>%
+                       purrr:::pmap_chr(function(major_allele, minor_allele, ...){
+                         base_type <- c(A = "purine", C = "pyrimidine", G = "purine", T = "pyrimidine")
+                         if(base_type[major_allele] == base_type[minor_allele]){
+                           substitution <- "transition" 
+                         }else{
+                           substitution <- "transversion"
+                         }
+                         return(substitution)
+                       }))
   if(clean){
     info <- info %>%
       dplyr::filter(!is.na(substitution))

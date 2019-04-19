@@ -1,0 +1,26 @@
+# (C) Copyright 2019 Sur Herrera Paredes
+# 
+# This file is part of HMVAR.
+# 
+# HMVAR is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# HMVAR is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with HMVAR.  If not, see <http://www.gnu.org/licenses/>.
+
+context("MK tests")
+library(HMVAR)
+
+test_that("Substitution type",{
+  i <- dplyr::tibble(major_allele = 'A', minor_allele = 'C')
+  e <- i %>% dplyr::bind_cols(substitution = "transition")
+  expect_identical(determine_substitution_type(i), e,
+                   info = "Test transition")
+})
