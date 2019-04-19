@@ -19,11 +19,11 @@ Recomends:
   svglite
 Suggests: 
     testthat
-Date: 2019-03-22
+Date: 2019-04-18
 Authors@R: c(person("Sur", "Herrera Paredes",
-             role = c("aut", "cre"),
-             email = "surh@stanford.edu"),
-             comment = c(ORCID = "0000-0001-9246-8337"))
+                    role = c("aut", "cre"),
+                    email = "surh@stanford.edu",
+                    comment = c(ORCID = "0000-0001-9246-8337")))
 Description: Analysis of variants from microbiomes.
 License: GPL-3
 RoxygenNote: 6.1.1
