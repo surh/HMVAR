@@ -18,7 +18,7 @@
 #' Benchmark mice imputation
 #' 
 #' Hide a percent of the observations and compare
-#' the results of imputation via \link{mice::mice}
+#' the results of imputation via \link{mice}
 #' with the original observations.
 #'
 #' @param geno A data table in BIMBAM format. Must contain
@@ -30,16 +30,18 @@
 #' Column ID must correspond to column site_id in geno.
 #' @param outdir Output directory to write the results.
 #' @param p Fraction of observations to hide.
-#' @param m Number of imputations performed. See \link{mice::mice}
+#' @param m Number of imputations performed. See \link{mice}
 #' documentation.
 #' @param verbose Whether to print progress on imputation. 
 #' @param seed Seed for random sambling of data and for imputation
 #' if needed.
+#' @param block_size Number of markers to use to impute each marker.
 #'
 #' @return A list with elements r, p.imputed, res, and imputed_geno_file.
 #' @export
 #' 
 #' @importFrom magrittr %>%
+#' @importFrom mice mice
 benchmark_imputation <- function(geno, snp, outdir, p = 0.1 ,
                                  m = 5, verbose = FALSE, seed = NA,
                                  block_size = 100){
@@ -236,6 +238,8 @@ gemma_kinship <- function(geno_file, pheno_file, snp_file,
 #' manual for details.
 #' @param kinship_file Kinship file in GEMMA format. See GEMMA
 #' manual for details.
+#' @param cov_file Covariates file in BIMBAM format. See GEMMA
+#' manual for details.
 #' @param gemma GEMMA executable.
 #' @param outdir directory to write output.
 #' @param maf Minor allele frequency threshold for SNPs to test.
@@ -305,6 +309,7 @@ gemma_lmm <- function(geno_file, pheno_file, snp_file, kinship_file,
 #' the output file path and the imputed table. If FALSE, only the file path
 #' will be returned.
 #' @param seed Seed for imputation. See \link{mice} documentation.
+#' @param block_size Number of markers to use to impute each marker.
 #'
 #' @return Either the output file path, or a list containing the file path
 #' and the imputed table.
@@ -350,9 +355,11 @@ mice_impute <- function(geno, snp,
 #' 
 #' Calls mice on data table
 #'
-#' @param d 
-#' @param m 
-#' @param verbose 
+#' @param d A tibble
+#' @param m Number of imputations
+#' @param verbose Print info while running
+#' @param seed Seed for mice
+#' @param block_size Number of markers to use to impute each marker.
 #'
 #' @return A tibble with imputed results
 #' 

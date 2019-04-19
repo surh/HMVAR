@@ -6,6 +6,12 @@
 \usage{
 phylotype2rdp2(x, split.char = ";")
 }
+\arguments{
+\item{x}{A character vector, one element per taxa}
+
+\item{split.char}{A character string indicating the field
+delimiter character}
+}
 \description{
 Slow version
 }

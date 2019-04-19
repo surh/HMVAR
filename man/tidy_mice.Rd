@@ -7,11 +7,15 @@
 tidy_mice(d, m = 5, verbose = FALSE, seed = NA, block_size = 100)
 }
 \arguments{
-\item{d}{}
+\item{d}{A tibble}
 
-\item{m}{}
+\item{m}{Number of imputations}
 
-\item{verbose}{}
+\item{verbose}{Print info while running}
+
+\item{seed}{Seed for mice}
+
+\item{block_size}{Number of markers to use to impute each marker.}
 }
 \value{
 A tibble with imputed results

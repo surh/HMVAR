@@ -32,6 +32,8 @@ the output file path and the imputed table. If FALSE, only the file path
 will be returned.}
 
 \item{seed}{Seed for imputation. See \link{mice} documentation.}
+
+\item{block_size}{Number of markers to use to impute each marker.}
 }
 \value{
 Either the output file path, or a list containing the file path

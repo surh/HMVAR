@@ -21,19 +21,21 @@ Column ID must correspond to column site_id in geno.}
 
 \item{p}{Fraction of observations to hide.}
 
-\item{m}{Number of imputations performed. See \link{mice::mice}
+\item{m}{Number of imputations performed. See \link{mice}
 documentation.}
 
 \item{verbose}{Whether to print progress on imputation.}
 
 \item{seed}{Seed for random sambling of data and for imputation
 if needed.}
+
+\item{block_size}{Number of markers to use to impute each marker.}
 }
 \value{
 A list with elements r, p.imputed, res, and imputed_geno_file.
 }
 \description{
 Hide a percent of the observations and compare
-the results of imputation via \link{mice::mice}
+the results of imputation via \link{mice}
 with the original observations.
 }
