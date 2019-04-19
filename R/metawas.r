@@ -18,7 +18,7 @@
 #' Benchmark mice imputation
 #' 
 #' Hide a percent of the observations and compare
-#' the results of imputation via \link{mice}
+#' the results of imputation via \link[mice]{mice}
 #' with the original observations.
 #'
 #' @param geno A data table in BIMBAM format. Must contain
@@ -30,7 +30,7 @@
 #' Column ID must correspond to column site_id in geno.
 #' @param outdir Output directory to write the results.
 #' @param p Fraction of observations to hide.
-#' @param m Number of imputations performed. See \link{mice}
+#' @param m Number of imputations performed. See \link[mice]{mice}
 #' documentation.
 #' @param verbose Whether to print progress on imputation. 
 #' @param seed Seed for random sambling of data and for imputation
