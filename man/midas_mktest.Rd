@@ -5,7 +5,7 @@
 \title{Perform McDonald-Kreitman test on MIDAS SNPs}
 \usage{
 midas_mktest(midas_dir, map, map_file, genes = NULL, depth_thres = 1,
-  freq_thres = 0.5)
+  freq_thres = 0.5, focal_group = NA)
 }
 \arguments{
 \item{midas_dir}{Directory where the output from
@@ -33,6 +33,11 @@ sample to be included.}
 The value represents the distance from 0 or 1, for a site to be
 assigned to the major or minor allele respectively. It must be
 a value in [0,1].}
+
+\item{focal_group}{A string indicating the group that should
+be compared to everything else. If different from NA, all values
+in the 'Group' column of the mapping file will be converted to
+"non.<focal_group>", ensuring a dichotomous grouping.}
 }
 \value{
 A data table containing the McDonald-Kreitman

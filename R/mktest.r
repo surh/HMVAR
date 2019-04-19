@@ -377,20 +377,19 @@ determine_snp_dist <- function(info, freq, depth, map,
   
   freq_thres <- min(freq_thres, 1 - freq_thres)
   
-  
   # Reformat
   depth <- depth %>% tidyr::gather(key = "sample", value = 'depth', -site_id)
   freq <- freq %>% tidyr::gather(key = "sample", value = 'freq', -site_id)
-  # meta <- info %>% select(site_id, ref_pos, snp_effect)
   
   # Last lines can be re-written for speed!!
   dat <- depth %>%
     dplyr::inner_join(freq, by = c("site_id", "sample")) %>%
     dplyr::left_join(map, by = "sample") %>%
     dplyr::filter(depth >= depth_thres) %>%
-    dplyr::mutate(allele = replace(freq, freq < freq_thres, 'major')) %>%
+    dplyr::filter(freq != 0.5) %>%
+    dplyr::mutate(allele = replace(freq, freq <= freq_thres, 'major')) %>%
     dplyr::mutate(allele = replace(allele, freq >= (1 - freq_thres), 'minor')) %>%
-    dplyr::mutate(allele = replace(allele, (freq >= freq_thres) & (freq < (1 - freq_thres)), NA)) %>%
+    dplyr::mutate(allele = replace(allele, (freq > freq_thres) & (freq < (1 - freq_thres)), NA)) %>%
     dplyr::filter(!is.na(allele))
   
   site_dist <- dat %>%
