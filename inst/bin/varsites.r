@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-# (C) Copyright 2018 Sur Herrera Paredes
+# (C) Copyright 2018-2019 Sur Herrera Paredes
 # 
 # This file is part of HMVAR.
 # 
@@ -184,20 +184,11 @@ midas_data$info <- determine_snp_dist(info = midas_data$info,
                                       depth_thres = args$depth_thres,
                                       freq_thres = args$freq_thres,
                                       clean = FALSE)
-
 # Subsitution type
 cat("Determining substitution type...\n")
-info <- info %>%
-  add_column(substitution = info %>%
-               pmap_chr(function(major_allele, minor_allele, ...){
-                 base_type <- c(A = "purine", C = "pyrimidine", G = "purine", T = "pyrimidine")
-                 if(base_type[major_allele] == base_type[minor_allele]){
-                   substitution <- "transition" 
-                 }else{
-                   substitution <- "transversion"
-                 }
-                 return(substitution)
-               }))
+midas_data$info <- determine_substitution_type(midas_data$info, clean = FALSE)
+
+
 
 
 # Match freqs and depth
