@@ -15,12 +15,23 @@
 # You should have received a copy of the GNU General Public License
 # along with HMVAR.  If not, see <http://www.gnu.org/licenses/>.
 
-context("MK tests")
+context("varsites")
 library(HMVAR)
 
 test_that("Substitution type",{
   i <- dplyr::tibble(major_allele = 'A', minor_allele = 'C')
-  e <- i %>% dplyr::bind_cols(substitution = "transition")
+  e <- i %>% dplyr::bind_cols(substitution = "transvertion")
   expect_identical(determine_substitution_type(i), e,
+                   info = "Test transvertion")
+  
+  i <- dplyr::tibble(major_allele = 'A', minor_allele = 'G')
+  e <- i %>% dplyr::bind_cols(substitution = NA) %>%
+    filter(!is.na(substitution))
+  expect_identical(determine_substitution_type(i), e,
+                   info = "Test transition")
+  
+  i <- dplyr::tibble(major_allele = 'A', minor_allele = 'G')
+  e <- i %>% dplyr::bind_cols(substitution = NA)
+  expect_identical(determine_substitution_type(i, clean = FALSE), e,
                    info = "Test transition")
 })

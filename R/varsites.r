@@ -52,7 +52,11 @@ determine_substitution_type <- function(info, clean = TRUE){
     dplyr::bind_cols(substitution = info %>%
                        purrr:::pmap_chr(function(major_allele, minor_allele, ...){
                          base_type <- c(A = "purine", C = "pyrimidine", G = "purine", T = "pyrimidine")
-                         if(base_type[major_allele] == base_type[minor_allele]){
+                         major <- base_type[ major_allele ]
+                         minor <- base_type[ minor_allele ]
+                         if(any(is.na(c(major, minor)))){
+                           substitution <- NA
+                         }else if(major == minor){
                            substitution <- "transition" 
                          }else{
                            substitution <- "transversion"
