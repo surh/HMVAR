@@ -25,14 +25,7 @@ transversions.
 \examples{
 library(HMVAR)
 
-# Get file paths
-midas_dir <- system.file("toy_example/merged.snps/", package = "HMVAR")
-map <- readr::read_tsv(system.file("toy_example/map.txt", package = "HMVAR"),
-                       col_types = readr::cols(.default = readr::col_character())) \%>\%
-  dplyr::select(sample = ID, Group)
-
-# Read data
-midas_data <- read_midas_data(midas_dir = midas_dir, map = map, cds_only = TRUE)
-
-determine_substitution_type(midas_data$info, clean = FALSE)
+i <- dplyr::tibble(major_allele = c('A', 'C', 'G', 'T', 'a', NA),
+                   minor_allele = c('T', 'T', 'A', 'A', 'T', 'G'))
+determine_substitution_type(i, clean = FALSE)
 }

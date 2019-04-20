@@ -190,7 +190,10 @@ midas_data$info <- determine_substitution_type(midas_data$info, clean = FALSE)
 
 
 
-
+#################
+# NEED TO INCLUDE THIS IN determine_sample_dist function
+# and have option to do this in function or provide it
+# independently.
 # Match freqs and depth
 cat("Matching all data...\n")
 depth <- midas_data$depth %>% gather(key = "sample", value = 'depth', -site_id)
@@ -202,6 +205,13 @@ dat <- depth %>%
   filter(depth >= args$depth_thres) %>%
   left_join(midas_data$info, by = "site_id")
 dat
+
+################3
+
+# For each site determine if it is homogeneous or heterogeneous
+dat <- determine_sample_dist(dat) %>%
+  select(-ref_id, -ref_allele, -major_allele, -minor_allele)
+
 
 # # Prepare output dir
 # if(!dir.exists(args$outdir)){
