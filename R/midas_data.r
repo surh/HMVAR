@@ -128,6 +128,72 @@ read_midas_data <- function(midas_dir, map, genes = NULL, cds_only = TRUE){
   return(list(info = info, freq = freq, depth = depth))
 }
 
+#' Match freq and depth
+#' 
+#' Takes two data.frames or tibbles representing site x sample allele
+#' frequencies (freq) and sequence coverage (depth), and used \link[tidyr]{gather}
+#' to convert them into a tibble with one line per site per sample. It combines
+#' both sources of info into one table, it filters out positions below a
+#' sequencing depth threshold, and if another data table with metadata (info)
+#' about the sites is passed, it also joins that information into the sites
+#' that passed the threshold.
+#'
+#' @param freq A site by sample data frame or tibble. Must contain a column
+#' named "site_id".
+#' @param depth A site by sample data frame or tibble. Must containa a column
+#' named "site_id".
+#' @param info A site by variable data frame or tibble. Must contain a column
+#' named "site_id".
+#' @param map A sample by variable data frame or tibble. Must conatin a colum
+#' named "sample".
+#' @param depth_thres Minimum sequence coverage (depth) for a site to be kept
+#' in the final output.
+#'
+#' @return A data frame or tibble with columns site_id, freq, depth, and one
+#' column per column in info and map.
+#' 
+#' @export
+#' @importFrom magrittr %>%
+#'
+#' @examples
+#' freq <- tibble(site_id = paste('snv' , 1:4, sep = ""),
+#'                sample1 = c(1,1,0,1), sample2 = c(1,1,1,1),
+#'                sample3=c(0,0,0,1))
+#' depth <- tibble(site_id = paste('snv' , 1:4, sep = ""),
+#'                 sample1 = c(1,0,1,1), sample2 = c(4,1,1,0),
+#'                 sample3=c(0,0,0,1))
+#' match_freq_and_depth(freq, depth, depth_thres = 1)
+match_freq_and_depth <- function(freq, depth, info = NULL, map = NULL, depth_thres = 1){
+  if(!("site_id" %in% colnames(freq))){
+    stop("ERROR: freq mut contain a site_id column", call. = TRUE)
+  }
+  if(!("site_id" %in% colnames(depth))){
+    stop("ERROR: depth mut contain a site_id column", call. = TRUE)
+  }
+  
+  cat("\tReformatting data...\n")
+  depth <- depth %>% tidyr::gather(key = "sample", value = 'depth', -site_id)
+  freq <- freq %>% tidyr::gather(key = "sample", value = 'freq', -site_id)
+  
+  cat("\tMatching freq and depth...\n")
+  dat <- depth %>%
+    dplyr::inner_join(freq, by = c("site_id", "sample")) %>%
+    dplyr::filter(depth >= depth_thres)
+  
+  if(!is.null(map)){
+    cat("\tMatching map...\n")
+    dat <- dat %>%
+      dplyr::left_join(map, by = "sample")
+  }
+  
+  if(!is.null(info)){
+    cat("\tMatching info...\n")
+    dat <- dat %>%
+      dplyr::left_join(info, by = "site_id")
+  }
+  
+  return(dat)
+}
 
 #' Convert MIDAS merge output to BIMBAM input
 #' 

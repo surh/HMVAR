@@ -16,7 +16,6 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with HMVAR.  If not, see <http://www.gnu.org/licenses/>.
-
 library(HMVAR)
 library(tidyverse)
 library(argparser)
@@ -187,26 +186,23 @@ midas_data$info <- determine_snp_dist(info = midas_data$info,
 # Subsitution type
 cat("Determining substitution type...\n")
 midas_data$info <- determine_substitution_type(midas_data$info, clean = FALSE)
-
+midas_data$info
 
 
 #################
 # NEED TO INCLUDE THIS IN determine_sample_dist function
 # and have option to do this in function or provide it
 # independently.
-# Match freqs and depth
-cat("Matching all data...\n")
-depth <- midas_data$depth %>% gather(key = "sample", value = 'depth', -site_id)
-freq <- midas_data$freq %>% gather(key = "sample", value = 'freq', -site_id)
 
-dat <- depth %>%
-  inner_join(freq, by = c("site_id", "sample")) %>%
-  left_join(map, by = "sample") %>%
-  filter(depth >= args$depth_thres) %>%
-  left_join(midas_data$info, by = "site_id")
-dat
+dat <- match_freq_and_depth(freq = midas_data$freq,
+                            depth = midas_data$depth,
+                            info = midas_data$info,
+                            map = map,
+                            depth_thres = args$depth_thres)
 
 ################3
+
+
 
 # For each site determine if it is homogeneous or heterogeneous
 dat <- determine_sample_dist(dat) %>%
