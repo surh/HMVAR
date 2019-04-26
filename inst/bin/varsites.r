@@ -188,20 +188,12 @@ cat("Determining substitution type...\n")
 midas_data$info <- determine_substitution_type(midas_data$info, clean = FALSE)
 midas_data$info
 
-
-#################
-# NEED TO INCLUDE THIS IN determine_sample_dist function
-# and have option to do this in function or provide it
-# independently.
-
+# Refirnat data
 dat <- match_freq_and_depth(freq = midas_data$freq,
                             depth = midas_data$depth,
                             info = midas_data$info,
                             map = map,
                             depth_thres = args$depth_thres)
-
-################3
-
 
 
 # For each site determine if it is homogeneous or heterogeneous
