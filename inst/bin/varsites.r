@@ -188,24 +188,25 @@ cat("Determining substitution type...\n")
 midas_data$info <- determine_substitution_type(midas_data$info, clean = FALSE)
 midas_data$info
 
-# Refirnat data
+# Reformat data
 dat <- match_freq_and_depth(freq = midas_data$freq,
                             depth = midas_data$depth,
                             info = midas_data$info,
                             map = map,
                             depth_thres = args$depth_thres)
-
+dat
 
 # For each site determine if it is homogeneous or heterogeneous
 dat <- determine_sample_dist(dat) %>%
   select(-ref_id, -ref_allele, -major_allele, -minor_allele)
-
+dat
 
 # # Prepare output dir
 # if(!dir.exists(args$outdir)){
 #   cat("Preparing output directory...\n")
 #   dir.create(args$outdir)
 # }
+
 
 # Count number of sites and number of variable per sample
 cat("Calcuating variable sites...\n")
@@ -214,22 +215,36 @@ varsites <- dat %>%
   split(.$sample) %>%
   map_dfr(function(d){
     nsites <- nrow(d)
-    sites <- d$freq
-    nfixed <- sum(sites >= 1 | sites <= 0)
-    ntransitions <- sum(d$substitution == "transition")
+    # sites <- d$freq
+    nhomogeneous <- sum(d$sample_dist == "homogeneous", na.rm = TRUE)
+    nheterogenous <- sum(d$sample_dist == "heterogeneous", na.rm = TRUE)
+    ntransitions <- sum(d$substitution == "transition", na.rm = TRUE)
+    ntransvertions <- sum(d$substitution == "transvertion", na.rm = TRUE)
     nsynonymous <- sum(d$snp_effect == "synonymous", na.rm = TRUE)
     nnonsynonymous <- sum(d$snp_effect == "non-synonymous", na.rm = TRUE)
     return(tibble(nsites = nsites,
-                  fixed = nfixed,
-                  variable = nsites - nfixed,
-                  transitions = ntransitions,
-                  transversions = nsites - ntransitions,
-                  synonymous = nsynonymous,
-                  non.synonymous = nnonsynonymous,
-                  other = nsites - nsynonymous - nnonsynonymous))
+                  n_homogenous = nhomogeneous,
+                  n_heterogenous = nheterogenous,
+                  n_transitions = ntransitions,
+                  n_transversions = ntransvertions,
+                  n_synonymous = nsynonymous,
+                  n_non.synonymous = nnonsynonymous))
   }, .id = "sample") %>%
   inner_join(map, by = "sample")
-# varsites
+varsites
+
+
+columns <- c("n_synonymous", "n_non.synonymous")
+x <- "Group"
+
+varsites
+varsites %>%
+  gather(key = "type", value = "nsamples", columns) %>%
+  ggplot(aes(x = x, y = nsamples, fill = type)) +
+  geom_bar(stat = "identity")
+
+
+
 cat("\tWriting number of variable sites to file...\n")
 filename <- paste0(args$outdir, "/", args$prefix, ".varsites.txt")
 write_tsv(varsites, path = filename)
