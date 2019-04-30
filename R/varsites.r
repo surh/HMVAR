@@ -202,3 +202,114 @@ variable_dist_per_site <- function(dat, variable, group = NULL){
     dplyr::filter(!duplicated(.)) %>%
     dplyr::full_join(res, by = "site_id")
 }
+
+
+
+varsites_pipeline <- function(freq, depth, info, map,
+                              depth_thres = 1, freq_thres = 0.5, plot = TRUE){
+  
+  if(!("Group" %in% colnames(map))){
+    stop("ERROR: map must have a Group column", call. = TRUE)
+  }
+  
+  cat("Determining snp effect...\n")
+  info <- determine_snp_effect(info)
+  
+  cat("Determining snp distribution...\n")
+  info <- determine_snp_dist(info = info,
+                             freq = freq,
+                             depth = depth,
+                             map = map,
+                             depth_thres = depth_thres,
+                             freq_thres = freq_thres,
+                             clean = FALSE)
+  
+  # Subsitution type
+  cat("Determining substitution type...\n")
+  info <- determine_substitution_type(info, clean = FALSE)
+  
+  # Reformat data
+  cat("Matching freq and depth...\n")
+  dat <- match_freq_and_depth(freq = freq,
+                              depth = depth,
+                              info = info,
+                              map = map,
+                              depth_thres = depth_thres)
+  
+  # For each site determine if it is homogeneous or heterogenous
+  cat("Determining within sample distribution...\n")
+  dat <- determine_sample_dist(dat)
+  
+  # Count number of sites and number of variable per sample
+  cat("Calcuating variable site types per sample...\n")
+  varsites <- dat %>%
+    filter(depth >= 1) %>%
+    split(.$sample) %>%
+    map_dfr(function(d){
+      nsites <- nrow(d)
+      # sites <- d$freq
+      nhomogeneous <- sum(d$sample_dist == "homogeneous", na.rm = TRUE)
+      nheterogeneous <- sum(d$sample_dist == "heterogeneous", na.rm = TRUE)
+      ntransitions <- sum(d$substitution == "transition", na.rm = TRUE)
+      ntransvertions <- sum(d$substitution == "transversion", na.rm = TRUE)
+      nsynonymous <- sum(d$snp_effect == "synonymous", na.rm = TRUE)
+      nnonsynonymous <- sum(d$snp_effect == "non-synonymous", na.rm = TRUE)
+      return(tibble(nsites = nsites,
+                    n_homogeneous = nhomogeneous,
+                    n_heterogeneous = nheterogeneous,
+                    n_transitions = ntransitions,
+                    n_transversions = ntransvertions,
+                    n_synonymous = nsynonymous,
+                    n_non.synonymous = nnonsynonymous))
+    }, .id = "sample") %>%
+    inner_join(map, by = "sample")
+  
+  # Varsites per position
+  cat("Calcuating variable site types per site...\n")
+  varsites.pos <- variable_dist_per_site(dat = dat,
+                                         variable = "sample_dist",
+                                         group = "Group")
+  
+  # Prepare ouptut
+  Res <- list(varsites = varsites, varsites.pos = varsites.pos,
+              dnds.plot = NULL,
+              variability.plot = NULL,
+              pos.plot = NULL)
+  
+  if(plot){
+    cat("Plotting...\n")
+    # Plot synonymous & non-synonymous
+    p1 <- plotgg_stacked_columns(dat = varsites,
+                                 x = "sample",
+                                 columns = c("n_synonymous", "n_non.synonymous"),
+                                 facet_formula = ~ Group,
+                                 gather_key = "type",
+                                 gather_value = "nloci")
+    Res$dnds.plot <- p1
+    
+    # Plot homogeneous & heterogeneous
+    p1 <- plotgg_stacked_columns(dat = varsites,
+                                 x = "sample",
+                                 columns = c("n_homogeneous", "n_heterogeneous"),
+                                 facet_formula = ~ Group,
+                                 gather_key = "type",
+                                 gather_value = "nloci")
+    Res$variability.plot <- p1
+    
+    # Plot homogeneous & heterogeneous
+    p1 <- ggplot(varsites.pos, aes(x = ref_pos,y  = homogeneous / (homogeneous + heterogeneous))) +
+      facet_grid(~ ref_id, space = "free_x", scales = "free_x") +
+      geom_line(aes(color = Group)) +
+      geom_point(aes(color = Group), size = 1, alpha = 0.2) +
+      scale_y_continuous(limits = c(0, 1)) +
+      theme(panel.background = element_blank(),
+            panel.grid = element_blank(),
+            axis.text = element_text(color = "black"),
+            axis.text.x = element_text(angle = 90),
+            axis.line.x.bottom = element_line(),
+            axis.line.y.left = element_line())
+    Res$pos.plot <- p1
+  }
+  
+  return(Res)
+}

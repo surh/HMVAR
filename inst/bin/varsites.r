@@ -135,114 +135,25 @@ map <- read_tsv(args$map_file,
 midas_data <- read_midas_data(midas_dir = args$midas_dir,
                               map = map, genes = args$genes,
                               cds_only = FALSE)
-cat("Determining snp effect...\n")
-midas_data$info <- determine_snp_effect(midas_data$info)
-cat("Determining snp distribution...\n")
-midas_data$info <- determine_snp_dist(info = midas_data$info,
-                                      freq = midas_data$freq,
-                                      depth = midas_data$depth,
-                                      map = map,
-                                      depth_thres = args$depth_thres,
-                                      freq_thres = args$freq_thres,
-                                      clean = FALSE)
-# Subsitution type
-cat("Determining substitution type...\n")
-midas_data$info <- determine_substitution_type(midas_data$info, clean = FALSE)
-midas_data$info
 
-# Reformat data
-dat <- match_freq_and_depth(freq = midas_data$freq,
-                            depth = midas_data$depth,
-                            info = midas_data$info,
-                            map = map,
-                            depth_thres = args$depth_thres)
 
-# For each site determine if it is homogeneous or heterogenous
-dat <- determine_sample_dist(dat)
-dat
 
-# Count number of sites and number of variable per sample
-cat("Calcuating variable sites...\n")
-varsites <- dat %>%
-  filter(depth >= 1) %>%
-  split(.$sample) %>%
-  map_dfr(function(d){
-    nsites <- nrow(d)
-    # sites <- d$freq
-    nhomogeneous <- sum(d$sample_dist == "homogeneous", na.rm = TRUE)
-    nheterogeneous <- sum(d$sample_dist == "heterogeneous", na.rm = TRUE)
-    ntransitions <- sum(d$substitution == "transition", na.rm = TRUE)
-    ntransvertions <- sum(d$substitution == "transversion", na.rm = TRUE)
-    nsynonymous <- sum(d$snp_effect == "synonymous", na.rm = TRUE)
-    nnonsynonymous <- sum(d$snp_effect == "non-synonymous", na.rm = TRUE)
-    return(tibble(nsites = nsites,
-                  n_homogeneous = nhomogeneous,
-                  n_heterogeneous = nheterogeneous,
-                  n_transitions = ntransitions,
-                  n_transversions = ntransvertions,
-                  n_synonymous = nsynonymous,
-                  n_non.synonymous = nnonsynonymous))
-  }, .id = "sample") %>%
-  inner_join(map, by = "sample")
-varsites
+varsites_pipeline(freq = midas_data$freq, depth = midas_data$depth, info = midas_data$info, map = map)
 
-# Plot synonymous & non-synonymous
-p1 <- plotgg_stacked_columns(dat = varsites,
-                       x = "sample",
-                       columns = c("n_synonymous", "n_non.synonymous"),
-                       facet_formula = ~ Group,
-                       gather_key = "type",
-                       gather_value = "nloci")
-p1
-
-# Plot homogeneous & heterogeneous
-p1 <- plotgg_stacked_columns(dat = varsites,
-                             x = "sample",
-                             columns = c("n_homogeneous", "n_heterogeneous"),
-                             facet_formula = ~ Group,
-                             gather_key = "type",
-                             gather_value = "nloci")
-p1
 
 
 #### Plot position
 
 
 
-
-
-varsites.pos <- variable_dist_per_site(dat = dat, variable = "sample_dist", group = "Group")
-varsites.pos
-
-
-
-varsites.pos <- variable_dist_per_site(dat = dat,
-                                       variable = "sample_dist",
-                                       group = "Group")
-varsites.pos
-
 # # pos.varsites
 # cat("\tWriting variable samples per position to file...\n")
 # filename <- paste0(args$outdir, "/", args$prefix, ".posvarsites.txt")
 # write_tsv(pos.varsites, path = filename)
 
-cat("\tPlotting...\n")
-p1 <- ggplot(pos.varsites, aes(x = ref_pos, y = n_homogeneous / nsamples)) +
-  facet_grid(~ ref_id, space = "free_x", scales = "free_x") +
-  # geom_line(aes(color = Group)) +
-  geom_point(aes(color = Group), size = 0.05, alpha = 0.05) +
-  geom_smooth(aes(color = Group), se = FALSE,
-              method = "gam", formula = y ~ s(x, bs = "cs")) +
-  scale_y_continuous(limits = c(0,1)) +
-  theme(panel.background = element_blank(),
-        panel.grid = element_blank(),
-        axis.text = element_text(color = "black"),
-        axis.text.x = element_text(angle = 90),
-        axis.line.x.bottom = element_line(),
-        axis.line.y.left = element_line())
-p1
-filename <- paste0(args$outdir, "/", args$prefix, ".posvarsites.propfixed.png")
-ggsave(filename, p1, width = 12, height = 4, dpi = 200)
+
+# filename <- paste0(args$outdir, "/", args$prefix, ".posvarsites.propfixed.png")
+# ggsave(filename, p1, width = 12, height = 4, dpi = 200)
 
 
 # # Prepare output dir
