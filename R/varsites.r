@@ -203,8 +203,53 @@ variable_dist_per_site <- function(dat, variable, group = NULL){
     dplyr::full_join(res, by = "site_id")
 }
 
-
-
+#' Varsites pipeline
+#' 
+#' Analyzes variable sites per sample and produces counts of
+#' different types of variants per sample. It also analyzes variable
+#' sites within sample to determine if they are homogeneous (fixed within sample)
+#' or heterogeneous (variable within sample). It produces several plots
+#'
+#' @param freq A site x sample allele frequency table as a data frame or
+#' tibble. It must have a 'site_id' column.
+#' @param depth A site x sample sequence coverage table as a data frame
+#' or tibble. It must have a 'site_id' column.
+#' @param info A site x variable table. Based on the MIDAS snp_info.txt
+#' files. It must have columns 'site_id', 'ref_id', 'ref_pos', 'amino_acids',
+#' 'major_allele', and 'minor_allele'.
+#' @param map A data frame or tibble with sample metadata. It must have a
+#' 'sample' column that matches the sample names in `freq` and `depth`,
+#' as well as a 'Group' column with a categorical variable to group the
+#' samples.
+#' @param depth_thres Minimum sequence coverage to to keep a site in
+#' a given sample.
+#' @param freq_thres Frequency trheshold for allele assignemnt per
+#' sample. See \link{determine_snp_dist}.
+#' @param plot If TRUE several plot objects will be included in the ouptut.
+#'
+#' @return A list with elements varsites and varsites.pos. Optionally,
+#' ggplot2 objects are also included.
+#' 
+#' @export
+#' @importFrom magrittr %>%
+#'
+#' @examples
+#' library(magrittr)
+#' map <- readr::read_tsv(system.file("toy_example/map.txt",
+#'                                    package = "HMVAR"),
+#'                        col_types = readr::cols(ID = readr::col_character(),
+#'                                                Group = readr::col_character())) %>%
+#'   dplyr::select(sample = ID,
+#'                 tidyselect::everything())
+#' Dat <- read_midas_data(midas_dir = system.file("toy_example/merged.snps/",
+#'                                                package = "HMVAR"),
+#'                        map = map,
+#'                        cds_only = FALSE)
+#' 
+#' Res <- varsites_pipeline(freq = Dat$freq,
+#'                          depth = Dat$depth,
+#'                          info = Dat$info,
+#'                          map = map)
 varsites_pipeline <- function(freq, depth, info, map,
                               depth_thres = 1, freq_thres = 0.5, plot = TRUE){
   
@@ -243,9 +288,9 @@ varsites_pipeline <- function(freq, depth, info, map,
   # Count number of sites and number of variable per sample
   cat("Calcuating variable site types per sample...\n")
   varsites <- dat %>%
-    filter(depth >= 1) %>%
+    dplyr::filter(depth >= 1) %>%
     split(.$sample) %>%
-    map_dfr(function(d){
+    purrr::map_dfr(function(d){
       nsites <- nrow(d)
       # sites <- d$freq
       nhomogeneous <- sum(d$sample_dist == "homogeneous", na.rm = TRUE)
@@ -254,15 +299,15 @@ varsites_pipeline <- function(freq, depth, info, map,
       ntransvertions <- sum(d$substitution == "transversion", na.rm = TRUE)
       nsynonymous <- sum(d$snp_effect == "synonymous", na.rm = TRUE)
       nnonsynonymous <- sum(d$snp_effect == "non-synonymous", na.rm = TRUE)
-      return(tibble(nsites = nsites,
-                    n_homogeneous = nhomogeneous,
-                    n_heterogeneous = nheterogeneous,
-                    n_transitions = ntransitions,
-                    n_transversions = ntransvertions,
-                    n_synonymous = nsynonymous,
-                    n_non.synonymous = nnonsynonymous))
+      return(tibble::tibble(nsites = nsites,
+                            n_homogeneous = nhomogeneous,
+                            n_heterogeneous = nheterogeneous,
+                            n_transitions = ntransitions,
+                            n_transversions = ntransvertions,
+                            n_synonymous = nsynonymous,
+                            n_non.synonymous = nnonsynonymous))
     }, .id = "sample") %>%
-    inner_join(map, by = "sample")
+    dplyr::inner_join(map, by = "sample")
   
   # Varsites per position
   cat("Calcuating variable site types per site...\n")
@@ -297,17 +342,19 @@ varsites_pipeline <- function(freq, depth, info, map,
     Res$variability.plot <- p1
     
     # Plot homogeneous & heterogeneous
-    p1 <- ggplot(varsites.pos, aes(x = ref_pos,y  = homogeneous / (homogeneous + heterogeneous))) +
-      facet_grid(~ ref_id, space = "free_x", scales = "free_x") +
-      geom_line(aes(color = Group)) +
-      geom_point(aes(color = Group), size = 1, alpha = 0.2) +
-      scale_y_continuous(limits = c(0, 1)) +
-      theme(panel.background = element_blank(),
-            panel.grid = element_blank(),
-            axis.text = element_text(color = "black"),
-            axis.text.x = element_text(angle = 90),
-            axis.line.x.bottom = element_line(),
-            axis.line.y.left = element_line())
+    p1 <- ggplot2::ggplot(varsites.pos,
+                          ggplot2::aes(x = ref_pos,
+                                       y  = homogeneous / (homogeneous + heterogeneous))) +
+      ggplot2::facet_grid(~ ref_id, space = "free_x", scales = "free_x") +
+      ggplot2::geom_line(ggplot2::aes(color = Group)) +
+      ggplot2::geom_point(ggplot2::aes(color = Group), size = 1, alpha = 0.2) +
+      ggplot2::scale_y_continuous(limits = c(0, 1)) +
+      ggplot2::theme(panel.background = ggplot2::element_blank(),
+                     panel.grid = ggplot2::element_blank(),
+                     axis.text = ggplot2::element_text(color = "black"),
+                     axis.text.x = ggplot2::element_text(angle = 90),
+                     axis.line.x.bottom = ggplot2::element_line(),
+                     axis.line.y.left = ggplot2::element_line())
     Res$pos.plot <- p1
   }
   

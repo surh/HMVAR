@@ -65,11 +65,6 @@ process_arguments <- function(){
                                   "the output."),
                     default = "results/",
                     type = "character")
-  p <- add_argument(p, "--plot_position",
-                    help = paste0("Flag indicating whether to plot the proportion ",
-                                  "of variable sites by genomic position. Might be ",
-                                  "time consuming."),
-                    flag = TRUE)
   p <- add_argument(p, "--prefix",
                     help = paste0("Prefix for output filenames."),
                     default = "out",
@@ -89,39 +84,32 @@ process_arguments <- function(){
   if(!file.exists(args$map_file))
     stop("ERROR: map_file does not exist.")
   
+  # Read genes
+  if(is.na(args$genes)){
+    args$genes <- NULL
+  }else{
+    cat("Reading list of genes...\n")
+    args$genes <- read_tsv(args$genes, col_names = FALSE, col_types = 'c')
+    args$genes <- genes$X1
+  }
+  
+  if(is.na(args$prefix)){
+    args$prefix <- NULL
+  }
+  
   return(args)
 }
 
 # Parameters
-# args <- list(midas_dir = "/godot/users/sur/exp/fraserv/2018/2018-12-14.hmp_mktest/genomes/Granulicatella_adiacens_61980/",
-#              map_file = "/godot/users/sur/exp/fraserv/2018/2018-12-14.hmp_mktest/hmp_SPvsTD_map.txt",
-#              genes = NA,
-#              depth_thres = 1,
-#              freq_thres = 0.5,
-#              cds_only = FALSE,
-#              plot_position = TRUE,
-#              prefix = "Granulicatella_adiacens_61980",
-#              outdir = "results/")
-# args <- process_arguments()
-
-args <- list(midas_dir = system.file("toy_example/merged.snps/", package = "HMVAR"),
-             map_file = system.file("toy_example/map.txt", package = "HMVAR"),
+args <- list(midas_dir = "/godot/users/sur/exp/fraserv/2018/2018-12-14.hmp_mktest/genomes/Granulicatella_adiacens_61980/",
+             map_file = "/godot/users/sur/exp/fraserv/2018/2018-12-14.hmp_mktest/hmp_SPvsTD_map.txt",
              genes = NA,
              depth_thres = 1,
              freq_thres = 0.5,
              cds_only = FALSE,
-             plot_position = TRUE,
-             prefix = "toyprefix",
+             prefix = "Granulicatella_adiacens_61980",
              outdir = "results/")
-
-# Read genes
-if(is.na(args$genes)){
-  args$genes <- NULL
-}else{
-  cat("Reading list of genes...\n")
-  args$genes <- read_tsv(args$genes, col_names = FALSE, col_types = 'c')
-  args$genes <- genes$X1
-}
+args <- process_arguments()
 
 # Read map
 cat("Reading map...\n")
@@ -136,28 +124,40 @@ midas_data <- read_midas_data(midas_dir = args$midas_dir,
                               map = map, genes = args$genes,
                               cds_only = FALSE)
 
+# Varsites pipeline
+Res <- varsites_pipeline(freq = midas_data$freq,
+                         depth = midas_data$depth,
+                         info = midas_data$info,
+                         map = map,
+                         depth_thres = args$depth_thres,
+                         freq_thres = args$freq_thres,
+                         plot = TRUE)
 
+# Write output
+# Prepare output dir
+if(!dir.exists(args$outdir)){
+  cat("Preparing output directory...\n")
+  dir.create(args$outdir)
+}
 
-varsites_pipeline(freq = midas_data$freq, depth = midas_data$depth, info = midas_data$info, map = map)
+cat("Writing output...\n")
+filename <- paste0(c(args$prefix, "varsites.txt"), collapse = ".")
+filename <- file.path(args$outdir, filename)
+write_tsv(Res$varsites, filename)
 
+filename <- paste0(c(args$prefix, "varsites.pos.txt"), collapse = ".")
+filename <- file.path(args$outdir, filename)
+write_tsv(Res$varsites.pos, filename)
 
+filename <- paste0(c(args$prefix, "dnds.png"), collapse = ".")
+filename <- file.path(args$outdir, filename)
+ggsave(filename, Res$dnds.plot, width = 6 , height = 4, units = 'in', dpi = 200)
 
-#### Plot position
+filename <- paste0(c(args$prefix, "variability.png"), collapse = ".")
+filename <- file.path(args$outdir, filename)
+ggsave(filename, Res$dnds.plot, width = 6 , height = 4, units = 'in', dpi = 200)
 
+filename <- paste0(c(args$prefix, "pos.png"), collapse = ".")
+filename <- file.path(args$outdir, filename)
+ggsave(filename, Res$dnds.plot, width = 12 , height = 4, units = 'in', dpi = 200)
 
-
-# # pos.varsites
-# cat("\tWriting variable samples per position to file...\n")
-# filename <- paste0(args$outdir, "/", args$prefix, ".posvarsites.txt")
-# write_tsv(pos.varsites, path = filename)
-
-
-# filename <- paste0(args$outdir, "/", args$prefix, ".posvarsites.propfixed.png")
-# ggsave(filename, p1, width = 12, height = 4, dpi = 200)
-
-
-# # Prepare output dir
-# if(!dir.exists(args$outdir)){
-#   cat("Preparing output directory...\n")
-#   dir.create(args$outdir)
-# }
