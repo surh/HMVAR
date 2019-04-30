@@ -206,44 +206,107 @@ p1
 
 
 #### Plot position
- 
-if(args$plot_position){
-  cat("Calculating variable samples per position...\n")
-  pos.varsites <- dat %>%
-    split(.$site_id) %>%
-    map_dfr(function(d){
-      res <- d %>%
-        split(.$Group) %>% map_dfr(function(d){
-          nsamples <- nrow(d)
-          n_homogeneous <- sum(d$sample_dist == "homogeneous")
-          return(tibble(site_id = unique(d$site_id),
-                        nsamples = nsamples,
-                        n_homogeneous = n_homogeneous))
-        }, .id = "Group")
-    }) %>% left_join(midas_data$info, by = "site_id")
-  # pos.varsites
-  cat("\tWriting variable samples per position to file...\n")
-  filename <- paste0(args$outdir, "/", args$prefix, ".posvarsites.txt")
-  write_tsv(pos.varsites, path = filename)
-
-  cat("\tPlotting...\n")
-  p1 <- ggplot(pos.varsites, aes(x = ref_pos, y = n_homogeneous / nsamples)) +
-    facet_grid(~ ref_id, space = "free_x", scales = "free_x") +
-    # geom_line(aes(color = Group)) +
-    geom_point(aes(color = Group), size = 0.05, alpha = 0.05) +
-    geom_smooth(aes(color = Group), se = FALSE,
-                method = "gam", formula = y ~ s(x, bs = "cs")) +
-    scale_y_continuous(limits = c(0,1)) +
-    theme(panel.background = element_blank(),
-          panel.grid = element_blank(),
-          axis.text = element_text(color = "black"),
-          axis.text.x = element_text(angle = 90),
-          axis.line.x.bottom = element_line(),
-          axis.line.y.left = element_line())
-  p1
-  filename <- paste0(args$outdir, "/", args$prefix, ".posvarsites.propfixed.png")
-  ggsave(filename, p1, width = 12, height = 4, dpi = 200)
+#' Size of groups
+#' 
+#' Internal function
+#'
+#' @param d A data frame or tibble
+#' @param columns Names of columns to group
+#'
+#' @return A tibble
+#' @importFrom magrittr %>%
+group_size <- function(d, columns){
+  d %>% split(.[,columns]) %>%
+    purrr:::map_int(~nrow(.)) %>%
+    t %>%
+    tibble::as_tibble()
 }
+
+group <- c('Group')
+group
+cat("Calculating variable samples per position...\n")
+dat
+D <- dat %>%
+  split(.$site_id)
+d <- D[[1]]
+d
+
+
+
+dat %>%
+  split(.$site_id) %>%
+  map_dfr(group_size, columns = 'sample_dist', .id = 'site_id')
+
+
+
+
+variable_dist_per_site <- function(dat, variable, group = NULL){
+  group <- "Group"
+  variable <- 'sample_dist'
+  
+  if(!all(c("site_id", "ref_id", "ref_pos", group, variable) %in% colnames(dat))){
+    stop("ERROR: missing columns in dat")
+  }
+  
+  if(is.null(group)){
+    res <- dat %>%
+      split(.$site_id) %>%
+      map_dfr(group_size, columns = 'sample_dist', .id = 'site_id')
+  }else{
+    res <- dat %>%
+      split(.$site_id) %>%
+      map_dfr(function(d, column){
+        d %>% split(.[,column]) %>%
+          map_dfr(group_size, columns = 'sample_dist', .id = column)},
+        column = 'Group',
+        .id = 'site_id')
+  }
+  dat
+  res
+  res <- dat %>% select(site_id, ref_id, ref_pos) %>% filter(!duplicated(.)) %>% full_join(res, by = "site_id")
+}
+
+
+
+
+
+group_size(d = d, columns = 'sample_dist')
+
+
+pos.varsites <- dat %>%
+  split(.$site_id) %>%
+  map_dfr(function(d){
+    res <- d %>%
+      split(.$Group) %>% map_dfr(function(d){
+        nsamples <- nrow(d)
+        n_homogeneous <- sum(d$sample_dist == "homogeneous")
+        return(tibble(site_id = unique(d$site_id),
+                      nsamples = nsamples,
+                      n_homogeneous = n_homogeneous))
+      }, .id = "Group")
+  }) %>% left_join(midas_data$info, by = "site_id")
+# pos.varsites
+cat("\tWriting variable samples per position to file...\n")
+filename <- paste0(args$outdir, "/", args$prefix, ".posvarsites.txt")
+write_tsv(pos.varsites, path = filename)
+
+cat("\tPlotting...\n")
+p1 <- ggplot(pos.varsites, aes(x = ref_pos, y = n_homogeneous / nsamples)) +
+  facet_grid(~ ref_id, space = "free_x", scales = "free_x") +
+  # geom_line(aes(color = Group)) +
+  geom_point(aes(color = Group), size = 0.05, alpha = 0.05) +
+  geom_smooth(aes(color = Group), se = FALSE,
+              method = "gam", formula = y ~ s(x, bs = "cs")) +
+  scale_y_continuous(limits = c(0,1)) +
+  theme(panel.background = element_blank(),
+        panel.grid = element_blank(),
+        axis.text = element_text(color = "black"),
+        axis.text.x = element_text(angle = 90),
+        axis.line.x.bottom = element_line(),
+        axis.line.y.left = element_line())
+p1
+filename <- paste0(args$outdir, "/", args$prefix, ".posvarsites.propfixed.png")
+ggsave(filename, p1, width = 12, height = 4, dpi = 200)
 
 
 # # Prepare output dir
