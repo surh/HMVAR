@@ -116,7 +116,7 @@ determine_sample_dist <- function(dat, thres = 0.05, error_prob = 0.01){
     cut(breaks = c(0, thres, 1), right = FALSE, include.lowest = TRUE)
   levels(sample_dist) <- c("heterogeneous", "homogeneous")
   
-  dat <- dat %>% bind_cols(sample_dist = sample_dist)
+  dat <- dat %>% dplyr::bind_cols(sample_dist = sample_dist)
   
   return(dat)
 }
