@@ -157,15 +157,9 @@ dat <- match_freq_and_depth(freq = midas_data$freq,
                             map = map,
                             depth_thres = args$depth_thres)
 
-# For each site determine if it is homogeneous or heterogeneous
+# For each site determine if it is homogeneous or heterogenous
 dat <- determine_sample_dist(dat)
 dat
-
-# # Prepare output dir
-# if(!dir.exists(args$outdir)){
-#   cat("Preparing output directory...\n")
-#   dir.create(args$outdir)
-# }
 
 # Count number of sites and number of variable per sample
 cat("Calcuating variable sites...\n")
@@ -176,14 +170,14 @@ varsites <- dat %>%
     nsites <- nrow(d)
     # sites <- d$freq
     nhomogeneous <- sum(d$sample_dist == "homogeneous", na.rm = TRUE)
-    nheterogenous <- sum(d$sample_dist == "heterogeneous", na.rm = TRUE)
+    nheterogeneous <- sum(d$sample_dist == "heterogeneous", na.rm = TRUE)
     ntransitions <- sum(d$substitution == "transition", na.rm = TRUE)
     ntransvertions <- sum(d$substitution == "transversion", na.rm = TRUE)
     nsynonymous <- sum(d$snp_effect == "synonymous", na.rm = TRUE)
     nnonsynonymous <- sum(d$snp_effect == "non-synonymous", na.rm = TRUE)
     return(tibble(nsites = nsites,
                   n_homogeneous = nhomogeneous,
-                  n_heterogenous = nheterogenous,
+                  n_heterogeneous = nheterogeneous,
                   n_transitions = ntransitions,
                   n_transversions = ntransvertions,
                   n_synonymous = nsynonymous,
@@ -204,7 +198,7 @@ p1
 # Plot homogeneous & heterogeneous
 p1 <- plotgg_stacked_columns(dat = varsites,
                              x = "sample",
-                             columns = c("n_homogeneous", "n_heterogenous"),
+                             columns = c("n_homogeneous", "n_heterogeneous"),
                              facet_formula = ~ Group,
                              gather_key = "type",
                              gather_value = "nloci")
@@ -213,40 +207,47 @@ p1
 
 #### Plot position
  
-# if(args$plot_position){
-#   cat("Calculating variable samples per position...\n")
-#   pos.varsites <- dat %>%
-#     split(.$site_id) %>%
-#     map_dfr(function(d){
-#       res <- d %>%
-#         split(.$Group) %>% map_dfr(function(d){
-#           nsamples <- nrow(d)
-#           nfixed <- sum(d$freq == 0 | d$freq == 1)
-#           return(tibble(site_id = unique(d$site_id),
-#                         nsamples = nsamples,
-#                         fixed = nfixed))
-#         }, .id = "Group")
-#     }) %>% left_join(info, by = "site_id")
-#   # pos.varsites
-#   cat("\tWriting variable samples per position to file...\n")
-#   filename <- paste0(args$outdir, "/", args$prefix, ".posvarsites.txt")
-#   write_tsv(pos.varsites, path = filename)
-#   
-#   cat("\tPlotting...\n")
-#   p1 <- ggplot(pos.varsites, aes(x = ref_pos, y = fixed / nsamples)) +
-#     facet_grid(~ ref_id, space = "free_x", scales = "free_x") +
-#     # geom_line(aes(color = Group)) +
-#     geom_point(aes(color = Group), size = 0.05, alpha = 0.05) +
-#     geom_smooth(aes(color = Group), se = FALSE,
-#                 method = "gam", formula = y ~ s(x, bs = "cs")) +
-#     scale_y_continuous(limits = c(0,1)) +
-#     theme(panel.background = element_blank(),
-#           panel.grid = element_blank(),
-#           axis.text = element_text(color = "black"),
-#           axis.text.x = element_text(angle = 90),
-#           axis.line.x.bottom = element_line(),
-#           axis.line.y.left = element_line())
-#   # p1
-#   filename <- paste0(args$outdir, "/", args$prefix, ".posvarsites.propfixed.png")
-#   ggsave(filename, p1, width = 12, height = 4, dpi = 200)
+if(args$plot_position){
+  cat("Calculating variable samples per position...\n")
+  pos.varsites <- dat %>%
+    split(.$site_id) %>%
+    map_dfr(function(d){
+      res <- d %>%
+        split(.$Group) %>% map_dfr(function(d){
+          nsamples <- nrow(d)
+          n_homogeneous <- sum(d$sample_dist == "homogeneous")
+          return(tibble(site_id = unique(d$site_id),
+                        nsamples = nsamples,
+                        n_homogeneous = n_homogeneous))
+        }, .id = "Group")
+    }) %>% left_join(midas_data$info, by = "site_id")
+  # pos.varsites
+  cat("\tWriting variable samples per position to file...\n")
+  filename <- paste0(args$outdir, "/", args$prefix, ".posvarsites.txt")
+  write_tsv(pos.varsites, path = filename)
+
+  cat("\tPlotting...\n")
+  p1 <- ggplot(pos.varsites, aes(x = ref_pos, y = n_homogeneous / nsamples)) +
+    facet_grid(~ ref_id, space = "free_x", scales = "free_x") +
+    # geom_line(aes(color = Group)) +
+    geom_point(aes(color = Group), size = 0.05, alpha = 0.05) +
+    geom_smooth(aes(color = Group), se = FALSE,
+                method = "gam", formula = y ~ s(x, bs = "cs")) +
+    scale_y_continuous(limits = c(0,1)) +
+    theme(panel.background = element_blank(),
+          panel.grid = element_blank(),
+          axis.text = element_text(color = "black"),
+          axis.text.x = element_text(angle = 90),
+          axis.line.x.bottom = element_line(),
+          axis.line.y.left = element_line())
+  p1
+  filename <- paste0(args$outdir, "/", args$prefix, ".posvarsites.propfixed.png")
+  ggsave(filename, p1, width = 12, height = 4, dpi = 200)
+}
+
+
+# # Prepare output dir
+# if(!dir.exists(args$outdir)){
+#   cat("Preparing output directory...\n")
+#   dir.create(args$outdir)
 # }
