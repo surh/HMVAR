@@ -37,11 +37,11 @@ about the sites is passed, it also joins that information into the sites
 that passed the threshold.
 }
 \examples{
-freq <- tibble(site_id = paste('snv' , 1:4, sep = ""),
-               sample1 = c(1,1,0,1), sample2 = c(1,1,1,1),
-               sample3=c(0,0,0,1))
-depth <- tibble(site_id = paste('snv' , 1:4, sep = ""),
-                sample1 = c(1,0,1,1), sample2 = c(4,1,1,0),
-                sample3=c(0,0,0,1))
+freq <- tibble::tibble(site_id = paste('snv' , 1:4, sep = ""),
+                       sample1 = c(1,1,0,1), sample2 = c(1,1,1,1),
+                       sample3=c(0,0,0,1))
+depth <- tibble::tibble(site_id = paste('snv' , 1:4, sep = ""),
+                        sample1 = c(1,0,1,1), sample2 = c(4,1,1,0),
+                        sample3=c(0,0,0,1))
 match_freq_and_depth(freq, depth, depth_thres = 1)
 }

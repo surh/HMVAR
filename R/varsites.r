@@ -43,7 +43,7 @@
 determine_substitution_type <- function(info, clean = TRUE){
   info <- info %>%
     dplyr::bind_cols(substitution = info %>%
-                       purrr:::pmap_chr(function(major_allele, minor_allele, ...){
+                       purrr::pmap_chr(function(major_allele, minor_allele, ...){
                          base_type <- c(A = "purine", C = "pyrimidine", G = "purine", T = "pyrimidine")
                          major <- base_type[ major_allele ]
                          minor <- base_type[ minor_allele ]
@@ -133,7 +133,7 @@ determine_sample_dist <- function(dat, thres = 0.05, error_prob = 0.01){
 #' @importFrom magrittr %>%
 group_size <- function(d, columns){
   d %>% split(.[,columns]) %>%
-    purrr:::map_int(~nrow(.)) %>%
+    purrr::map_int(~nrow(.)) %>%
     t %>%
     tibble::as_tibble()
 }
