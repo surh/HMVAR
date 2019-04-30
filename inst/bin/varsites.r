@@ -131,44 +131,6 @@ map <- read_tsv(args$map_file,
   select(sample = ID,
          everything())
 
-# # Read MIDAS data
-# cat("Reading MIDAS output...\n")
-# info <- read_tsv(paste0(args$midas_dir, "/snps_info.txt"),
-#                  col_types = 'ccncccnnnnnccccc',
-#                  na = 'NA')
-# depth <- read_midas_abun(paste0(args$midas_dir, "/snps_depth.txt"))
-# freq <- read_midas_abun(paste0(args$midas_dir, "/snps_freq.txt"))
-# 
-# # Process data
-# cat("Processing MIDAS data...\n")
-# # Clean info
-# info <- info %>% 
-#   select(-locus_type, -starts_with("count_"), -ref_allele)
-# # Clean depth and freq
-# depth <- depth %>%
-#   select(site_id, intersect(map$sample, colnames(depth)) )
-# freq <- freq %>%
-#   select(site_id, intersect(map$sample, colnames(freq)) )
-# # Clean map
-# map <- map %>% 
-#   filter(sample %in% colnames(depth))
-# 
-# # Select gene/cds data
-# if(args$cds_only){
-#   cat("Selecting CDS only...\n")
-#   info <- info %>% 
-#     filter(!is.na(gene_id))
-# }
-# if(!is.null(genes)){
-#   cat("Selecting chosen genes...\n")
-#   info <- info %>%
-#     filter(gene_id %in% genes)
-# }
-# freq <- freq %>% 
-#   filter(site_id %in% info$site_id)
-# depth <- depth %>% 
-#   filter(site_id %in% info$site_id)
-
 # Read and process midas sites
 midas_data <- read_midas_data(midas_dir = args$midas_dir,
                               map = map, genes = args$genes,
@@ -196,8 +158,7 @@ dat <- match_freq_and_depth(freq = midas_data$freq,
                             depth_thres = args$depth_thres)
 
 # For each site determine if it is homogeneous or heterogeneous
-dat <- determine_sample_dist(dat) %>%
-  select(-ref_id, -ref_allele, -major_allele, -minor_allele)
+dat <- determine_sample_dist(dat)
 dat
 
 # # Prepare output dir
@@ -251,7 +212,7 @@ p1
 
 
 #### Plot position
-# 
+ 
 # if(args$plot_position){
 #   cat("Calculating variable samples per position...\n")
 #   pos.varsites <- dat %>%
