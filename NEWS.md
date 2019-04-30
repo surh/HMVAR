@@ -18,6 +18,12 @@ https://github.com/surh/HMVAR/issues/25).
 11. Fixed allele asignment by `determine_site_dist` (Issue
 https://github.com/surh/HMVAR/issues/1).
 12. Unit testing for functions that obtain MK contingency table.
+13. Adding `determine_substitution_type`.
+14. Adding `match_freq_and_depth`.
+15. Adding `plotgg_sacked_columns`.
+16. Added `variable_dist_per_site`.
+17. Added `varsites_pipeline`. Updated `varsites.r` executable
+to use this function. (Issue https://github.com/surh/HMVAR/issues/4)
 
 # 0.1-0
 1. Added exectuable script to perform mktest.

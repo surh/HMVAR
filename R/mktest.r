@@ -37,7 +37,7 @@ get_mk_results_files <- function(d, pattern = "^mk_results"){
   
   if(length(chosen) > 0)
     chosen <- paste(d, chosen, sep = "/")
-
+  
   return(chosen)
 }
 
@@ -136,7 +136,6 @@ check_pvalues <- function(estimates, pvals, plot = TRUE){
 #' @return A data table
 #'
 #' @importFrom magrittr %>%
-#' @importFrom dplyr select intersect
 select_samples_from_abun <- function(abun, map){
   abun <- abun %>% dplyr::select(site_id, dplyr::intersect(map$sample, colnames(abun)) )
   
@@ -162,11 +161,7 @@ select_samples_from_abun <- function(abun, map){
 #' 'snp_effect' added.
 #' @export
 #'
-#' @importFrom dplyr select
-#' @importFrom purrr pmap_chr
-#' @importFrom stringr str_split
 #' @importFrom magrittr %>%
-#' @importFrom tibble add_column
 #' 
 #' @examples
 #' library(HMVAR)
@@ -332,17 +327,15 @@ get_site_dist <- function(d, group_thres = 2){
 #' The value represents the distance from 0 or 1, for a site to be
 #' assigned to the major or minor allele respectively. It must be
 #' a value in [0,1].
+#' @param clean Whether to remove sites that had no valid
+#' distribution.
 #'
 #' @return A data table which is the same and info bnut with
 #' a 'distribution' column indicating the allele distribution
 #' between sites in the  given samples.
 #' @export
 #' 
-#' @importFrom tidyr gather
 #' @importFrom magrittr %>%
-#' @importFrom dplyr inner_join left_join filter mutate
-#' @importFrom purrr map_chr
-#' @importFrom tibble tibble
 #' 
 #' @examples
 #' library(HMVAR)
@@ -369,7 +362,8 @@ get_site_dist <- function(d, group_thres = 2){
 #' mktable
 determine_snp_dist <- function(info, freq, depth, map,
                                depth_thres = 1,
-                               freq_thres = 0.5){
+                               freq_thres = 0.5,
+                               clean = TRUE){
   
   # Process freq_thres
   if(freq_thres < 0 || freq_thres > 1)
@@ -399,7 +393,12 @@ determine_snp_dist <- function(info, freq, depth, map,
                               distribution = factor(site_dist,
                                                     levels = c('Fixed', 'Invariant', 'Polymorphic')))
   info <- info %>%
-    dplyr::inner_join(site_dist, by = "site_id")
+    dplyr::left_join(site_dist, by = "site_id")
+  
+  if(clean){
+    info <- info %>%
+      dplyr::filter(!is.na(distribution))
+  }
   
   return(info)
 }
@@ -419,7 +418,6 @@ determine_snp_dist <- function(info, freq, depth, map,
 #' of each substitution type.
 #' @export 
 #' 
-#' @importFrom dplyr select
 #' @importFrom magrittr %>%
 #' 
 #' @examples
@@ -451,10 +449,10 @@ mkvalues <- function(info){
     dplyr::select(snp_effect, distribution) %>%
     table(exclude = NULL, useNA = 'always')
   
-  return(tibble(Dn = tab['non-synonymous', 'Fixed'],
-                Ds = tab['synonymous', 'Fixed'],
-                Pn = tab['non-synonymous', 'Polymorphic'],
-                Ps = tab['synonymous', 'Polymorphic']))
+  return(dplyr::tibble(Dn = tab['non-synonymous', 'Fixed'],
+                       Ds = tab['synonymous', 'Fixed'],
+                       Pn = tab['non-synonymous', 'Polymorphic'],
+                       Ps = tab['synonymous', 'Polymorphic']))
 }
 
 #' Perform McDonald-Kreitman test on MIDAS SNPs
@@ -494,9 +492,6 @@ mkvalues <- function(info){
 #' @export
 #' 
 #' @importFrom magrittr %>%
-#' @importFrom readr read_tsv
-#' @importFrom dplyr select mutate
-#' @importFrom purrr map_dfr
 #' 
 #' @examples 
 #' library(HMVAR)
