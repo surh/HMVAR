@@ -207,7 +207,6 @@ dat
 #   dir.create(args$outdir)
 # }
 
-
 # Count number of sites and number of variable per sample
 cat("Calcuating variable sites...\n")
 varsites <- dat %>%
@@ -234,14 +233,79 @@ varsites <- dat %>%
 varsites
 
 
+
+
+
+
+plotgg_stacked_columns <- function(dat, x, columns = NULL,
+                                   facet_formula = NULL,
+                                   gather_key = "key",
+                                   gather_value = "value",
+                                   custom_theme = theme(panel.background = ggplot2::element_blank(),
+                                                        panel.grid = ggplot2::element_blank(),
+                                                        axis.text = ggplot2::element_text(color = "black"),
+                                                        axis.title = ggplot2::element_text(color = "black", face = "bold"),
+                                                        axis.line.x.bottom = ggplot2::element_line(),
+                                                        axis.line.y.left = ggplot2::element_line())){
+  if(!(x %in% colnames(dat))){
+    stop("ERROR: x must be a column of dat", call. = TRUE)
+  }
+  
+  # Get column names if not specified
+  if(is.null(columns)){
+    columns <- setdiff(colnames(dat), c(all.names(facet_formula), x))
+  }
+  
+  
+  p1 <- dat %>%
+    tidyr::gather(key = !!gather_key, value = !!gather_value, columns) %>%
+    ggplot2::ggplot(ggplot2::aes_string(x = x, y = gather_value, fill = gather_key)) +
+    ggplot2::geom_bar(stat = "identity") +
+    custom_theme
+  
+  # Facet
+  if(!is.null(facet_formula)){
+    facet_formula <- formula(facet_formula)
+    p1 <- p1 + ggplot2::facet_grid(facet_formula, scales = "free_x",
+                                   space = "free_x")
+  }
+  
+  return(p1)
+}
+
+
+
+
+
+
+
+
+
+plotgg_stacked_columns(dat = varsites,
+                       x = "sample",
+                       columns = c("n_synonymous", "n_non.synonymous"),
+                       facet_formula = ~ Group,
+                       gather_key = "type",
+                       gather_value = "nloci")
+
+
 columns <- c("n_synonymous", "n_non.synonymous")
-x <- "Group"
+custom_theme <- theme(panel.background = element_blank(),
+                      panel.grid = element_blank(),
+                      axis.text = element_text(color = "black"),
+                      axis.title = element_text(color = "black", face = "bold"),
+                      axis.line.x.bottom = element_line(),
+                      axis.line.y.left = element_line())
+facet_formula <- formula(~ Group)
 
 varsites
 varsites %>%
-  gather(key = "type", value = "nsamples", columns) %>%
-  ggplot(aes(x = x, y = nsamples, fill = type)) +
-  geom_bar(stat = "identity")
+  gather(key = "type", value = "nloci", columns) %>%
+  ggplot(aes(x = sample, y = nloci, fill = type)) +
+  geom_bar(stat = "identity") +
+  custom_theme +
+  facet_grid(facet_formula, scale = "free_x", space = "free_x")
+  
 
 
 
