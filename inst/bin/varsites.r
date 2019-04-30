@@ -155,9 +155,9 @@ ggsave(filename, Res$dnds.plot, width = 6 , height = 4, units = 'in', dpi = 200)
 
 filename <- paste0(c(args$prefix, "variability.png"), collapse = ".")
 filename <- file.path(args$outdir, filename)
-ggsave(filename, Res$dnds.plot, width = 6 , height = 4, units = 'in', dpi = 200)
+ggsave(filename, Res$variability.plot, width = 6 , height = 4, units = 'in', dpi = 200)
 
 filename <- paste0(c(args$prefix, "pos.png"), collapse = ".")
 filename <- file.path(args$outdir, filename)
-ggsave(filename, Res$dnds.plot, width = 12 , height = 4, units = 'in', dpi = 200)
+ggsave(filename, Res$pos.plot, width = 12 , height = 4, units = 'in', dpi = 200)
 
