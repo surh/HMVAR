@@ -2,7 +2,7 @@ Package: HMVAR
 Type: Package
 Title: Human Microbiome Variant Analysis in R
 Version: 0.1-0
-Depends: R (>= 3.4.3),
+Depends: R (>= 3.4),
 	AMOR (>= 0.0-15)
 Imports:
 	qvalue (>= 2.8.0),
