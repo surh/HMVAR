@@ -22,6 +22,7 @@ Imports:
 	magrittr,
 	argparser (>= 0.4),
 	mice (>= 3.4.0),
+	rlang(>= 0.3.4),
 	bugwas
 Recomends:
   svglite
