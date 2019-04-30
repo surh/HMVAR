@@ -121,3 +121,84 @@ determine_sample_dist <- function(dat, thres = 0.05, error_prob = 0.01){
   return(dat)
 }
 
+
+#' Size of groups
+#' 
+#' Internal function
+#'
+#' @param d A data frame or tibble
+#' @param columns Names of columns to group
+#'
+#' @return A tibble
+#' @importFrom magrittr %>%
+group_size <- function(d, columns){
+  d %>% split(.[,columns]) %>%
+    purrr:::map_int(~nrow(.)) %>%
+    t %>%
+    tibble::as_tibble()
+}
+
+#' Calculated distribution of variable per site
+#' 
+#' Calculates the distribution of values of a categorical variable
+#' per site from a table that contains one row per site per sample.
+#'
+#' @param dat A data frame or tibble containing columns "site_id",
+#' "ref_id" and "ref_pos". Each row must correspond to a site per
+#' sample.
+#' @param variable Column name of variable to evaluate. It must be
+#' a categorical variable.
+#' @param group If passed, it must correspond to a column name in
+#' dat. That column must be a grouping factor and the distribution
+#' will be calculated independently for each group.
+#'
+#' @return A tibble with columns "site_id", "ref_id", and "ref_pos".
+#' There will also be one column per level in `variable`, and,
+#' optionally, one column for `group`.
+#' 
+#' @export
+#' @importFrom magrittr %>%
+#' 
+#' @examples
+#' library(magrittr)
+#' map <- readr::read_tsv(system.file("toy_example/map.txt",
+#'                                    package = "HMVAR"),
+#'                        col_types = readr::cols(ID = readr::col_character(),
+#'                                                Group = readr::col_character())) %>%
+#'   dplyr::select(sample = ID,
+#'                 tidyselect::everything())
+#' Dat <- read_midas_data(midas_dir = system.file("toy_example/merged.snps/",
+#'                                                package = "HMVAR"),
+#'                        map = map,
+#'                        cds_only = FALSE)
+#' 
+#' dat <- match_freq_and_depth(freq = Dat$freq,
+#'                             depth = Dat$depth,
+#'                             info = Dat$info,
+#'                             map = map) %>%
+#'   determine_sample_dist()
+#' dat
+variable_dist_per_site <- function(dat, variable, group = NULL){
+  if(!all(c("site_id", "ref_id", "ref_pos", group, variable) %in% colnames(dat))){
+    stop("ERROR: missing columns in dat")
+  }
+  
+  if(is.null(group)){
+    res <- dat %>%
+      split(.$site_id) %>%
+      purrr::map_dfr(group_size, columns = 'sample_dist', .id = 'site_id')
+  }else{
+    res <- dat %>%
+      split(.$site_id) %>%
+      purrr::map_dfr(function(d, column){
+        d %>% split(.[,column]) %>%
+          purrr::map_dfr(group_size, columns = 'sample_dist', .id = column)},
+        column = 'Group',
+        .id = 'site_id')
+  }
+  
+  dat %>%
+    dplyr::select(site_id, ref_id, ref_pos) %>%
+    dplyr::filter(!duplicated(.)) %>%
+    dplyr::full_join(res, by = "site_id")
+}

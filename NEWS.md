@@ -21,6 +21,7 @@ https://github.com/surh/HMVAR/issues/1).
 13. Adding `determine_substitution_type`.
 14. Adding `match_freq_and_depth`.
 15. Adding `plotgg_sacked_columns`.
+16. Added `variable_dist_per_site`.
 
 # 0.1-0
 1. Added exectuable script to perform mktest.
