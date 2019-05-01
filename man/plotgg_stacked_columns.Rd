@@ -6,9 +6,9 @@
 \usage{
 plotgg_stacked_columns(dat, x, columns = NULL, facet_formula = NULL,
   gather_key = "key", gather_value = "value",
-  custom_theme = theme(panel.background = ggplot2::element_blank(),
-  panel.grid = ggplot2::element_blank(), axis.text =
-  ggplot2::element_text(color = "black"), axis.title =
+  custom_theme = ggplot2::theme(panel.background =
+  ggplot2::element_blank(), panel.grid = ggplot2::element_blank(),
+  axis.text = ggplot2::element_text(color = "black"), axis.title =
   ggplot2::element_text(color = "black", face = "bold"), axis.line.x.bottom
   = ggplot2::element_line(), axis.line.y.left = ggplot2::element_line()))
 }

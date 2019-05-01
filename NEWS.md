@@ -24,6 +24,7 @@ https://github.com/surh/HMVAR/issues/1).
 16. Added `variable_dist_per_site`.
 17. Added `varsites_pipeline`. Updated `varsites.r` executable
 to use this function. (Issue https://github.com/surh/HMVAR/issues/4)
+18. Added `plotgg_manhattan` function. (Issue https://github.com/surh/HMVAR/issues/10)
 
 # 0.1-0
 1. Added exectuable script to perform mktest.

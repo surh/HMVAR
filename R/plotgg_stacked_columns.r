@@ -1,4 +1,4 @@
-# (C) Copyright 2018-2019 Sur Herrera Paredes
+# (C) Copyright 2019 Sur Herrera Paredes
 # 
 # This file is part of HMVAR.
 # 
@@ -57,12 +57,12 @@ plotgg_stacked_columns <- function(dat, x, columns = NULL,
                                    facet_formula = NULL,
                                    gather_key = "key",
                                    gather_value = "value",
-                                   custom_theme = theme(panel.background = ggplot2::element_blank(),
-                                                        panel.grid = ggplot2::element_blank(),
-                                                        axis.text = ggplot2::element_text(color = "black"),
-                                                        axis.title = ggplot2::element_text(color = "black", face = "bold"),
-                                                        axis.line.x.bottom = ggplot2::element_line(),
-                                                        axis.line.y.left = ggplot2::element_line())){
+                                   custom_theme = ggplot2::theme(panel.background = ggplot2::element_blank(),
+                                                                 panel.grid = ggplot2::element_blank(),
+                                                                 axis.text = ggplot2::element_text(color = "black"),
+                                                                 axis.title = ggplot2::element_text(color = "black", face = "bold"),
+                                                                 axis.line.x.bottom = ggplot2::element_line(),
+                                                                 axis.line.y.left = ggplot2::element_line())){
   if(!(x %in% colnames(dat))){
     stop("ERROR: x must be a column of dat", call. = TRUE)
   }
