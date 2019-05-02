@@ -27,3 +27,50 @@ run_command <- function(cmd){
   return(out)
 }
 
+
+
+#' Process map
+#' 
+#' Internal
+#'
+#' @param map Either a data frame or tibble or the path to
+#' a file containing a table. Must have columns ID and Group.
+#' @param map_file Same as map, for backwars compatibility
+#' @param focal_group Level from Group column to use as
+#' focal grou, i.e. compare everything else to this group.
+#' 
+#' @importFrom magrittr %>%
+#' 
+#' @return A tibble with columns sample and Group.
+check_map <- function(map, map_file, focal_group = NA){
+  # Backwards compatibility with map_file.
+  if(missing(map) && !missing(map_file)){
+    map <- map_file
+  }
+  
+  # Process map
+  if(is.character(map) && length(map) == 1){
+    # Read and process map
+    map <- readr::read_tsv(map,
+                           col_types = readr::cols(.default = readr::col_character()))
+    # Rename map columns
+    map <- map %>% 
+      dplyr::select(sample = ID, Group) 
+  }else if(is.data.frame(map)){
+    if(!all(c("sample", "Group")  %in% colnames(map))){
+      stop("ERROR: map must contain sample and Group columns", call. = TRUE)
+    }
+  }else{
+    stop("ERROR: map must be a file path or a data.frame/tibble")
+  }
+  
+  # Compare everything to focal_group
+  if(!is.na(focal_group)){
+    map <- map %>%
+      dplyr::mutate(Group = replace(Group,
+                                    Group != focal_group,
+                                    paste0("non.", focal_group)))
+  }
+  
+  return(map)
+}
