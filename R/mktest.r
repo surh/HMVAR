@@ -517,56 +517,16 @@ midas_mktest <- function(midas_dir, map,
                          freq_thres = 0.5,
                          focal_group = NA){
   
-  # Backwards compatibility with map_file.
-  if(missing(map) && !missing(map_file)){
-    map <- map_file
-  }
-  
-  # Process map
-  if(is.character(map) && length(map) == 1){
-    # Read and process map
-    map <- readr::read_tsv(map,
-                           col_types = readr::cols(.default = readr::col_character()))
-    # Rename map columns
-    map <- map %>% 
-      dplyr::select(sample = ID, Group) 
-  }else if(is.data.frame(map)){
-    if(!all(c("sample", "Group")  %in% colnames(map))){
-      stop("ERROR: map must contain sample and Group columns", call. = TRUE)
-    }
-  }else{
-    stop("ERROR: map must be a file path or a data.frame/tibble")
-  }
-  
-  # Compare everything to focal_group
-  if(!is.na(focal_group)){
-    map <- map %>%
-      dplyr::mutate(Group = replace(Group,
-                                    Group != focal_group,
-                                    paste0("non.", focal_group)))
-  }
+  map <- check_map(map = map,
+                   map_file = map_file,
+                   focal_group = focal_group)
   
   # Read data
   Dat <- read_midas_data(midas_dir = midas_dir,
                          map = map,
                          genes = genes)
   
-  # Calculate MK parameters
-  # # Calcualate snp effect
-  # Dat$info <- determine_snp_effect(Dat$info)
-  # # Calculate snp dist
-  # Dat$info <- determine_snp_dist(info = Dat$info,
-  #                                freq = Dat$freq,
-  #                                depth = Dat$depth,
-  #                                map = map,
-  #                                depth_thres = depth_thres,
-  #                                freq_thres = freq_thres)
-  # 
-  # Res <- Dat$info %>%
-  #   split(.$gene_id) %>%
-  #   purrr::map_dfr(mkvalues,
-  #                  .id = "gene_id")
-  
+  # ML table
   Res <- calculate_mktable(info = Dat$info,
                            freq = Dat$freq,
                            depth = Dat$depth,
