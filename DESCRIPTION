@@ -3,8 +3,8 @@ Type: Package
 Title: Human Microbiome Variant Analysis in R
 Version: 0.1-0
 Depends: R (>= 3.4),
-	AMOR (>= 0.0-15)
 Imports:
+	AMOR (>= 0.0-15),
 	qvalue (>= 2.8.0),
 	GO.db (>= 3.4.1),
 	ggtree (>= 1.8.2),
