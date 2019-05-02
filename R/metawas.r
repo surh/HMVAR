@@ -41,7 +41,6 @@
 #' @export
 #' 
 #' @importFrom magrittr %>%
-#' @importFrom mice mice
 benchmark_imputation <- function(geno, snp, outdir, p = 0.1 ,
                                  m = 5, verbose = FALSE, seed = NA,
                                  block_size = 100){
@@ -95,7 +94,7 @@ benchmark_imputation <- function(geno, snp, outdir, p = 0.1 ,
   
   # Collect imputed values
   res$imputed <- (imp$imp %>%
-                    select(-site_id, -minor_allele, -major_allele) %>%
+                    dplyr::select(-site_id, -minor_allele, -major_allele) %>%
                     as.matrix)[ii]
   res$path <- outdir
   

@@ -26,8 +26,6 @@
 #'
 #' @return A tibble
 #' @export
-#'
-#' @importFrom readr read_tsv
 read_midas_abun <- function(file){
   abun <- readr::read_tsv(file,
                           na = 'NA', 
@@ -68,9 +66,6 @@ read_midas_abun <- function(file){
 #' @export
 #' 
 #' @importFrom magrittr %>%
-#' @importFrom readr read_tsv
-#' @importFrom dplyr select filter
-#' @importFrom tidyselect starts_with
 #' 
 #' @examples 
 #' library(HMVAR)
@@ -118,7 +113,7 @@ read_midas_data <- function(midas_dir, map, genes = NULL, cds_only = TRUE){
     info <- info %>% 
       dplyr::filter(locus_type == 'CDS')
   }
-  info <- info %>% select(-locus_type)
+  info <- info %>% dplyr::select(-locus_type)
   
   freq <- freq %>% 
     dplyr::filter(site_id %in% info$site_id)
@@ -215,10 +210,7 @@ match_freq_and_depth <- function(freq, depth, info = NULL, map = NULL, depth_thr
 #' second contains tibbles with the data written to those files
 #' 
 #' @export
-#' @importFrom tidyr gather spread
-#' @importFrom dplyr select inner_join left_join filter arrange mutate
 #' @importFrom magrittr %>%
-#' @importFrom readr write_tsv
 midas_to_bimbam <- function(midas_dir, map, outdir, focal_group = NULL,
                             prefix = NULL){
   Dat <- read_midas_data(midas_dir = midas_dir,
@@ -255,7 +247,8 @@ midas_to_bimbam <- function(midas_dir, map, outdir, focal_group = NULL,
       dplyr::select(id = sample, phenotype)
   }
   
-  snp <- Dat$info %>% select(ID = site_id, pos = ref_pos, chr = ref_id)
+  snp <- Dat$info %>%
+    dplyr::select(ID = site_id, pos = ref_pos, chr = ref_id)
   # snp <- Dat$info %>% select(ID = site_id, pos = ref_pos, chr = ref_id)  %>%
   #   mutate(chr = as.numeric(factor(chr)))
 
