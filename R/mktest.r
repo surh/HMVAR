@@ -552,17 +552,85 @@ midas_mktest <- function(midas_dir, map,
                          genes = genes)
   
   # Calculate MK parameters
-  # Calcualate snp effect
-  Dat$info <- determine_snp_effect(Dat$info)
-  # Calculate snp dist
-  Dat$info <- determine_snp_dist(info = Dat$info,
-                                 freq = Dat$freq,
-                                 depth = Dat$depth,
-                                 map = map,
-                                 depth_thres = depth_thres,
-                                 freq_thres = freq_thres)
+  # # Calcualate snp effect
+  # Dat$info <- determine_snp_effect(Dat$info)
+  # # Calculate snp dist
+  # Dat$info <- determine_snp_dist(info = Dat$info,
+  #                                freq = Dat$freq,
+  #                                depth = Dat$depth,
+  #                                map = map,
+  #                                depth_thres = depth_thres,
+  #                                freq_thres = freq_thres)
+  # 
+  # Res <- Dat$info %>%
+  #   split(.$gene_id) %>%
+  #   purrr::map_dfr(mkvalues,
+  #                  .id = "gene_id")
   
-  Res <- Dat$info %>%
+  Res <- calculate_mktable(info = Dat$info,
+                           freq = Dat$freq,
+                           depth = Dat$depth,
+                           map = map,
+                           depth_thres = depth_thres,
+                           freq_thres = freq_thres)
+  
+  return(Res)
+}
+
+#' Calculate McDonald-Kreitman contingency table
+#' 
+#' Takes SNVs in MIDAS format and produces a McDonald-Kreitman
+#' contingency table.
+#'
+#' @param info A snv x variable data frame or table. Must have columns
+#' 'site_id', 'minor_allele', 'major_allele', 'gene_id' and 'amino_acids'
+#' as defined in the midas_merge.py snps from MIDAS.
+#' @param freq A snv x sample data frame or tibble with minor allele
+#' frequenncies. Must have a 'site_id' column.
+#' @param depth A snv x sample data frame or tibble with sequence coverage.
+#' Must have a 'site_id' column.
+#' @param map A sample x group data frame or tibble. Must have columns
+#' 'sample' and 'Group'.
+#' @param depth_thres The minimum number of reads at
+#' a position in a given sample for that position in that
+#' sample to be included.
+#' @param freq_thres Frequency cuttoff for minor vs major allele.
+#' The value represents the distance from 0 or 1, for a site to be
+#' assigned to the major or minor allele respectively. It must be
+#' a value in [0,1].
+#'
+#' @return A tibble with columns gene_id, Dn, Ds, Pn, and Ps, which
+#' correspond to the McDonald-Kreitman contingency table.
+#' 
+#' @export
+#' @importFrom magrittr %>%
+#'
+#' @examples
+#' library(tidyverse)
+#' 
+#' map <- read_tsv(system.file("toy_example/map.txt", package = "HMVAR"),
+#'                 col_types = cols(.default = col_character())) %>%
+#'   select(sample = ID, Group)
+#' 
+#' midas_data <- read_midas_data(system.file("toy_example/merged.snps/", package = "HMVAR"),
+#'                               map = map,
+#'                               genes = NULL,
+#'                               cds_only = TRUE)
+#' 
+#' calculate_mktable(info = midas_data$info, freq = midas_data$freq, depth = midas_data$depth, map = map)
+calculate_mktable <- function(info, freq, depth, map, depth_thres = 1, freq_thres = 0.5){
+  # Calcualate snp effect
+  info <- determine_snp_effect(info)
+  
+  # Calculate snp dist
+  info <- determine_snp_dist(info = info,
+                             freq = freq,
+                             depth = depth,
+                             map = map,
+                             depth_thres = depth_thres,
+                             freq_thres = freq_thres)
+  
+  Res <- info %>%
     split(.$gene_id) %>%
     purrr::map_dfr(mkvalues,
                    .id = "gene_id")

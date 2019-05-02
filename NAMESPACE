@@ -3,6 +3,7 @@
 export("%>%")
 export(benchmark_imputation)
 export(bimbam_impute)
+export(calculate_mktable)
 export(calculate_prevalence)
 export(check_pvals_in_file)
 export(check_pvalues)
