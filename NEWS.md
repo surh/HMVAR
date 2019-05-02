@@ -27,6 +27,7 @@ to use this function. (Issue https://github.com/surh/HMVAR/issues/4).
 18. Added `plotgg_manhattan` function. (Issue https://github.com/surh/HMVAR/issues/10).
 19. Fixed various issues with NAMESPACE. Including removing AMOR from
 depends field (Issue https://github.com/surh/HMVAR/issues/13).
+20. Generalizing column names for genomewide_ni.
 
 # 0.1-0
 1. Added exectuable script to perform mktest.
