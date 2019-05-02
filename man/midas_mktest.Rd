@@ -4,17 +4,21 @@
 \alias{midas_mktest}
 \title{Perform McDonald-Kreitman test on MIDAS SNPs}
 \usage{
-midas_mktest(midas_dir, map_file, genes = NULL, depth_thres = 1,
-  freq_thres = 0.5)
+midas_mktest(midas_dir, map, map_file, genes = NULL, depth_thres = 1,
+  freq_thres = 0.5, focal_group = NA)
 }
 \arguments{
 \item{midas_dir}{Directory where the output from
 midas_merge.py is located. It must include files:
 'snps_info.txt', 'snps_depth.txt' and 'snps_freq.txt'.}
 
-\item{map_file}{A mapping file associating samples
+\item{map}{Either  a file path or a tibble. If a path,
+it mos point to a mapping file associating samples
 in the MIDAS otput to groups. It must have an 'ID'
-and a 'Group' column.}
+and a 'Group' column. If a tibble. It must have columns
+'sample' and 'Group'.}
+
+\item{map_file}{Same as map. Present for backwards compatibility.}
 
 \item{genes}{The list of genes that are to be tested.
 Must correspond to entries in the 'genes_id' column
@@ -29,6 +33,11 @@ sample to be included.}
 The value represents the distance from 0 or 1, for a site to be
 assigned to the major or minor allele respectively. It must be
 a value in [0,1].}
+
+\item{focal_group}{A string indicating the group that should
+be compared to everything else. If different from NA, all values
+in the 'Group' column of the mapping file will be converted to
+"non.<focal_group>", ensuring a dichotomous grouping.}
 }
 \value{
 A data table containing the McDonald-Kreitman
@@ -38,4 +47,22 @@ contingency table per gene.
 Take output from MIDAS script midas_merge.py
 and perform a McDonald-Kreitman test between
 two groups.
+}
+\examples{
+library(HMVAR)
+
+# Get paths
+midas_dir <- system.file("toy_example/merged.snps/", package = "HMVAR")
+map_file <- system.file("toy_example/map.txt", package = "HMVAR")
+
+# Process map yourself
+map <- readr::read_tsv(map_file,
+                       col_types = readr::cols(.default = readr::col_character())) \%>\%
+  dplyr::select(sample = ID, Group)
+midas_mktest(midas_dir = midas_dir,
+             map = map)
+
+# Give a map file path to midas_mktest
+midas_mktest(midas_dir = midas_dir,
+             map = map_file)
 }

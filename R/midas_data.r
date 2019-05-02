@@ -26,8 +26,6 @@
 #'
 #' @return A tibble
 #' @export
-#'
-#' @importFrom readr read_tsv
 read_midas_abun <- function(file){
   abun <- readr::read_tsv(file,
                           na = 'NA', 
@@ -68,13 +66,30 @@ read_midas_abun <- function(file){
 #' @export
 #' 
 #' @importFrom magrittr %>%
-#' @importFrom readr read_tsv
-#' @importFrom dplyr select filter
-#' @importFrom tidyselect starts_with
-read_midas_data <- function(midas_dir, map, genes, cds_only = TRUE){
+#' 
+#' @examples 
+#' library(HMVAR)
+#' library(tidyverse)
+#' 
+#' # Get file paths
+#' midas_dir <- system.file("toy_example/merged.snps/", package = "HMVAR")
+#' map <- read_tsv(system.file("toy_example/map.txt", package = "HMVAR"),
+#'                 col_types = cols(.default = col_character())) %>%
+#'   select(sample = ID, Group)
+#' 
+#' # Read data
+#' midas_data <- read_midas_data(midas_dir = midas_dir, map = map, cds_only = TRUE)
+#' midas_data
+read_midas_data <- function(midas_dir, map, genes = NULL, cds_only = TRUE){
   # Read data
   info <- readr::read_tsv(paste0(midas_dir, "/snps_info.txt"),
-                          col_types = 'ccncccnnnnnccccc',
+                          col_types = readr::cols(.default = readr::col_character(),
+                                                  ref_pos = readr::col_number(),
+                                                  count_samples = readr::col_number(),
+                                                  count_a = readr::col_number(),
+                                                  count_c = readr::col_number(),
+                                                  count_g = readr::col_number(),
+                                                  count_t = readr::col_number()),
                           na = 'NA')
   depth <- read_midas_abun(paste0(midas_dir, "/snps_depth.txt"))
   freq <- read_midas_abun(paste0(midas_dir, "/snps_freq.txt"))
@@ -82,7 +97,7 @@ read_midas_data <- function(midas_dir, map, genes, cds_only = TRUE){
   # Process data
   # Clean info
   info <- info %>% 
-    dplyr::select(-locus_type, -tidyselect::starts_with("count_"))
+    dplyr::select(-tidyselect::starts_with("count_"))
   # Clean depth and freq
   depth <- select_samples_from_abun(depth, map)
   freq <- select_samples_from_abun(freq, map)
@@ -96,8 +111,10 @@ read_midas_data <- function(midas_dir, map, genes, cds_only = TRUE){
       dplyr::filter(gene_id %in% genes)
   }else if(cds_only){
     info <- info %>% 
-      dplyr::filter(!is.na(gene_id))
+      dplyr::filter(locus_type == 'CDS')
   }
+  info <- info %>% dplyr::select(-locus_type)
+  
   freq <- freq %>% 
     dplyr::filter(site_id %in% info$site_id)
   depth <- depth %>% 
@@ -106,6 +123,72 @@ read_midas_data <- function(midas_dir, map, genes, cds_only = TRUE){
   return(list(info = info, freq = freq, depth = depth))
 }
 
+#' Match freq and depth
+#' 
+#' Takes two data.frames or tibbles representing site x sample allele
+#' frequencies (freq) and sequence coverage (depth), and used \link[tidyr]{gather}
+#' to convert them into a tibble with one line per site per sample. It combines
+#' both sources of info into one table, it filters out positions below a
+#' sequencing depth threshold, and if another data table with metadata (info)
+#' about the sites is passed, it also joins that information into the sites
+#' that passed the threshold.
+#'
+#' @param freq A site by sample data frame or tibble. Must contain a column
+#' named "site_id".
+#' @param depth A site by sample data frame or tibble. Must containa a column
+#' named "site_id".
+#' @param info A site by variable data frame or tibble. Must contain a column
+#' named "site_id".
+#' @param map A sample by variable data frame or tibble. Must conatin a colum
+#' named "sample".
+#' @param depth_thres Minimum sequence coverage (depth) for a site to be kept
+#' in the final output.
+#'
+#' @return A data frame or tibble with columns site_id, freq, depth, and one
+#' column per column in info and map.
+#' 
+#' @export
+#' @importFrom magrittr %>%
+#'
+#' @examples
+#' freq <- tibble::tibble(site_id = paste('snv' , 1:4, sep = ""),
+#'                        sample1 = c(1,1,0,1), sample2 = c(1,1,1,1),
+#'                        sample3=c(0,0,0,1))
+#' depth <- tibble::tibble(site_id = paste('snv' , 1:4, sep = ""),
+#'                         sample1 = c(1,0,1,1), sample2 = c(4,1,1,0),
+#'                         sample3=c(0,0,0,1))
+#' match_freq_and_depth(freq, depth, depth_thres = 1)
+match_freq_and_depth <- function(freq, depth, info = NULL, map = NULL, depth_thres = 1){
+  if(!("site_id" %in% colnames(freq))){
+    stop("ERROR: freq mut contain a site_id column", call. = TRUE)
+  }
+  if(!("site_id" %in% colnames(depth))){
+    stop("ERROR: depth mut contain a site_id column", call. = TRUE)
+  }
+  
+  cat("\tReformatting data...\n")
+  depth <- depth %>% tidyr::gather(key = "sample", value = 'depth', -site_id)
+  freq <- freq %>% tidyr::gather(key = "sample", value = 'freq', -site_id)
+  
+  cat("\tMatching freq and depth...\n")
+  dat <- depth %>%
+    dplyr::inner_join(freq, by = c("site_id", "sample")) %>%
+    dplyr::filter(depth >= depth_thres)
+  
+  if(!is.null(map)){
+    cat("\tMatching map...\n")
+    dat <- dat %>%
+      dplyr::left_join(map, by = "sample")
+  }
+  
+  if(!is.null(info)){
+    cat("\tMatching info...\n")
+    dat <- dat %>%
+      dplyr::left_join(info, by = "site_id")
+  }
+  
+  return(dat)
+}
 
 #' Convert MIDAS merge output to BIMBAM input
 #' 
@@ -127,8 +210,7 @@ read_midas_data <- function(midas_dir, map, genes, cds_only = TRUE){
 #' second contains tibbles with the data written to those files
 #' 
 #' @export
-#' 
-#' 
+#' @importFrom magrittr %>%
 midas_to_bimbam <- function(midas_dir, map, outdir, focal_group = NULL,
                             prefix = NULL){
   Dat <- read_midas_data(midas_dir = midas_dir,
@@ -137,55 +219,55 @@ midas_to_bimbam <- function(midas_dir, map, outdir, focal_group = NULL,
                          cds_only = FALSE)
   
   # Match freqs and depth
-  Dat$depth <- Dat$depth %>% gather(key = "sample", value = 'depth', -site_id)
-  Dat$freq <- Dat$freq %>% gather(key = "sample", value = 'freq', -site_id)
-  Dat$info <- Dat$info %>% select(site_id, ref_id, ref_pos, major_allele, minor_allele)
+  Dat$depth <- Dat$depth %>% tidyr::gather(key = "sample", value = 'depth', -site_id)
+  Dat$freq <- Dat$freq %>% tidyr::gather(key = "sample", value = 'freq', -site_id)
+  Dat$info <- Dat$info %>% dplyr::select(site_id, ref_id, ref_pos, major_allele, minor_allele)
   
   # Set sites without coverage to NA
   dat <- Dat$depth %>%
-    inner_join(Dat$freq, by = c("site_id", "sample"))
+    dplyr::inner_join(Dat$freq, by = c("site_id", "sample"))
   dat$freq[ dat$depth < 1 ] <- NA
-  Dat$freq <- dat %>% select(-depth) %>% spread(sample, freq)
+  Dat$freq <- dat %>% dplyr::select(-depth) %>% tidyr::spread(sample, freq)
   
   # Create BIMBAM tables
   geno <- Dat$info %>%
-    select(site_id, minor_allele, major_allele) %>%
-    left_join(Dat$freq, by = "site_id")  
+    dplyr::select(site_id, minor_allele, major_allele) %>%
+    dplyr::left_join(Dat$freq, by = "site_id")  
   
   pheno <- map %>%
-    filter(sample %in% colnames(geno)) %>%
-    arrange(factor(sample, levels = colnames(geno)[-(1:3)]))
+    dplyr::filter(sample %in% colnames(geno)) %>%
+    dplyr::arrange(factor(sample, levels = colnames(geno)[-(1:3)]))
   if(is.null(focal_group)){
     pheno <- pheno %>%
-      # mutate(phenotype = 1*(Group == "Supragingival.plaque")) %>%
-      mutate(phenotype = as.numeric(factor(Group)) - 1) %>%
-      select(id = sample, phenotype)
+      dplyr::mutate(phenotype = as.numeric(factor(Group)) - 1) %>%
+      dplyr::select(id = sample, phenotype)
   }else{
     pheno <- pheno %>%
-      mutate(phenotype = 1*(Group == focal_group)) %>%
-      # mutate(phenotype = as.numeric(factor(Group)) - 1) %>%
-      select(id = sample, phenotype)
+      dplyr::mutate(phenotype = 1*(Group == focal_group)) %>%
+      dplyr::select(id = sample, phenotype)
   }
   
-  snp <- Dat$info %>% select(ID = site_id, pos = ref_pos, chr = ref_id)
+  snp <- Dat$info %>%
+    dplyr::select(ID = site_id, pos = ref_pos, chr = ref_id)
   # snp <- Dat$info %>% select(ID = site_id, pos = ref_pos, chr = ref_id)  %>%
   #   mutate(chr = as.numeric(factor(chr)))
-  
+
   # Write bimbam tables
   if(!dir.exists(outdir)){
     dir.create(outdir)
   }
   
   gen_file <- file.path(outdir, paste(c(prefix, 'geno.bimbam'), collapse = "_"))
-  write_tsv(geno, path = gen_file, col_names = FALSE)
+  readr::write_tsv(geno, path = gen_file, col_names = FALSE)
   
   phen_file <- file.path(outdir, paste(c(prefix, 'pheno.bimbam'), collapse = "_"))
-  write_tsv(pheno %>% select(phenotype),
-            path = phen_file, col_names = FALSE)
+  readr::write_tsv(pheno %>%
+                     dplyr::select(phenotype),
+                   path = phen_file, col_names = FALSE)
   
   snp_file <- file.path(outdir, paste(c(prefix, 'snp.bimbam'), collapse = "_"))
-  write_tsv(snp, path = snp_file, col_names = FALSE)
-  
+  readr::write_tsv(snp, path = snp_file, col_names = FALSE)
+
   return(list(filenames = list(geno_file = gen_file,
                                pheno_file = phen_file,
                                snp_file = snp_file),

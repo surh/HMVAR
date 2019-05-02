@@ -30,7 +30,7 @@
 #' 
 #' @param file File to a tab-delimited file. Should have Dn,
 #' Ds, Pn, and Ps columns, and one row per gene.
-#' @param col_types Column definitions for \link{read_tsv}.
+#' @param col_types Column definitions for \link[readr]{read_tsv}.
 #' @param na Vector corresponding to NaN values.
 #' 
 #' @return vector with NI and alpha

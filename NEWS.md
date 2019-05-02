@@ -1,10 +1,33 @@
 # 0.1-1
-1. Flipping mice imputation matrix. Added support for blocks.
+1. Overall cleaning and NAMESPACE update
+2. Adding focal group map pre-processing option for
+midas_mktest function and mktest,r executable script.
+3. Flipping mice imputation matrix. Added support for blocks.
 NEED TO DOCUMENT block_size
-2. Reverting to standard alphanumeric names for chromosomes
+4. Reverting to standard alphanumeric names for chromosomes
 in BIMBAM format.
-3. Eliminating annoying messages from read_midas_abun.
-4. Generalizing column names for genomewide_ni
+5. Eliminating annoying messages from read_midas_abun.
+6. Adding toy example in MIDAS format (Issue
+https://github.com/surh/HMVAR/issues/6).
+7. Updating `read_midas_data` function, and adding examples.
+8. Function `midas_mktest` now accepts either a file path to map
+or a data frame witht the map. It also has examples.
+9. Examples for functions that calculate MK contingency table.
+10. Added unit testing support via testhat (Issue
+https://github.com/surh/HMVAR/issues/25).
+11. Fixed allele asignment by `determine_site_dist` (Issue
+https://github.com/surh/HMVAR/issues/1).
+12. Unit testing for functions that obtain MK contingency table.
+13. Adding `determine_substitution_type`.
+14. Adding `match_freq_and_depth`.
+15. Adding `plotgg_sacked_columns`.
+16. Added `variable_dist_per_site`.
+17. Added `varsites_pipeline`. Updated `varsites.r` executable.
+to use this function. (Issue https://github.com/surh/HMVAR/issues/4).
+18. Added `plotgg_manhattan` function. (Issue https://github.com/surh/HMVAR/issues/10).
+19. Fixed various issues with NAMESPACE. Including removing AMOR from
+depends field (Issue https://github.com/surh/HMVAR/issues/13).
+20. Generalizing column names for genomewide_ni.
 
 # 0.1-0
 1. Added exectuable script to perform mktest.
