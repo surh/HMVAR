@@ -40,24 +40,25 @@ process_arguments <- function(){
                                  "the option --suffix lets you specify the suffix of",
                                  "the tab-delimited files."),
                     type = "character")
-  p <- add_argument(p, "map_file",
-                    help = paste0("Mapping file that associates samples ",
-                                  "with groups. It must be a tab-delimited ",
-                                  "file with headers 'ID' and 'Group'"),
-                    type = "character")
   p <- add_argument(p, "outdir",
                     help = paste("This should be the outpu directory for the output"),
                     type = "character")
   
   # Optional arguments
   p <- add_argument(p, "--dir_type",
-                     help = paste("Either 'tabs' or 'midas' to indicate whether",
-                                  "tab-delimited files or midas_merge.py directories",
-                                  "within the input directory",
-                                  "are to be processed. If <input> is a file, then",
-                                  "this option will be ignored."),
-                     type = "character",
-                     default = "files")
+                    help = paste("Either 'tabs' or 'midas' to indicate whether",
+                                 "tab-delimited files or midas_merge.py directories",
+                                 "within the input directory",
+                                 "are to be processed. If <input> is a file, then",
+                                 "this option will be ignored."),
+                    type = "character",
+                    default = "files")
+  p <- add_argument(p, "--map_file",
+                    help = paste("Mapping file that associates samples",
+                                 "with groups. It must be a tab-delimited",
+                                 "file with headers 'ID' and 'Group'. Only",
+                                 "required if --dir_type=midas"),
+                    type = "character")
   p <- add_argument(p, "--genes",
                     help = paste0("File with list of gene IDs to test. ",
                                   "It must contain one gene id per line, ",
@@ -129,7 +130,7 @@ process_arguments <- function(){
   return(args)
 }
 
-write_outputs <- function(dat, infile, suffix, outdir){
+write_outputs <- function(dat, infile, suffix, outdir, pval_col){
   # infile <- args$input
   # outdir <- args$outdir
   
@@ -141,7 +142,7 @@ write_outputs <- function(dat, infile, suffix, outdir){
   write_tsv(dos, filename)
   
   # Produce plots
-  if(nrow(dat) > 1){
+  if(sum(!is.na(dat$DoS)) > 1){
     p1 <- ggplot(dat, aes(x = DoS)) +
       geom_histogram(bins = 15) +
       ggtitle(label = prefix) +
@@ -150,7 +151,7 @@ write_outputs <- function(dat, infile, suffix, outdir){
     filename <- file.path(outdir, filename)
     ggsave(filename, p1, width = 6, height = 5, dpi = 200)
     
-    p1 <- ggplot(d, aes(x = p.value)) +
+    p1 <- ggplot(dat, aes_string(x = pval_col)) +
       geom_histogram(bins = 20) +
       ggtitle(label = prefix) +
       AMOR::theme_blackbox()
@@ -161,7 +162,7 @@ write_outputs <- function(dat, infile, suffix, outdir){
     filename <- paste0(c(prefix, "DoS.pval.qqplot.png"), collapse = ".")
     filename <- file.path(outdir, filename)
     png(filename = filename, width = 6, height = 5, units = "in", res = 200)
-    HMVAR::pval_qqplot(d$DoS.pvalue)
+    HMVAR::pval_qqplot(dat[ , pval_col, drop = TRUE ])
     dev.off()
   }
 }
@@ -173,31 +174,23 @@ if(!dir.exists(args$outdir)){
   dir.create(args$outdir)
 }
 
-if(file.exists(args$input)){
-  # Input is file
-  dat <- read_tsv(args$input,
-                  col_types = cols(.default = col_character(),
-                                   Dn = col_integer(),
-                                   Ds = col_integer(),
-                                   Pn = col_integer(),
-                                   Ps = col_integer()))
-  
-  if(!is.null(args$genes)){
-    dat <- dat %>%
-      filter(gene_id %in% args$genes)
-  }
-  
-  dos <- calculate_dos(dat = dat, test = TRUE, clean = FALSE)
-  write_outputs(dat = dos, infile = args$input, suffix = args$suffix, outdir = args$outdir)
-}else if(dir.exists(args$input)){
+if(dir.exists(args$input)){
   # Input is dir
+  cat("Input is a dir\n")
   if(args$dir_type == 'tabs'){
+    cat("Inputs are tab files\n")
     inputs <- list.files(args$input)
     inputs <- str_subset(string = inputs, pattern = args$suffix)
-    
+    cat("Found ", length(inputs), " files\n")
   }else if(args$dir_type == "midas"){
-    inputs <- list.dirs(args$input)
-    inputs <- str_subset(string = inputs, pattern = args$suffix)
+    cat("Inputs are dirs\n")
+    if(!file.exists(args$map_file)){
+      stop("ERROR: --map_file must be provided in <input> is dir and --dir_type=midas.")
+    }
+    inputs <- list.dirs(args$input, recursive = FALSE)
+    # inputs <- str_subset(string = inputs, pattern = args$suffix)
+    cat("Found ", length(inputs), " dirs\n")
+    pval_col <- 'p.value'
   }else{
     stop("ERROR: --dir_type must be tabs or midas.")
   }
@@ -220,27 +213,54 @@ if(file.exists(args$input)){
           filter(gene_id %in% args$genes)
       }
       
+      if('p.value' %in% colnames(dat)){
+        pval_col <- 'DoS.p.value' 
+      }else{
+        pval_col <- 'p.value'
+      }
+      
       dos <- calculate_dos(dat = dat, test = TRUE, clean = FALSE)
-      write_outputs(dat = dos, infile = input, suffix = args$suffix, outdir = args$outdir)
+      write_outputs(dat = dos, infile = input, suffix = args$suffix, outdir = args$outdir, pval_col = pval_col)
     }else if(args$dir_type == 'midas'){
       # Each input is a midas merge dir
-      dos <- midas_dos(midas_dir = file.path(args$input, input),
+      dos <- midas_dos(midas_dir = input,
                        map = args$map_file,
                        genes = args$genes,
                        depth_thres = args$depth_thres,
                        freq_thres = args$freq_thres,
                        focal_group = args$focal_group)
       
-      write_outputs(dat = dos, infile = input, suffix = args$suffix, outdir = args$outdir)
+      write_outputs(dat = dos, infile = input, suffix = "$", outdir = args$outdir, pval_col = 'p.value')
     }else{
       stop("ERROR: --dir_type must be tabs or midas.")
     }
     dos$input <- input
     Res <- Res %>% bind_rows(dos)
   }
+  # Write combined
+  write_outputs(dat = Res, infile = "summary", suffix = '$', outdir = args$outdir, pval_col = pval_col)
+}else if(file.exists(args$input)){
+    # Input is file
+    dat <- read_tsv(args$input,
+                    col_types = cols(.default = col_character(),
+                                     Dn = col_integer(),
+                                     Ds = col_integer(),
+                                     Pn = col_integer(),
+                                     Ps = col_integer()))
+    
+    if(!is.null(args$genes)){
+      dat <- dat %>%
+        filter(gene_id %in% args$genes)
+    }
+    
+    if('p.value' %in% colnames(dat)){
+      pval_col <- 'DoS.p.value' 
+    }else{
+      pval_col <- 'p.value'
+    }
+     
+    dos <- calculate_dos(dat = dat, test = TRUE, clean = FALSE)
+    write_outputs(dat = dos, infile = args$input, suffix = args$suffix, outdir = args$outdir, pval_col = pval_col)
 }else{
   stop("ERROR: input doesn't exist")
 }
-
-# Write combined
-write_outputs(dat = Res, infile = "summary", suffix = '$', outdir = args$outdir)

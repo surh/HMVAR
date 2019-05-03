@@ -30,6 +30,8 @@ depends field (Issue https://github.com/surh/HMVAR/issues/13).
 20. Generalizing column names for genomewide_ni.
 21. Added `calculate_mktable`.
 22. Added functions for DoS (Issue https://github.com/surh/HMVAR/issues/11).
+23. Created `dos.r` executable (Issue
+https://github.com/surh/HMVAR/issues/12).
 
 # 0.1-0
 1. Added exectuable script to perform mktest.
