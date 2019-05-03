@@ -100,7 +100,7 @@ process_arguments <- function(){
                                  "to identify which files to process, and also, to",
                                  "determine the output files. Basically if an input",
                                  "file is of the form /path/<prefix><suffix>",
-                                 "the ouptut will be of the form <outdir>/<prefix>*").
+                                 "the ouptut will be of the form <outdir>/<prefix>*"),
                     type = "character",
                     default = ".txt")
   
@@ -109,94 +109,138 @@ process_arguments <- function(){
   args <- parse_args(p)
   
   # Process arguments
+  if(args$freq_thres < 0 || args$freq_thres > 1){
+    stop("ERROR: freq_thres must be a value in [0,1].")
+  }
+  if(args$depth_thres < 0){
+    stop("ERROR: depth_thres must be a non-negative integer.")
+  }
+  args$suffix <- paste0(args$suffix, "$")
+  
+  # Read genes
+  if(is.na(args$genes)){
+    args$genes <- NULL
+  }else{
+    cat("Reading list of genes...\n")
+    args$genes <- read_tsv(args$genes, col_names = FALSE, col_types = 'c')
+    args$genes <- genes$X1
+  }
   
   return(args)
 }
 
-# args <- list(mktest = "../2019-04-02.hmp_mktest_data/Buccal.mucosa/results/",
-#              outdir = "results/")
-args <- list(mktest = opts[1],
-             outdir = opts[2])
-
-# files <- list.files(args$mktest)
-# f <- files[2]
-# f
-# outdir <- args$outdir
-
-
-dir.create(args$outdir)
-dos <- list.files(args$mktest) %>%
-  map_dfr(function(f, outdir){
-    spec <- str_replace(f, "_mktest.txt$", "")
-    cat(spec, "\n")
-    f <- file.path(args$mktest, f)
-    d <- read_tsv(f,
-                  col_types = cols(.default = col_double(),
-                                   gene_id = col_character()))
-    d <- d %>%
-      mutate(DoS = (Dn / (Dn + Ds)) - (Pn / (Pn + Ps)))  %>%
-      filter(!is.na(DoS)) %>%
-      # mutate(DoS.zscore = DoS / sd(DoS)) %>%
-      mutate(DoS.pvalue = 2*(1 - pnorm(q = abs(DoS) / sd(DoS)))) %>%
-      mutate(spec = spec)
-    # d %>% arrange(DoS.pvalue) %>%
-    #   mutate(q.value = p.adjust(DoS.pvalue, 'fdr'))
-    filename <- paste0(c(spec, "DoS.table.txt"), collapse = ".")
+write_outputs <- function(dat, infile, suffix, outdir){
+  # infile <- args$input
+  # outdir <- args$outdir
+  
+  prefix <- str_replace(string = basename(infile), pattern = suffix, replacement = "")
+  
+  # Write table
+  filename <- paste0(c(prefix, "DoS.table.txt"), collapse = ".")
+  filename <- file.path(outdir, filename)
+  write_tsv(dos, filename)
+  
+  # Produce plots
+  if(nrow(dat) > 1){
+    p1 <- ggplot(dat, aes(x = DoS)) +
+      geom_histogram(bins = 15) +
+      ggtitle(label = prefix) +
+      AMOR::theme_blackbox()
+    filename <- paste0(c(prefix, "DoS.histogram.png"), collapse = ".")
     filename <- file.path(outdir, filename)
-    write_tsv(d, filename)
- 
-    if(nrow(d) > 1){
-      p1 <- ggplot(d, aes(x = DoS)) +
-        geom_histogram(bins = 15) +
-        ggtitle(label = spec) +
-        AMOR::theme_blackbox()
-      filename <- paste0(c(spec, "DoS.histogram.png"), collapse = ".")
-      filename <- file.path(outdir, filename)
-      ggsave(filename, p1, width = 6, height = 5, dpi = 200)
-      
-      p1 <- ggplot(d, aes(x = DoS.pvalue)) +
-        geom_histogram(bins = 20) +
-        ggtitle(label = spec) +
-        AMOR::theme_blackbox()
-      filename <- paste0(c(spec, "DoS.pval.histogram.png"), collapse = ".")
-      filename <- file.path(outdir, filename)
-      ggsave(filename, p1, width = 6, height = 5, dpi = 200)
-      
-      filename <- paste0(c(spec, "DoS.pval.qqplot.png"), collapse = ".")
-      filename <- file.path(outdir, filename)
-      png(filename = filename, width = 6, height = 5, units = "in", res = 200)
-      HMVAR::pval_qqplot(d$DoS.pvalue)
-      dev.off()
-    }
+    ggsave(filename, p1, width = 6, height = 5, dpi = 200)
     
-    d
-  }, outdir = args$outdir, .id = "file")
+    p1 <- ggplot(d, aes(x = p.value)) +
+      geom_histogram(bins = 20) +
+      ggtitle(label = prefix) +
+      AMOR::theme_blackbox()
+    filename <- paste0(c(prefix, "DoS.pval.histogram.png"), collapse = ".")
+    filename <- file.path(outdir, filename)
+    ggsave(filename, p1, width = 6, height = 5, dpi = 200)
+    
+    filename <- paste0(c(prefix, "DoS.pval.qqplot.png"), collapse = ".")
+    filename <- file.path(outdir, filename)
+    png(filename = filename, width = 6, height = 5, units = "in", res = 200)
+    HMVAR::pval_qqplot(d$DoS.pvalue)
+    dev.off()
+  }
+}
 
-dos
-dos %>% arrange(desc(DoS))
-dos %>% arrange(DoS.pvalue)
-write_tsv(dos, "summary.dos.txt")
 
-p1 <- ggplot(dos, aes(x = DoS)) +
-  geom_histogram(bins = 15) +
-  AMOR::theme_blackbox()
-p1
-ggsave("summary.dos.hist.png", width = 6, height = 5, dpi = 200)
+args <- process_arguments()
 
-p1 <- ggplot(dos, aes(x = DoS)) +
-  geom_density(aes(fill = spec), alpha = 0.3) +
-  scale_fill_discrete(guide =  FALSE) +
-  AMOR::theme_blackbox()
-p1
-ggsave("summary.dos.specdensity.png", width = 6, height = 5, dpi = 200)
+if(!dir.exists(args$outdir)){
+  dir.create(args$outdir)
+}
 
-p1 <- ggplot(dos, aes(x = DoS.pvalue)) +
-  geom_histogram(bins = 20) +
-  AMOR::theme_blackbox()
-p1
-ggsave("summary.dospval.hist.png", width = 6, height = 5, dpi = 200)
+if(file.exists(args$input)){
+  # Input is file
+  dat <- read_tsv(args$input,
+                  col_types = cols(.default = col_character(),
+                                   Dn = col_integer(),
+                                   Ds = col_integer(),
+                                   Pn = col_integer(),
+                                   Ps = col_integer()))
+  
+  if(!is.null(args$genes)){
+    dat <- dat %>%
+      filter(gene_id %in% args$genes)
+  }
+  
+  dos <- calculate_dos(dat = dat, test = TRUE, clean = FALSE)
+  write_outputs(dat = dos, infile = args$input, suffix = args$suffix, outdir = args$outdir)
+}else if(dir.exists(args$input)){
+  # Input is dir
+  if(args$dir_type == 'tabs'){
+    inputs <- list.files(args$input)
+    inputs <- str_subset(string = inputs, pattern = args$suffix)
+    
+  }else if(args$dir_type == "midas"){
+    inputs <- list.dirs(args$input)
+    inputs <- str_subset(string = inputs, pattern = args$suffix)
+  }else{
+    stop("ERROR: --dir_type must be tabs or midas.")
+  }
+  
+  Res <- NULL
+  for(input in inputs){
+    cat("Processing ", input, "...\n")
+    if(args$dir_type == 'tabs'){
+      # Each input is a file
+      # Input is file
+      dat <- read_tsv(file.path(args$input, input),
+                      col_types = cols(.default = col_character(),
+                                       Dn = col_integer(),
+                                       Ds = col_integer(),
+                                       Pn = col_integer(),
+                                       Ps = col_integer()))
+      
+      if(!is.null(args$genes)){
+        dat <- dat %>%
+          filter(gene_id %in% args$genes)
+      }
+      
+      dos <- calculate_dos(dat = dat, test = TRUE, clean = FALSE)
+      write_outputs(dat = dos, infile = input, suffix = args$suffix, outdir = args$outdir)
+    }else if(args$dir_type == 'midas'){
+      # Each input is a midas merge dir
+      dos <- midas_dos(midas_dir = file.path(args$input, input),
+                       map = args$map_file,
+                       genes = args$genes,
+                       depth_thres = args$depth_thres,
+                       freq_thres = args$freq_thres,
+                       focal_group = args$focal_group)
+      
+      write_outputs(dat = dos, infile = input, suffix = args$suffix, outdir = args$outdir)
+    }else{
+      stop("ERROR: --dir_type must be tabs or midas.")
+    }
+    dos$input <- input
+    Res <- Res %>% bind_rows(dos)
+  }
+}else{
+  stop("ERROR: input doesn't exist")
+}
 
-png("summary.dos.pvalqqplot.png", width = 6, height = 6, units = "in", res = 200)
-HMVAR::pval_qqplot(dos$DoS.pvalue)
-dev.off()
-
+# Write combined
+write_outputs(dat = Res, infile = "summary", suffix = '$', outdir = args$outdir)
