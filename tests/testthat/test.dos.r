@@ -70,3 +70,51 @@ test_that("calculate_dos", {
   expect_identical(calculate_dos(d, test = TRUE, clean = FALSE), e,
                    info = "Test DoS, p.value")
 })
+
+test_that("dos", {
+  i <- tibble::tibble(site_id = c('snv1', 'snv2', 'snv3', 'snv4'),
+                      minor_allele = rep('A', 4),
+                      major_allele = rep('C', 4),
+                      gene_id = rep('gene1', 4),
+                      amino_acids = c('A,A,A,A', 
+                                      'A,A,A,A',
+                                      'A,D,E,F',
+                                      'A,D.E.F'))
+  f <- tibble::tibble(site_id = c('snv1', 'snv2', 'snv3', 'snv4'),
+                      s1 = c(1, 1, 1, 1),
+                      s2 = c(1, 0, 1, 0),
+                      s3 = c(0, 1, 0, 1),
+                      s4 = c(0, 0, 0, 0))
+  d <- tibble::tibble(site_id = c('snv1', 'snv2', 'snv3', 'snv4'),
+                      s1 = c(1, 1, 1, 1),
+                      s2 = c(1, 1, 1, 1),
+                      s3 = c(1, 1, 1, 1),
+                      s4 = c(1, 1, 1, 1))
+  m <- tibble::tibble(sample = c('s1', 's2', 's3', 's4'),
+                      Group = c('A', 'A', 'B', 'B'))
+  e <- tibble::tibble(gene_id = 'gene1',
+                      Dn = as.integer(1),
+                      Ds = as.integer(1),
+                      Pn = as.integer(1),
+                      Ps = as.integer(1),
+                      DoS = 0)
+  expect_identical(dos(info = i,
+                       freq = f,
+                       depth = d,
+                       map = m,
+                       depth_thres = 1,
+                       freq_thres = 0.5,
+                       test = FALSE,
+                       clean = FALSE),
+                   e, info = "DoS")
+  
+  # Missing column
+  i <- tibble::tibble(site_id = c('snv1', 'snv2', 'snv3', 'snv4'),
+                      major_allele = rep('C', 4),
+                      gene_id = rep('gene1', 4),
+                      amino_acids = c('A,A,A,A', 
+                                      'A,A,A,A',
+                                      'A,D,E,F',
+                                      'A,D.E.F'))
+  expect_error(dos(i), info = "Missing column in info")
+})
