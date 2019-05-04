@@ -23,12 +23,12 @@ expand_annot <- function(gene_id, terms){
 }
 
 annots_to_geneGO <- function(annots, direction = "geneID2GO"){
-  if(!(c("gene_id", "terms") %in% colnames(annots))){
+  if(!all(c("gene_id", "terms") %in% colnames(annots))){
     stop("ERROR: missing columns in annots")
   }
   
-  if(direction == "geneID2G"){
-    annots %>%
+  if(direction == "geneID2GO"){
+    annots <- annots %>%
       purrr::pmap_dfr(expand_annot) %>%
       dplyr::filter(!is.na(term)) %>%
       split(.$gene_id) %>%
@@ -41,7 +41,7 @@ annots_to_geneGO <- function(annots, direction = "geneID2GO"){
       split(.$term) %>%
       purrr::map(~ .x$gene_id)
   }else{
-    stop("ERROR: direction must be geneID2G or GO2geneID", call. = TRUE)
+    stop("ERROR: direction must be geneID2GO or GO2geneID", call. = TRUE)
   }
   
   return(annots)
@@ -69,19 +69,41 @@ sampleGOdata <- new("topGOdata",
 
 
 dat <- read_eggnog("~/micropopgen/exp/2019/2019-04-01.hmp_subsite_annotations/annotations/Catonella_morbi_61904.emapper.annotations")
+dat
+
+
 
 gene_column <- "query_name"
 annot_colum <- "GO_terms"
+sig_genes <- dat$query_name[1:200]
+ontology <- "MF"
+description <- ""
+algorithm <- "classic"
+statistic <- "fisher"
+node_size <- 3
 
 annots <- dat %>%
   dplyr::select(gene_id = gene_column, terms = annot_colum)
 annots
+geneID2GO <- annots_to_geneGO(annots = annots, direction = "geneID2GO")
+geneID2GO
+
+gene_list <- factor(1*(annots$gene_id %in% sig_genes))
+names(gene_list) <- annots$gene_id
+length(gene_list)
+go_data <- new("topGOdata",
+               description = description,
+               ontology = ontology,
+               allGenes = gene_list,
+               nodeSize = node_size,
+               annot = annFUN.gene2GO,
+               gene2GO = geneID2GO)
+
+go_res <- topGO::runTest(go_data,
+                         algorithm = algorithm,
+                         statistic = statistic)
+go_res
 
 
-
-
-
-
-
-
+GenTable(go_data, p.value = go_res)
 
