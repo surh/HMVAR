@@ -23,7 +23,7 @@
 #' 
 #' @export
 read_eggnog <- function(path){
-  res <- readr::read_tsv(annots,
+  res <- readr::read_tsv(path,
                          comment = "#",
                          col_names = c("query_name", "seed_eggNOG_ortholog", "seed_ortholog_evalue",
                                        "seed_ortholog_score",	"predicted_gene_name", "GO_terms",
