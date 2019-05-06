@@ -91,17 +91,51 @@ annots_to_geneGO <- function(annots, direction = "geneID2GO"){
 
 
 
+#' gene selection function
+#' 
+#' Internal
+#'
+#' @param thres score threshold to select function
+#'
+#' @return A function
 gene_sel_fun <- function(thres){
   function(x) x < thres
 }
 
 
-test_go <- function (genes, annots,
-                     ontology,
-                     description, algorithm, statistic,
-                     node_size, score_threshold) UseMethod("test_go")
+#' Gene Ontology enrichment via topGO
+#' 
+#' Performs Gene Ontology (GO) enrichment analysis via
+#' topGO
+#'
+#' @param genes Either a character vector with the gene
+#' identifiers that are 'significant' or a named numeric vector
+#' where the vector names are the gene_identifiers of the universe
+#' of genes and the numeric values the genes' scores.
+#' @param annots Either a data.frame or tibble that has 'gene_id' and
+#' 'terms' column or the result of running \link{annots_to_geneGO} on
+#' such table.
+#' @param ontology Which ontology to test. See help at \link[topGO]{topGOdata-class}.
+#' @param description Description for the test. See help at \link[topGO]{topGOdata-class}.
+#' @param algorithm Algortithm for test. See help at \link[topGO]{runTest}.
+#' @param statistic Statistic to test. See help at \link[topGO]{runTest}.
+#' @param node_size Minimum number of genes per term to test that
+#' term. See help at \link[topGO]{topGOdata-class}
+#' @param score_threshold If genes is a numeric vector, then
+#' this should be the 'significance' threshold. E.g. if scores are p-values
+#' a common threshold would be 0.05.
+#'
+#' @return A list with elements topgo_data and topgo_res of class
+#' topGOdata and topGOresult respecitveley
+#' @export
+test_go <- function(genes, annots,
+                    ontology,
+                    description, algorithm, statistic,
+                    node_size, score_threshold) UseMethod("test_go")
 
 
+#' @rdname test_go
+#' @method test_go character
 test_go.character <- function(genes, annots,
                               ontology = "BP",
                               description = '',
@@ -129,7 +163,8 @@ test_go.character <- function(genes, annots,
   
 }
 
-
+#' @rdname test_go
+#' @method test_go numeric
 test_go.numeric <- function(genes, annots,
                             ontology = "BP",
                             description = '',
@@ -152,7 +187,7 @@ test_go.numeric <- function(genes, annots,
                  allGenes = genes,
                  geneSelectionFun = gene_sel_fun(score_threshold),
                  nodeSize = node_size,
-                 annot = annFUN.gene2GO,
+                 annot = topGO::annFUN.gene2GO,
                  gene2GO = annots)
   
   # perform topGO test
