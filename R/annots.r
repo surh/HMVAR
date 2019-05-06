@@ -15,13 +15,55 @@
 # You should have received a copy of the GNU General Public License
 # along with HMVAR.  If not, see <http://www.gnu.org/licenses/>.
 
+#' Expand annotation
+#' 
+#' Internal function
+#'
+#' @param gene_id Character
+#' @param terms Character string of comma-separated terms for the
+#' `gene_id`.
+#'
+#' @return A tibble with one row per term
+#' 
+#' @importFrom magrittr %>%
 expand_annot <- function(gene_id, terms){
   terms <- stringr::str_split(string = terms, pattern = ",") %>%
-    unlist
+    unlist %>%
+    stringr::str_replace("^ +", "") %>%
+    stringr::str_replace(" +$", "")
   tibble::tibble(gene_id = gene_id,
                  term = terms)
 }
 
+#' Convert annotation table to gene or annotation list for topGO
+#' 
+#' Takes a data frame or tibble that maps genes to annotations,
+#' and creates either a list of genes or a list of annotation terms
+#' that can be ussed with \link[topGO]{annFUN.gene2GO} or
+#' \link[topGO]{annFUN.GO2genes}.
+#'
+#' @param annots A tibble or data frame that has columns 'gene_id' and
+#' 'annots'. Column 'annots' must be a comma-separated charachter string
+#' with all the terms that annotate a given 'gene_id'.
+#' @param direction Either "geneID2GO" or "GO2geneID". Direction of the
+#' list that is produced.
+#'
+#' @return A named list. If `direction = "geneID2GO"`, then the list has
+#' one element per 'gene_id' (named after that gene), and each element
+#' of the list is a character vector with all the terms that annotate that
+#' gene. If `direction = "GO2geneID"`, the the list has one element per
+#' annotation term in 'annots' (named after that term), and each element
+#' of the list is a character vector with all the genes annotated with
+#' that term.
+#' 
+#' @export
+#' @importFrom magrittr %>%
+#'
+#' @examples
+#' d <- tibble::tibble(gene_id = c('gene1', 'gene2', 'gene3'),
+#'                     terms = c('term3', 'term1,term2', 'term2, term3'))
+#' annots_to_geneGO(d, direction = "geneID2GO")
+#' annots_to_geneGO(d, direction = "GO2geneID")
 annots_to_geneGO <- function(annots, direction = "geneID2GO"){
   if(!all(c("gene_id", "terms") %in% colnames(annots))){
     stop("ERROR: missing columns in annots")
@@ -46,64 +88,3 @@ annots_to_geneGO <- function(annots, direction = "geneID2GO"){
   
   return(annots)
 }
-
-
-library(topGO)
-library(ALL)
-data(ALL)
-data(geneList)
-
-affyLib <- paste(annotation(ALL), "db", sep = ".")
-affyLib
-library(package = affyLib, character.only = TRUE)
-
-sampleGOdata <- new("topGOdata",
-                    description = "Simple session",
-                    ontology = "BP",
-                    allGenes = geneList,
-                    geneSelectionFun = topDiffGenes,
-                    nodeSize = 10,
-                    annotationFun = annFUN.db,
-                    affyLib = affyLib)
-
-
-
-dat <- read_eggnog("~/micropopgen/exp/2019/2019-04-01.hmp_subsite_annotations/annotations/Catonella_morbi_61904.emapper.annotations")
-dat
-
-
-
-gene_column <- "query_name"
-annot_colum <- "GO_terms"
-sig_genes <- dat$query_name[1:200]
-ontology <- "MF"
-description <- ""
-algorithm <- "classic"
-statistic <- "fisher"
-node_size <- 3
-
-annots <- dat %>%
-  dplyr::select(gene_id = gene_column, terms = annot_colum)
-annots
-geneID2GO <- annots_to_geneGO(annots = annots, direction = "geneID2GO")
-geneID2GO
-
-gene_list <- factor(1*(annots$gene_id %in% sig_genes))
-names(gene_list) <- annots$gene_id
-length(gene_list)
-go_data <- new("topGOdata",
-               description = description,
-               ontology = ontology,
-               allGenes = gene_list,
-               nodeSize = node_size,
-               annot = annFUN.gene2GO,
-               gene2GO = geneID2GO)
-
-go_res <- topGO::runTest(go_data,
-                         algorithm = algorithm,
-                         statistic = statistic)
-go_res
-
-
-GenTable(go_data, p.value = go_res)
-
