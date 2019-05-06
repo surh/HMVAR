@@ -88,3 +88,77 @@ annots_to_geneGO <- function(annots, direction = "geneID2GO"){
   
   return(annots)
 }
+
+
+
+gene_sel_fun <- function(thres){
+  function(x) x < thres
+}
+
+
+test_go <- function (genes, annots,
+                     ontology,
+                     description, algorithm, statistic,
+                     node_size, score_threshold) UseMethod("test_go")
+
+
+test_go.character <- function(genes, annots,
+                              ontology = "BP",
+                              description = '',
+                              algorithm = 'classic',
+                              statistic = 'fisher',
+                              node_size = 3){
+  
+  # Get annotations as gene -> GO list
+  if(is.data.frame(annots)){
+    annots <- annots_to_geneGO(annots = annots, direction = "geneID2GO")
+  }else if(!is.list(annots)){
+    stop("ERROR: annots must be either a data.frame or a list.", call. = TRUE)
+  }
+  
+  # Convert list of significant genes into scores
+  gene_scores <- -1*(names(annots) %in% genes)
+  names(gene_scores) <- names(annots)
+  
+  res <- test_go(genes = gene_scores, annots = annots,
+                 ontology = ontology, description = description,
+                 algorithm = algorithm, statistic = statistic, node_size = node_size,
+                 score_threshold = 0)
+  
+  return(res)
+  
+}
+
+
+test_go.numeric <- function(genes, annots,
+                            ontology = "BP",
+                            description = '',
+                            algorithm = 'classic',
+                            statistic = 'fisher',
+                            node_size = 3,
+                            score_threshold = 0.05){
+  
+  # Get annotations as gene -> GO list
+  if(is.data.frame(annots)){
+    annots <- annots_to_geneGO(annots = annots, direction = "geneID2GO")
+  }else if(!is.list(annots)){
+    stop("ERROR: annots must be either a data.frame or a list.", call. = TRUE)
+  }
+  
+  # Create topGO data
+  go_data <- new("topGOdata",
+                 description = description,
+                 ontology = ontology,
+                 allGenes = genes,
+                 geneSelectionFun = gene_sel_fun(score_threshold),
+                 nodeSize = node_size,
+                 annot = annFUN.gene2GO,
+                 gene2GO = annots)
+  
+  # perform topGO test
+  go_res <- topGO::runTest(go_data,
+                           algorithm = algorithm,
+                           statistic = statistic)
+  
+  return(list(topgo_data = go_data, topgo_res = go_res))
+}
