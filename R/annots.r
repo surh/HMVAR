@@ -61,7 +61,7 @@ expand_annot <- function(gene_id, terms){
 #'
 #' @examples
 #' d <- tibble::tibble(gene_id = c('gene1', 'gene2', 'gene3'),
-#'                     terms = c('term3', 'term1,term2', 'term2, term3'))
+#'                     terms = c(NA, 'term1,term2', 'term2, term3'))
 #' annots_to_geneGO(d, direction = "geneID2GO")
 #' annots_to_geneGO(d, direction = "GO2geneID")
 annots_to_geneGO <- function(annots, direction = "geneID2GO"){
