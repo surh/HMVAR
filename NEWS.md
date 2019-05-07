@@ -32,6 +32,10 @@ depends field (Issue https://github.com/surh/HMVAR/issues/13).
 22. Added functions for DoS (Issue https://github.com/surh/HMVAR/issues/11).
 23. Created `dos.r` executable (Issue
 https://github.com/surh/HMVAR/issues/12).
+24. Gene-set enrichment analysis (`gsea`) function created
+(Issue https://github.com/surh/HMVAR/issues/18).
+25. Function `test_go` added (Issue https://github.com/surh/HMVAR/issues/16
+https://github.com/surh/HMVAR/issues/14).
 
 # 0.1-0
 1. Added exectuable script to perform mktest.
