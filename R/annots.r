@@ -102,7 +102,6 @@ gene_sel_fun <- function(thres){
   function(x) x < thres
 }
 
-
 #' Gene Ontology enrichment via topGO
 #' 
 #' Performs Gene Ontology (GO) enrichment analysis via
@@ -204,25 +203,71 @@ test_go.numeric <- function(genes, annots,
   return(list(topgo_data = go_data, topgo_res = go_res))
 }
 
-#' Title
+#' Gene-set Enrichment analysis on one term.
+#' 
+#' Performs gene-set enrichment analysis on a group of genes.
+#' Tests whether the scores among selected genes differ from
+#' the overall score dsitribution.
+#' 
+#' The function currently doesn't check whether some genes in `genes`
+#' are missing from `scores`. It will simply ignore those and test among
+#' the `genes` found in scores.
 #'
-#' @param genes 
-#' @param scores 
-#' @param test 
-#' @param alternative 
-#' @param min_size 
+#' @param genes Character vector of gene IDs that belong to
+#' a group to test.
+#' @param scores Named numeric vector of gene scores to be tested.
+#' The 'names' attribute must correspond to the values in `genes`.
+#' @param test Which test to perform. Either 'wilcoxon' or 'ks'
+#' for Wilcoxon Rank Sum and Kolmogorov-Smirnov tests repsectiveley.
+#' Test use R's base \link{wilcox.test} and \link{ks.test} respectiveley.
+#' @param alternative The alternative hypothesis to test. Either 'greater',
+#' 'less' or 'two.sided'. It  corresponds to option 'alternative' in
+#' \link{wilcox.test} or \link{ks.test}. Typically, if scores are p-values
+#' one wishes to #' test the hypothesis that p-values within 'genes' are 'less'
+#' than expected; while if scores are some other type of value (like
+#' fold-change abundance) one is trying to test that those values are
+#' 'greater'. Keep in mind that the Kolmogorov-Smirnov test is a test of the
+#' maximum difference in cumulative distribution values. Therefore, an
+#' alternative 'greater' in this case correspons to cases where
+#' score is stochastially smaller than the rest. 
+#' @param min_size The minimum number of genes in the group for the test
+#' to be performed. Basically if the number of genes that appear in
+#' 'scores' is less than 'min_size', the test won't be performed.
 #'
-#' @return
+#' @return If the test is not performed it returns NULL. If the test
+#' is performed it returns a tibble with elements: size (the number 
+#' of elements in both 'genes' and 'scores'), statistic (the statistic
+#' calculated, depends on the test), and p.value (the p-value of the test).
+#' 
 #' @export
 #'
 #' @examples
+# Create some fake scores
+#' set.seed(123)
+#' scores <- rnorm(n = 100)
+#' names(scores) <- paste('gene', 1:100, sep = "")
+#' 
+#' # Select some genes and increase their scores
+#' genes <- names(scores)[1:10]
+#' scores[genes] <- scores[genes] + rnorm(10, mean = 1)
+#' 
+#' # Test
+#' term_gsea(genes, scores)
+#' term_gsea(genes, scores, test = 'ks', alternative = 'less')
 term_gsea <- function(genes, scores, test = "wilcoxon", alternative = "greater", min_size = 3){
   
-  if(length(genes) < min_size){
-    return(NULL)
+  if(!is.character(genes)){
+    stop("ERROR: genes must be a character vector", call. = TRUE)
+  }
+  if(!is.numeric(scores) || is.null(attr(scores, "names"))){
+    stop("ERROR: scores must be a named numeric vector", call. = TRUE)
   }
   
   ii <- names(scores) %in% genes
+  
+  if(sum(ii) < min_size){
+    return(NULL)
+  }
   
   if(test == 'wilcoxon'){
     res <- wilcox.test(scores[ii], scores[!ii], alternative = alternative)
@@ -232,20 +277,62 @@ term_gsea <- function(genes, scores, test = "wilcoxon", alternative = "greater",
     stop("ERROR: Invalid test", call. = TRUE)
   }
   
-  tibble::tibble(size = length(genes), statistic = res$statistic, p.value = res$p.value)
+  tibble::tibble(size = sum(ii), statistic = res$statistic, p.value = res$p.value)
 }
 
-#' Title
+#' Gene-set enrichment analysis
+#' 
+#' Performs Gene-set enrichment analysis on all annotation terms
+#' for a set of genes.
 #'
-#' @param dat 
-#' @param test 
-#' @param alternative 
-#' @param min_size 
+#' @param dat A data.frame or tibble. It must contain one row per gene
+#' and columns 'gene_id', 'terms', and 'score'. Column 'terms' must be
+#' of type character and each entry must be a comma-separated character
+#' string of all the terms that annotate the corresponding gene.
+#' @param test Which test to perform. Either 'wilcoxon' or 'ks'
+#' for Wilcoxon Rank Sum and Kolmogorov-Smirnov tests repsectiveley.
+#' Test use R's base \link{wilcox.test} and \link{ks.test} respectiveley.
+#' @param alternative The alternative hypothesis to test. Either 'greater',
+#' 'less' or 'two.sided'. It  corresponds to option 'alternative' in
+#' \link{wilcox.test} or \link{ks.test}. Typically, if scores are p-values
+#' one wishes to #' test the hypothesis that p-values within 'genes' are 'less'
+#' than expected; while if scores are some other type of value (like
+#' fold-change abundance) one is trying to test that those values are
+#' 'greater'. Keep in mind that the Kolmogorov-Smirnov test is a test of the
+#' maximum difference in cumulative distribution values. Therefore, an
+#' alternative 'greater' in this case correspons to cases where
+#' score is stochastially smaller than the rest. 
+#' @param min_size The minimum number of genes in the group for the test
+#' to be performed. Basically if the number of genes that appear in
+#' 'scores' is less than 'min_size', the test won't be performed.
 #'
-#' @return
+#' @return A tibble with elements: term (the annotation term ID), size (the number 
+#' of elements in both 'genes' and 'scores'), statistic (the statistic
+#' calculated, depends on the test), and p.value (the p-value of the test). The
+#' tibble is sorted by increasing p-value.
+#' 
 #' @export
+#' @importFrom magrittr %>%
 #'
 #' @examples
+#' # Make sine fake data
+#' dat <- tibble::tibble(gene_id = paste('gene', 1:10, sep = ''),
+#'                       terms = c('term1,term2,term3',
+#'                                 NA,
+#'                                 'term2,term3,term4',
+#'                                 'term3',
+#'                                 'term4,term5',
+#'                                 'term6',
+#'                                 'term6',
+#'                                 'term6,term2',
+#'                                 'term6.term7',
+#'                                 'term6,term2'),
+#'                       score = 1:10)
+#' dat
+#' 
+#' # Test
+#' gsea(dat, min_size = 2)
+#' gsea(dat, min_size = 3, test = 'ks', alternative = 'less')
 gsea <- function(dat, test = 'wilcoxon', alternative = 'greater', min_size = 3){
   if(!all(c('gene_id', 'terms', 'score') %in% colnames(dat))){
     stop("ERROR: missing columns", call. = TRUE)
