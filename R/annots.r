@@ -203,3 +203,77 @@ test_go.numeric <- function(genes, annots,
   
   return(list(topgo_data = go_data, topgo_res = go_res))
 }
+
+#' Title
+#'
+#' @param genes 
+#' @param scores 
+#' @param test 
+#' @param alternative 
+#' @param min_size 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+term_gsea <- function(genes, scores, test = "wilcoxon", alternative = "greater", min_size = 3){
+  
+  if(length(genes) < min_size){
+    return(NULL)
+  }
+  
+  ii <- names(scores) %in% genes
+  
+  if(test == 'wilcoxon'){
+    res <- wilcox.test(scores[ii], scores[!ii], alternative = alternative)
+  }else if(test == 'ks'){
+    res <- ks.test(scores[ii], scores[!ii], alternative = alternative)
+  }else{
+    stop("ERROR: Invalid test", call. = TRUE)
+  }
+  
+  tibble::tibble(size = length(genes), statistic = res$statistic, p.value = res$p.value)
+}
+
+#' Title
+#'
+#' @param dat 
+#' @param test 
+#' @param alternative 
+#' @param min_size 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+gsea <- function(dat, test = 'wilcoxon', alternative = 'greater', min_size = 3){
+  if(!all(c('gene_id', 'terms', 'score') %in% colnames(dat))){
+    stop("ERROR: missing columns", call. = TRUE)
+  }
+  
+  scores <- dat$score
+  names(scores) <- dat$gene_id
+  dat <- dat %>% dplyr::select(-score)
+  
+  # Expand annotations
+  dat <- dat %>%
+    purrr::pmap_dfr(expand_annot) %>%
+    dplyr::filter(!is.na(term))
+  
+  # Clean background
+  scores <- scores[ names(scores) %in% unique(dat$gene_id) ]
+  
+  # Test
+  dat <- dat %>%
+    split(.$term) %>%
+    purrr::map(~ .x$gene_id) %>%
+    purrr::map_dfr(term_gsea, scores = scores,
+                   test = test,
+                   alternative = alternative,
+                   min_size = min_size,
+                   .id = "term") %>%
+    dplyr::arrange(p.value)
+  
+  return(dat)
+}
+
