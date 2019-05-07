@@ -127,7 +127,9 @@ gene_sel_fun <- function(thres){
 #'
 #' @return A list with elements topgo_data and topgo_res of class
 #' topGOdata and topGOresult respecitveley
+#' 
 #' @export
+#' @importClassesFrom topGO topGOdata
 test_go <- function(genes, annots,
                     ontology,
                     description, algorithm, statistic,
@@ -136,6 +138,7 @@ test_go <- function(genes, annots,
 
 #' @rdname test_go
 #' @method test_go character
+#' @export
 test_go.character <- function(genes, annots,
                               ontology = "BP",
                               description = '',
@@ -165,6 +168,7 @@ test_go.character <- function(genes, annots,
 
 #' @rdname test_go
 #' @method test_go numeric
+#' @export
 test_go.numeric <- function(genes, annots,
                             ontology = "BP",
                             description = '',
@@ -179,6 +183,8 @@ test_go.numeric <- function(genes, annots,
   }else if(!is.list(annots)){
     stop("ERROR: annots must be either a data.frame or a list.", call. = TRUE)
   }
+  
+  topGO::groupGOTerms()
   
   # Create topGO data
   go_data <- new("topGOdata",
