@@ -16,6 +16,7 @@ bioc_packages:
   - qvalue
   - GO.db
   - ggtree
+  - topGO
 r_packages:
   - covr
   - ape
