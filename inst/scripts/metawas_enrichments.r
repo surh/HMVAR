@@ -38,7 +38,7 @@ process_arguments <- function(){
                                  "set of tab-delimited files as above. In the latter case",
                                  "the option --suffix lets you specify the suffix of",
                                  "the tab-delimited files. In any case, the tab-delimited",
-                                 "files must contain columns named 'chr' and 'ps' which"
+                                 "files must contain columns named 'chr' and 'ps' which",
                                  "indicate the feature's position."),
                     type = "character")
   p <- add_argument(p, "outdir",
@@ -134,11 +134,11 @@ process_arguments <- function(){
 
 
 
-expand_annot <- function(gene_id, annot){
-  annot <- str_split(string = annot, pattern = ",") %>% unlist
-  tibble(gene_id = gene_id,
-         term = annot)
-}
+# expand_annot <- function(gene_id, annot){
+#   annot <- str_split(string = annot, pattern = ",") %>% unlist
+#   tibble(gene_id = gene_id,
+#          term = annot)
+# }
 
 process_annotation <- function(annot,
                                sig_genes,
@@ -328,23 +328,29 @@ sum_vecs <- function(a, b){
 #   return(args)
 # }
 
-# args <- list(lmmres = "../2019-03-29.hmp_metawas_data/Supragingival.plaque/metawas/lmmpcs/Porphyromonas_sp_57899_lmm.results.txt",
-#              closest = "../2019-03-29.hmp_metawas_data/Supragingival.plaque/closest/Porphyromonas_sp_57899.closest",
-#              annotations = "../2019-04-01.hmp_subsite_annotations/hmp.subsite_annotations/Porphyromonas_sp_57899.emapper.annotations",
-#              dist_thres = 500,
-#              count_thres = 3,
-#              outdir = "metawas_enrichments",
-#              prefix = NULL)
-# args <- list(lmmres = "Streptococcus_sp_60488_lmm.results.txt",
+args <- list(input = "~/micropopgen/exp/2019/2019-03-29.hmp_metawas_data/Supragingival.plaque/metawas/lmmpcs/Porphyromonas_sp_57899_lmm.results.txt",
+             closest = "~/micropopgen/exp/2019/2019-03-29.hmp_metawas_data/Supragingival.plaque/closest/Porphyromonas_sp_57899.closest",
+             annotations = "~/micropopgen/exp/2019/2019-04-01.hmp_subsite_annotations/hmp.subsite_annotations/Porphyromonas_sp_57899.emapper.annotations",
+             dist_thres = 500,
+             count_thres = 3,
+             outdir = "metawas_enrichments",
+             suffix = ".txt$",
+             score_column = 'p_lrt.lmmpcs',
+             annot_column = 'GO_terms',
+             alternative = 'greater',
+             method = 'gsea')
+
+
+# args <- list(input = "Streptococcus_sp_60488_lmm.results.txt",
 #              closest = "Streptococcus_sp_60488.closest",
 #              annotations = "Streptococcus_sp_60488.emapper.annotations",
 #              dist_thres = 500,
 #              count_thres = 3,
 #              outdir = "metawas_enrichments",
 #              prefix = NULL)
-args <- process_arguments()
+# args <- process_arguments()
 
-dir.create(args$outdir)
+# dir.create(args$outdir)
 
 # manhat_dir <- paste0(outdir, "/manhattan")
 # dir.create(manhat_dir)
@@ -360,6 +366,25 @@ dir.create(args$outdir)
 # OG_bg <- NULL
 # GO_bg <- NULL
 # KO_bg <- NULL
+
+if(dir.exists(args$input)){
+  
+}else if(file.exists(args$input)){
+  
+  col_specs <- rlang::list2(chr = col_character(),
+                            ps = col_integer(),
+                            rs = col_character(),
+                            gene_id = col_character(),
+                            !!args$score_column := col_double())
+  
+  gw.test <- read_tsv(args$input,
+                      col_types = do.call(cols, col_specs))
+  gw.test
+  
+}else{
+  stop("ERROR: input doesn't exist")
+}
+
 
 # Read data
 cat("Reading lmm...\n")
