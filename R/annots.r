@@ -89,8 +89,6 @@ annots_to_geneGO <- function(annots, direction = "geneID2GO"){
   return(annots)
 }
 
-
-
 #' gene selection function
 #' 
 #' Internal
@@ -151,16 +149,16 @@ test_go.character <- function(genes, annots,
   }else if(!is.list(annots)){
     stop("ERROR: annots must be either a data.frame or a list.", call. = TRUE)
   }
-  
+
   # Convert list of significant genes into scores
   gene_scores <- -1*(names(annots) %in% genes)
   names(gene_scores) <- names(annots)
-  
+
   res <- test_go(genes = gene_scores, annots = annots,
                  ontology = ontology, description = description,
                  algorithm = algorithm, statistic = statistic, node_size = node_size,
                  score_threshold = 0)
-  
+
   return(res)
   
 }
@@ -182,7 +180,7 @@ test_go.numeric <- function(genes, annots,
   }else if(!is.list(annots)){
     stop("ERROR: annots must be either a data.frame or a list.", call. = TRUE)
   }
-  
+
   topGO::groupGOTerms()
   
   # Create topGO data
