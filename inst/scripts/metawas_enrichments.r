@@ -22,6 +22,117 @@
 
 library(tidyverse)
 library(argparser)
+library(HMVAR)
+
+
+process_arguments <- function(){
+  p <- arg_parser(paste("Calculate DoS statistics on a single genome or a
+                        set of pre-processed genomes."))
+  
+  # Positional arguments
+  p <- add_argument(p, "input",
+                    help = paste("Input can be either a single file or a directory.",
+                                 "If a single file is passed, it hould be a tab-delimited",
+                                 "file where each row corresponds to a tested feature.",
+                                 "If a directory is passed, it should contain a",
+                                 "set of tab-delimited files as above. In the latter case",
+                                 "the option --suffix lets you specify the suffix of",
+                                 "the tab-delimited files. In any case, the tab-delimited",
+                                 "files must contain columns named 'chr' and 'ps' which"
+                                 "indicate the feature's position."),
+                    type = "character")
+  p <- add_argument(p, "outdir",
+                    help = paste("This should be the directory for the output"),
+                    type = "character")
+  
+  # Optional arguments
+  p <- add_argument(p, "--suffix",
+                    help = paste("The suffix of the tab-delimited files. It will be used",
+                                 "to identify which files to process, and also to",
+                                 "determine the output files. Basically if an input",
+                                 "file is of the form /path/<prefix><suffix>",
+                                 "the ouptut will be of the form <outdir>/<prefix>*"),
+                    type = "character",
+                    default = ".txt")
+  
+  
+  
+  p <- add_argument(p, "--closest", help = paste("This can be either a single file or a",
+                                                 "directory. It must match the same type",
+                                                 "as <input>. If a single file it should",
+                                                 "be a tab-delimited file produced by bedtools'",
+                                                 "closestBed. If a directory is passed, then",
+                                                 "for each input file in the <input> directory,",
+                                                 "a file that has the same prefix will be expected.",
+                                                 "E.g. if an inout file is of the form",
+                                                 "<input>/<prefix><suffix>, then there should be a",
+                                                 "file of the form <closest>/<prefix>*. If nothing",
+                                                 "is passed, then each tab-delimited file must have",
+                                                 "a 'gene_id' column."),
+                    class = "character",
+                    default = NA)
+  
+  p <- add_argument(p, "--annotations", help = paste("This can be either a single file or a",
+                                                     "directory. It must match the same type",
+                                                     "as <input>. If a single file it should",
+                                                     "be a tab-delimited file produced by eggNOG",
+                                                     "mapper. If a directory is passed, then",
+                                                     "for each input file in the <input> directory,",
+                                                     "a file that has the same prefix will be expected.",
+                                                     "E.g. if an inout file is of the form",
+                                                     "<input>/<prefix><suffix>, then there should be a",
+                                                     "file of the form <annotations>/<prefix>*."),
+                    type = "character",
+                    default = NA)
+  p <- add_argument(p, "--dist_thres",
+                    help = paste("If --closest is passed, this is the maximum distance threshold",
+                                 "to associate a gene to a feature."),
+                    type = "numeric",
+                    default = 500)
+  p <- add_argument(p, "--count_thres", help = paste("This is the minimum number of genes with",
+                                                     "a given annotation, for that annotation to",
+                                                     "be tested"),
+                    type = "numeric",
+                    default = 3)
+  p <- add_argument(p, "--score_column",
+                    help = paste("Name of the column with the score to test in <input> files."),
+                    type = "character",
+                    default = 'p.value')
+  p <- add_argument(p, "--annot_column",
+                    help = paste("Name of the column with the annotation to test in --annotations files"),
+                    type = "character",
+                    default = 'GO_terms')
+  p <- add_argument(p, "--alternative",
+                    help = paste("Alternative hypothesis to test. See documentation in",
+                                 "test_go and gsea functions from HMVAR."),
+                    type = "character",
+                    default = 'greater')
+  p <- add_argument(p, "--method",
+                    help = paste("Which HMVAR function to use. Either 'test_go' or 'gsea'"),
+                    type = "character",
+                    default = 'gsea')
+  
+  
+  # p <- add_argument(p, "--prefix", help = "",
+  #                   default = NULL,
+  #                   type = "character")
+  
+  # Read arguments
+  cat("Processing arguments...\n")
+  args <- parse_args(p)
+  
+  # Process arguments
+  args$suffix <- paste0(args$suffix, "$")
+  if(!(args$method %in% c('test_go', 'gsea'))){
+    stop("ERROR: method must be 'test_go' or 'gsea'", call. = TRUE)
+  }
+  
+  return(args)
+}
+
+
+
+
 
 expand_annot <- function(gene_id, annot){
   annot <- str_split(string = annot, pattern = ",") %>% unlist
@@ -182,40 +293,40 @@ sum_vecs <- function(a, b){
   return(vec)
 }
 
-process_arguments <- function(){
-  p <- arg_parser(paste(""))
-  
-  # Positional arguments
-  p <- add_argument(p, "lmmres",
-                    help = paste(""),
-                    type = "character")
-  p <- add_argument(p, "closest", help = "")
-  p <- add_argument(p, "annotations", help = "")
-  
-  # Optional arguments
-  p <- add_argument(p, "--dist_thres",
-                     help = paste(""),
-                     type = "numeric",
-                     default = 500)
-  p <- add_argument(p, "--count_thres", help = "",
-                    default = 3)
-  p <- add_argument(p, "--outdir", help = "",
-                    default = "output")
-  p <- add_argument(p, "--prefix", help = "",
-                     default = NULL,
-                     type = "character")
-                     
-  # Read arguments
-  cat("Processing arguments...\n")
-  args <- parse_args(p)
-  
-  # Process arguments
-  if(is.na(args$prefix)){
-    args$prefix <- NULL
-  }
-  
-  return(args)
-}
+# process_arguments <- function(){
+#   p <- arg_parser(paste(""))
+#   
+#   # Positional arguments
+#   p <- add_argument(p, "lmmres",
+#                     help = paste(""),
+#                     type = "character")
+#   p <- add_argument(p, "closest", help = "")
+#   p <- add_argument(p, "annotations", help = "")
+#   
+#   # Optional arguments
+#   p <- add_argument(p, "--dist_thres",
+#                      help = paste(""),
+#                      type = "numeric",
+#                      default = 500)
+#   p <- add_argument(p, "--count_thres", help = "",
+#                     default = 3)
+#   p <- add_argument(p, "--outdir", help = "",
+#                     default = "output")
+#   p <- add_argument(p, "--prefix", help = "",
+#                      default = NULL,
+#                      type = "character")
+#                      
+#   # Read arguments
+#   cat("Processing arguments...\n")
+#   args <- parse_args(p)
+#   
+#   # Process arguments
+#   if(is.na(args$prefix)){
+#     args$prefix <- NULL
+#   }
+#   
+#   return(args)
+# }
 
 # args <- list(lmmres = "../2019-03-29.hmp_metawas_data/Supragingival.plaque/metawas/lmmpcs/Porphyromonas_sp_57899_lmm.results.txt",
 #              closest = "../2019-03-29.hmp_metawas_data/Supragingival.plaque/closest/Porphyromonas_sp_57899.closest",
