@@ -313,7 +313,7 @@ term_gsea <- function(genes, scores, test = "wilcoxon", alternative = "greater",
 #' @importFrom magrittr %>%
 #'
 #' @examples
-#' # Make sine fake data
+#' # Make some fake data
 #' dat <- tibble::tibble(gene_id = paste('gene', 1:10, sep = ''),
 #'                       terms = c('term1,term2,term3',
 #'                                 NA,

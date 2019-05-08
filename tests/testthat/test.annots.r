@@ -58,6 +58,8 @@ test_that('test_go', {
   
   # Pass list of annotations
   a.list <- annots_to_geneGO(a, 'geneID2GO')
+  # Need to use expect equal because topGO creates some sort of environment
+  # for the tests which are never identical.
   expect_equal(test_go(genes = g, annots = a, ontology = 'CC', node_size = 2),
                test_go(genes = g, annots = a.list, ontology = 'CC', node_size = 2),
                info = "Basic usage, pass list of annotations")
@@ -72,4 +74,50 @@ test_that('test_go', {
   # Badd annot object
   expect_error(test_go(genes = g, annots = c('a', 'b', 'c'), ontology = 'CC', node_size = 2),
                info = "Bad annots")
+})
+
+test_that("GSEA", {
+  class_and_dim <- function(...){
+    res <- gsea(...)
+    return(list(class = class(res), dim = dim(res)))
+  }
+  d <- tibble::tibble(gene_id = paste('gene', 1:10, sep = ''),
+                      terms = c('term1,term2,term3',
+                                NA,
+                                'term2,term3,term4',
+                                'term3',
+                                'term4,term5',
+                                'term6',
+                                'term6',
+                                'term6,term2',
+                                'term6.term7',
+                                'term6,term2'),
+                      score = 1:10)
+  e <- list(class = c('tbl_df', 'tbl', 'data.frame'),
+            dim = as.integer(c(3, 4)))
+  expect_identical(class_and_dim(dat = d),
+                   expected = e,
+                   info = "Basic usage")
+  
+  # Increase tests
+  e <- list(class = c('tbl_df', 'tbl', 'data.frame'),
+            dim = as.integer(c(4, 4)))
+  expect_identical(class_and_dim(dat = d, min_size = 2),
+                   expected = e,
+                   info = "min_size")
+  
+  d.bad <- tibble::tibble(id = paste('gene', 1:10, sep = ''),
+                      terms = c('term1,term2,term3',
+                                NA,
+                                'term2,term3,term4',
+                                'term3',
+                                'term4,term5',
+                                'term6',
+                                'term6',
+                                'term6,term2',
+                                'term6.term7',
+                                'term6,term2'),
+                      score = 1:10)
+  expect_error(gsea(d.bad),
+               info = "Bad column name")
 })
