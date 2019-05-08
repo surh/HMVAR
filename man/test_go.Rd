@@ -7,15 +7,15 @@
 \title{Gene Ontology enrichment via topGO}
 \usage{
 test_go(genes, annots, ontology, description, algorithm, statistic,
-  node_size, score_threshold)
+  node_size, ...)
 
 \method{test_go}{character}(genes, annots, ontology = "BP",
   description = "", algorithm = "classic", statistic = "fisher",
-  node_size = 3)
+  node_size = 3, ...)
 
 \method{test_go}{numeric}(genes, annots, ontology = "BP",
   description = "", algorithm = "classic", statistic = "fisher",
-  node_size = 3, score_threshold = 0.05)
+  node_size = 3, score_threshold = 0.05, ...)
 }
 \arguments{
 \item{genes}{Either a character vector with the gene
@@ -37,6 +37,8 @@ such table.}
 
 \item{node_size}{Minimum number of genes per term to test that
 term. See help at \link[topGO]{topGOdata-class}}
+
+\item{...}{Other arguments to specific methods}
 
 \item{score_threshold}{If genes is a numeric vector, then
 this should be the 'significance' threshold. E.g. if scores are p-values

@@ -118,9 +118,7 @@ gene_sel_fun <- function(thres){
 #' @param statistic Statistic to test. See help at \link[topGO]{runTest}.
 #' @param node_size Minimum number of genes per term to test that
 #' term. See help at \link[topGO]{topGOdata-class}
-#' @param score_threshold If genes is a numeric vector, then
-#' this should be the 'significance' threshold. E.g. if scores are p-values
-#' a common threshold would be 0.05.
+#' @param ... Other arguments to specific methods
 #'
 #' @return A list with elements topgo_data and topgo_res of class
 #' topGOdata and topGOresult respecitveley
@@ -130,7 +128,7 @@ gene_sel_fun <- function(thres){
 test_go <- function(genes, annots,
                     ontology,
                     description, algorithm, statistic,
-                    node_size, score_threshold) UseMethod("test_go")
+                    node_size, ...) UseMethod("test_go")
 
 
 #' @rdname test_go
@@ -141,7 +139,7 @@ test_go.character <- function(genes, annots,
                               description = '',
                               algorithm = 'classic',
                               statistic = 'fisher',
-                              node_size = 3){
+                              node_size = 3, ...){
   
   # Get annotations as gene -> GO list
   if(is.data.frame(annots)){
@@ -166,13 +164,17 @@ test_go.character <- function(genes, annots,
 #' @rdname test_go
 #' @method test_go numeric
 #' @export
+#' 
+#' @param score_threshold If genes is a numeric vector, then
+#' this should be the 'significance' threshold. E.g. if scores are p-values
+#' a common threshold would be 0.05.
 test_go.numeric <- function(genes, annots,
                             ontology = "BP",
                             description = '',
                             algorithm = 'classic',
                             statistic = 'fisher',
                             node_size = 3,
-                            score_threshold = 0.05){
+                            score_threshold = 0.05, ...){
   
   # Get annotations as gene -> GO list
   if(is.data.frame(annots)){
