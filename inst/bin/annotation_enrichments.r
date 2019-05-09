@@ -216,68 +216,6 @@ process_arguments <- function(){
   return(args)
 }
 
-# count_vars <- function(d){
-#   n.variants <- nrow(d)
-#   n.sig <- sum(d$type %in% c("int", "both"))
-#   n.outside <- sum(d$dist > 0)
-#   tibble(chr = unique(d$chr),
-#          start = unique(d$start),
-#          end = unique(d$end),
-#          n.variants = n.variants,
-#          n.sig = n.sig,
-#          n.outside = n.outside)
-# }
-
-# metawas_gene_counts <- function(metawas, closest, annot, outdir = "./", prefix = NULL){
-#   # Match everything per gene
-#   all <- metawas %>% full_join(closest, by = c("chr", "ps"))
-# 
-#   cat("\tCleaning annotation...\n")
-#   annot <- annot %>%
-#     select(gene_id, predicted_gene_name, eggNOG_annot)
-# 
-# 
-#   Genes <- all %>%
-#     split(.$gene_id) %>%
-#     map_dfr(~count_vars(.), .id = "gene_id") %>%
-#     arrange(chr, start) %>%
-#     left_join(annot, by = "gene_id")
-# 
-#   filename <- paste0(c(prefix, "gene_metawas_counts.txt"), collapse = ".")
-#   filename <- file.path(outdir, filename)
-#   write_tsv(Genes, filename)
-# 
-#   return(filename)
-# }
-
-#' Sums named vectors by name
-#'
-#' @param a A named vector.
-#' @param b A named vector.
-#'
-#' @return A named vector.
-#' @export
-#'
-#' @examples
-# sum_vecs <- function(a, b){
-#   if(is.null(a)){
-#     return(b)
-#   }
-#   if(is.null(b)){
-#     return(a)
-#   }
-# 
-#   new <- tibble(term = names(a), count = a) %>%
-#     full_join(tibble(term = names(b), count = b), by = "term")
-#   new <- new %>%
-#     bind_cols(count = new %>% select(-term) %>% rowSums(na.rm = TRUE)) %>%
-#     select(term, count)
-#   vec <- new$count
-#   names(vec) <- new$term
-#  
-#    return(vec)
-# }
-
 # args <- list(input = "~/micropopgen/exp/2019/2019-03-29.hmp_metawas_data/Supragingival.plaque/metawas/lmmpcs/Porphyromonas_sp_57899_lmm.results.txt",
 #              closest = "~/micropopgen/exp/2019/2019-03-29.hmp_metawas_data/Supragingival.plaque/closest/Porphyromonas_sp_57899.closest",
 #              annotations = "~/micropopgen/exp/2019/2019-04-01.hmp_subsite_annotations/hmp.subsite_annotations/Porphyromonas_sp_57899.emapper.annotations",
@@ -291,19 +229,19 @@ process_arguments <- function(){
 #              method = 'gsea',
 #              gene_score = 'min')
 
-args <- list(input = "inputs/Streptococcus_mitis_58288_lmm.results.txt",
-             closest = "closest/Streptococcus_mitis_58288.closest",
-             annotations = "annotations/Streptococcus_mitis_58288.emapper.annotations",
-             dist_thres = 500,
-             min_size = 3,
-             outdir = "output_1file_gsea/",
-             suffix = "_lmm.results.txt",
-             score_column = 'p_lrt.lmmpcs',
-             annot_column = 'GO_terms',
-             alternative = 'less',
-             method = 'gsea',
-             gene_score = 'min')
-# args <- process_arguments()
+# args <- list(input = "inputs/Streptococcus_mitis_58288_lmm.results.txt",
+#              closest = "closest/Streptococcus_mitis_58288.closest",
+#              annotations = "annotations/Streptococcus_mitis_58288.emapper.annotations",
+#              dist_thres = 500,
+#              min_size = 3,
+#              outdir = "output_1file_gsea/",
+#              suffix = "_lmm.results.txt$",
+#              score_column = 'p_lrt.lmmpcs',
+#              annot_column = 'GO_terms',
+#              alternative = 'less',
+#              method = 'gsea',
+#              gene_score = 'min')
+args <- process_arguments()
 
 if(!dir.exists(args$outdir)){
   dir.create(args$outdir)
