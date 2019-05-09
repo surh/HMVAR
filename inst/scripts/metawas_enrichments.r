@@ -327,24 +327,73 @@ sum_vecs <- function(a, b){
   return(vec)
 }
 
-args <- list(input = "~/micropopgen/exp/2019/2019-03-29.hmp_metawas_data/Supragingival.plaque/metawas/lmmpcs/Porphyromonas_sp_57899_lmm.results.txt",
-             closest = "~/micropopgen/exp/2019/2019-03-29.hmp_metawas_data/Supragingival.plaque/closest/Porphyromonas_sp_57899.closest",
-             annotations = "~/micropopgen/exp/2019/2019-04-01.hmp_subsite_annotations/hmp.subsite_annotations/Porphyromonas_sp_57899.emapper.annotations",
-             dist_thres = 500,
-             min_size = 3,
-             outdir = "metawas_enrichments",
-             suffix = ".txt$",
-             score_column = 'p_lrt.lmmpcs',
-             annot_column = 'GO_terms',
-             alternative = 'less',
-             method = 'gsea',
-             gene_score = 'min')
+# args <- list(input = "~/micropopgen/exp/2019/2019-03-29.hmp_metawas_data/Supragingival.plaque/metawas/lmmpcs/Porphyromonas_sp_57899_lmm.results.txt",
+#              closest = "~/micropopgen/exp/2019/2019-03-29.hmp_metawas_data/Supragingival.plaque/closest/Porphyromonas_sp_57899.closest",
+#              annotations = "~/micropopgen/exp/2019/2019-04-01.hmp_subsite_annotations/hmp.subsite_annotations/Porphyromonas_sp_57899.emapper.annotations",
+#              dist_thres = 500,
+#              min_size = 3,
+#              outdir = "metawas_enrichments",
+#              suffix = ".txt$",
+#              score_column = 'p_lrt.lmmpcs',
+#              annot_column = 'GO_terms',
+#              alternative = 'less',
+#              method = 'gsea',
+#              gene_score = 'min')
 # args <- process_arguments()
 
-# dir.create(args$outdir)
+if(!dir.exists(args$outdir)){
+  dir.create(args$outdir)
+}
 
 if(dir.exists(args$input)){
+  cat("Input is a dir\n")
+  if(!dir.exists(args$closest) || !dir.exists(args$annotations)){
+    stop("ERROR: If <input> is a dir, --closest and --annotations must be dirs too.", call. = TRUE)
+  }
   
+  # Find input files
+  # args$input <- "~/micropopgen/exp/2019/2019-03-29.hmp_metawas_data/Supragingival.plaque/metawas/lmmpcs/"
+  inputs <- list.files(args$input)
+  inputs <- str_subset(string = inputs, pattern = args$suffix)
+  cat("Found ", length(inputs), " files\n")
+  prefixes <- str_replace(inputs, args$suffix, "")
+  prefixes <- paste0("^", prefixes)
+  
+  # Get closest and annotation files
+  closest_files <- list.files(args$closest)
+  closest_files <- str_subset(closest_files, pattern = prefixes)
+  annot_files <- list.files(args$annotations)
+  annot_files <- str_subset(annot_files, pattern = prefixes)
+  if(length(closest_files) != length(inputs) || length(annot_files) != length(inputs)){
+    stop("ERROR: number of closest, annotation or input files does not match.")
+  }
+  
+  Dat <- tibble()
+  for(i in 1:length(inputs)){
+    input <- inputs[i]
+    prefix <- prefixes[i]
+    closest <- str_subset(closest_files, pattern = prefix)
+    annotations <- str_subset(annot_files, pattern = prefix)
+    
+    if(length(closest) != 1 || length(annotations) != 1){
+      cat("Input:", input, "\n")
+      stop("ERROR: missing or extra closest or annotation file")
+    }
+    
+    Res <- gw_test_enrichments(input = input, annotations = annotations,
+                               closest = closest, dist_thres = args$dist_thres,
+                               score_column = args$score_column,
+                               gene_score = args$gene_score,
+                               alternative = args$alternative,
+                               annot_column = args$annot_column,
+                               method = args$method, min_size = args$min_size)
+    
+    filename <- paste0(prefix, ".enrichments.txt")
+    filename <- file.path(args$outdir, filename)
+    write_tsv(Res$res, path = filename)
+    
+    Dat <- Dat %>% bind_rows(Res$res)
+  }
 }else if(file.exists(args$input)){
   Res <- gw_test_enrichments(input = args$input, annotations = args$annotations,
                              closest = args$closest, dist_thres = args$dist_thres,
@@ -354,48 +403,53 @@ if(dir.exists(args$input)){
                              annot_column = args$annot_column,
                              method = args$method, min_size = args$min_size)
   
+  prefix <- str_replace(basename(args$input), args$suffix, "")
+  filename <- paste0(prefix, ".enrichments.txt")
+  filename <- file.path(args$outdir, filename)
+  write_tsv(Res$res, path = filename)
+  
 }else{
   stop("ERROR: input doesn't exist")
 }
 
-
-# Metawas gene counts
-cat("Counting genes...\n")
-metawas_gene_counts(metawas = metawas,
-                    closest = closest,
-                    annot = annot,
-                    outdir = args$outdir,
-                    prefix = args$prefix)
-
-# Test GO
-if(nrow(annot) > 0){
-  cat("Test GO...\n")
-  process_annotation(annot = annot,
-                     sig_genes = sig_genes,
-                     annotation = "GO_terms",
-                     outdir = args$outdir,
-                     prefix = args$prefix,
-                     test = TRUE,
-                     count_thres = args$count_thres,
-                     match_go = TRUE)
-  # Test KO
-  cat("Test KO...\n")
-  process_annotation(annot = annot,
-                     sig_genes = sig_genes,
-                     annotation = "KEGG_KOs",
-                     outdir = args$outdir,
-                     prefix = args$prefix,
-                     test = TRUE,
-                     count_thres = args$count_thres,
-                     match_go = FALSE)
-  # Test eggNOG
-  cat("Test OG...\n")
-  process_annotation(annot = annot,
-                     sig_genes = sig_genes,
-                     annotation = "OGs",
-                     outdir = args$outdir,
-                     prefix = args$prefix,
-                     test = TRUE,
-                     count_thres = args$count_thres,
-                     match_go = FALSE)
-}
+# 
+# # Metawas gene counts
+# cat("Counting genes...\n")
+# metawas_gene_counts(metawas = metawas,
+#                     closest = closest,
+#                     annot = annot,
+#                     outdir = args$outdir,
+#                     prefix = args$prefix)
+# 
+# # Test GO
+# if(nrow(annot) > 0){
+#   cat("Test GO...\n")
+#   process_annotation(annot = annot,
+#                      sig_genes = sig_genes,
+#                      annotation = "GO_terms",
+#                      outdir = args$outdir,
+#                      prefix = args$prefix,
+#                      test = TRUE,
+#                      count_thres = args$count_thres,
+#                      match_go = TRUE)
+#   # Test KO
+#   cat("Test KO...\n")
+#   process_annotation(annot = annot,
+#                      sig_genes = sig_genes,
+#                      annotation = "KEGG_KOs",
+#                      outdir = args$outdir,
+#                      prefix = args$prefix,
+#                      test = TRUE,
+#                      count_thres = args$count_thres,
+#                      match_go = FALSE)
+#   # Test eggNOG
+#   cat("Test OG...\n")
+#   process_annotation(annot = annot,
+#                      sig_genes = sig_genes,
+#                      annotation = "OGs",
+#                      outdir = args$outdir,
+#                      prefix = args$prefix,
+#                      test = TRUE,
+#                      count_thres = args$count_thres,
+#                      match_go = FALSE)
+# }
