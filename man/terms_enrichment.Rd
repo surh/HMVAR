@@ -18,7 +18,7 @@ are already provided by this function.}
 }
 \value{
 A tibble with columnns 'term', 'size', 'statistic', and
-'p.value'. If all the terms have GO-like IDs, then columns 'ontology'
+'p.value'. If at least one term has GO-like IDs, then columns 'ontology'
 and 'annotation' will be otbained from GO.db.
 }
 \description{

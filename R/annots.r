@@ -379,7 +379,7 @@ gsea <- function(dat, test = 'wilcoxon', alternative = 'greater', min_size = 3){
 #' are already provided by this function.
 #'
 #' @return A tibble with columnns 'term', 'size', 'statistic', and
-#' 'p.value'. If all the terms have GO-like IDs, then columns 'ontology'
+#' 'p.value'. If at least one term has GO-like IDs, then columns 'ontology'
 #' and 'annotation' will be otbained from GO.db.
 #' 
 #' @export
@@ -399,7 +399,7 @@ terms_enrichment <- function(dat, method = 'gsea', ...){
     res <- gsea(dat = dat, ...)
     
     # If terms are GO match with annotations
-    if(all(stringr::str_detect(res$term, "^GO:[0-9]{7}"))){
+    if(any(stringr::str_detect(res$term, "^GO:[0-9]{7}"))){
       res <- res %>%
         purrr::pmap_dfr(function(term, size, statistic, p.value){
           t <- GO.db::GOTERM[[term]]

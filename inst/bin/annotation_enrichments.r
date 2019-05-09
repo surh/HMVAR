@@ -28,6 +28,7 @@ gw_test_enrichments <- function(input, annotations, closest,
                                 min_size = 3){
   
   # Read test
+  cat("\tReading genome-wide test...\n")
   col_specs <- rlang::list2(chr = col_character(),
                             ps = col_integer(),
                             rs = col_character(),
@@ -46,6 +47,7 @@ gw_test_enrichments <- function(input, annotations, closest,
       stop("ERROR: gene_score must be 'min' or 'max'", call. = TRUE)
     }
     
+    cat("\tReading closest...\n")
     closest <- read_tsv(closest,
                         col_names = c("chr", "ps", "ps2", "chr2",
                                       "start", "end", "gene_id", "dist"),
@@ -71,11 +73,14 @@ gw_test_enrichments <- function(input, annotations, closest,
       split(.$gene_id) %>%
       map_dfr(~ tibble(!!score_column := score_sel_fun(.x[,score_column, drop = TRUE])),
               score_column = score_column, .id = 'gene_id')
+    
+    cat("\tNumber of genes associated: ", nrow(gw.test), "\n")
   }else if(!('gene_id' %in% colnames(gw.test))){
     stop("ERROR: if closest not provided, input must have 'gene_id' column.", call. = TRUE)
   }
   
   # Read annotations
+  cat("\tReading annotations...\n")
   annots <- read_eggnog(annotations) %>%
     select(gene_id = query_name, everything()) %>%
     select(gene_id, terms = annot_column)
@@ -89,6 +94,7 @@ gw_test_enrichments <- function(input, annotations, closest,
   gw.test <- annots %>%
     right_join(gw.test, by = "gene_id") %>%
     select(gene_id, terms, score = score_column)
+  cat("\tGenes with annotation: ", sum(!is.na(gw.test$terms)), "\n")
   
   # test
   if(method == 'gsea'){
@@ -146,7 +152,7 @@ process_arguments <- function(){
                                                  "file of the form <closest>/<prefix>*. If nothing",
                                                  "is passed, then each tab-delimited file must have",
                                                  "a 'gene_id' column."),
-                    class = "character",
+                    type = "character",
                     default = NA)
   p <- add_argument(p, "--annotations", help = paste("This can be either a single file or a",
                                                      "directory. It must match the same type",
@@ -272,13 +278,26 @@ process_arguments <- function(){
 #    return(vec)
 # }
 
-args <- list(input = "~/micropopgen/exp/2019/2019-03-29.hmp_metawas_data/Supragingival.plaque/metawas/lmmpcs/Porphyromonas_sp_57899_lmm.results.txt",
-             closest = "~/micropopgen/exp/2019/2019-03-29.hmp_metawas_data/Supragingival.plaque/closest/Porphyromonas_sp_57899.closest",
-             annotations = "~/micropopgen/exp/2019/2019-04-01.hmp_subsite_annotations/hmp.subsite_annotations/Porphyromonas_sp_57899.emapper.annotations",
+# args <- list(input = "~/micropopgen/exp/2019/2019-03-29.hmp_metawas_data/Supragingival.plaque/metawas/lmmpcs/Porphyromonas_sp_57899_lmm.results.txt",
+#              closest = "~/micropopgen/exp/2019/2019-03-29.hmp_metawas_data/Supragingival.plaque/closest/Porphyromonas_sp_57899.closest",
+#              annotations = "~/micropopgen/exp/2019/2019-04-01.hmp_subsite_annotations/hmp.subsite_annotations/Porphyromonas_sp_57899.emapper.annotations",
+#              dist_thres = 500,
+#              min_size = 3,
+#              outdir = "metawas_enrichments",
+#              suffix = ".txt$",
+#              score_column = 'p_lrt.lmmpcs',
+#              annot_column = 'GO_terms',
+#              alternative = 'less',
+#              method = 'gsea',
+#              gene_score = 'min')
+
+args <- list(input = "inputs/Streptococcus_mitis_58288_lmm.results.txt",
+             closest = "closest/Streptococcus_mitis_58288.closest",
+             annotations = "annotations/Streptococcus_mitis_58288.emapper.annotations",
              dist_thres = 500,
              min_size = 3,
-             outdir = "metawas_enrichments",
-             suffix = ".txt$",
+             outdir = "output_1file_gsea/",
+             suffix = "_lmm.results.txt",
              score_column = 'p_lrt.lmmpcs',
              annot_column = 'GO_terms',
              alternative = 'less',
@@ -366,7 +385,12 @@ if(dir.exists(args$input)){
                              alternative = args$alternative,
                              annot_column = args$annot_column,
                              method = args$method, min_size = args$min_size)
+  cat("============data=================\n")
+  print(Res$data)
+  cat("=============res=================\n")
+  print(Res$res)
   
+  cat("Writing output...\n")
   prefix <- str_replace(basename(args$input), args$suffix, "")
   filename <- paste0(prefix, ".enrichments.txt")
   filename <- file.path(args$outdir, filename)
