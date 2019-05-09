@@ -388,7 +388,7 @@ terms_enrichment <- function(dat, method = 'gsea', ...){
   if(!is.data.frame(dat)){
     stop("ERROR: dat must be a data.frame or tibble", call. = TRUE)
   }
-  if(!(c('gene_id', 'terms', 'score') %in% colnames(dat))){
+  if(any(!(c('gene_id', 'terms', 'score') %in% colnames(dat)))){
     stop("ERROR: dat must have columns 'gene_id', 'terms' and 'score'.", call. = TRUE)
   }
   if(any(duplicated(dat$gene_id))){

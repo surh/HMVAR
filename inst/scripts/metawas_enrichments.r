@@ -90,71 +90,14 @@ gw_test_enrichments <- function(input, annotations, closest,
     right_join(gw.test, by = "gene_id") %>%
     select(gene_id, terms, score = score_column)
   
-  # Test
+  # test
   if(method == 'gsea'){
-    res <- gsea(dat = gw.test, test = 'wilcoxon', alternative = alternative, min_size = min_size)
-    
-    # If terms are GO match with annotations
-    if(all(str_detect(res$term, "^GO:[0-9]{7}"))){
-      res <- res %>%
-        pmap_dfr(function(term, size, statistic, p.value){
-          t <- GO.db::GOTERM[[term]]
-          if(!is.null(t)){
-            ontology <- t@Ontology
-            annotation <- t@Term
-          }else{
-            ontology <- NA
-            annotation <- NA
-          }
-          tibble(term = term,
-                 size = size,
-                 statistic = statistic,
-                 p.value = p.value,
-                 ontology = ontology,
-                 annotation = annotation)})
-    }
-    
+    res <- terms_enrichment(dat = gw.test, method = method, test = 'wilcoxon',
+                            alternative = alternative, min_size = min_size)
   }else if(method == 'test_go'){
-    genes <- gw.test$score
-    names(genes) <- gw.test$gene_id
-    bp.res <- test_go(genes = genes,
-                      annots = gw.test %>% select(gene_id, terms),
-                      ontology = 'BP',
-                      algorithm = 'weight01',
-                      statistic = 'ks',
-                      node_size = min_size,
-                      score_threshold = 1e-5)
-    cc.res <- test_go(genes = genes,
-                      annots = gw.test %>% select(gene_id, terms),
-                      ontology = 'CC',
-                      algorithm = 'weight01',
-                      statistic = 'ks',
-                      node_size = min_size,
-                      score_threshold = 1e-5)
-    mf.res <- test_go(genes = genes,
-                      annots = gw.test %>% select(gene_id, terms),
-                      ontology = 'MF',
-                      algorithm = 'weight01',
-                      statistic = 'ks',
-                      node_size = min_size,
-                      score_threshold = 1e-5)
-    
-    res <- topGO::GenTable(bp.res$topgo_data,
-                           p.value = bp.res$topgo_res,
-                           topNodes = length(bp.res$topgo_res@score)) %>%
-      bind_cols(ontology = rep('BP', length(bp.res$topgo_res@score))) %>%
-      bind_rows(topGO::GenTable(cc.res$topgo_data,
-                                p.value = cc.res$topgo_res,
-                                topNodes = length(cc.res$topgo_res@score)) %>%
-                  bind_cols(ontology = rep('CC', length(cc.res$topgo_res@score)))) %>%
-      bind_rows(topGO::GenTable(mf.res$topgo_data,
-                                p.value = mf.res$topgo_res,
-                                topNodes = length(mf.res$topgo_res@score)) %>%
-                  bind_cols(ontology = rep('MF', length(mf.res$topgo_res@score)))) %>%
-      as_tibble() %>%
-      select(term = GO.ID, size = Annotated, p.value, ontology, annotation = Term) %>%
-      mutate(p.value = as.numeric(p.value)) %>%
-      arrange(p.value)
+    res <- terms_enrichment(dat = gw.test, method = method,
+                            description = '', algorithm = 'weight01',
+                            statatistic = 'ks', node_size = min_size)
   }else{
     stop("ERROR: method must be 'gsea' or 'test_go'", call. = TRUE)
   }
@@ -329,18 +272,18 @@ process_arguments <- function(){
 #    return(vec)
 # }
 
-# args <- list(input = "~/micropopgen/exp/2019/2019-03-29.hmp_metawas_data/Supragingival.plaque/metawas/lmmpcs/Porphyromonas_sp_57899_lmm.results.txt",
-#              closest = "~/micropopgen/exp/2019/2019-03-29.hmp_metawas_data/Supragingival.plaque/closest/Porphyromonas_sp_57899.closest",
-#              annotations = "~/micropopgen/exp/2019/2019-04-01.hmp_subsite_annotations/hmp.subsite_annotations/Porphyromonas_sp_57899.emapper.annotations",
-#              dist_thres = 500,
-#              min_size = 3,
-#              outdir = "metawas_enrichments",
-#              suffix = ".txt$",
-#              score_column = 'p_lrt.lmmpcs',
-#              annot_column = 'GO_terms',
-#              alternative = 'less',
-#              method = 'gsea',
-#              gene_score = 'min')
+args <- list(input = "~/micropopgen/exp/2019/2019-03-29.hmp_metawas_data/Supragingival.plaque/metawas/lmmpcs/Porphyromonas_sp_57899_lmm.results.txt",
+             closest = "~/micropopgen/exp/2019/2019-03-29.hmp_metawas_data/Supragingival.plaque/closest/Porphyromonas_sp_57899.closest",
+             annotations = "~/micropopgen/exp/2019/2019-04-01.hmp_subsite_annotations/hmp.subsite_annotations/Porphyromonas_sp_57899.emapper.annotations",
+             dist_thres = 500,
+             min_size = 3,
+             outdir = "metawas_enrichments",
+             suffix = ".txt$",
+             score_column = 'p_lrt.lmmpcs',
+             annot_column = 'GO_terms',
+             alternative = 'less',
+             method = 'gsea',
+             gene_score = 'min')
 # args <- process_arguments()
 
 if(!dir.exists(args$outdir)){
@@ -396,7 +339,26 @@ if(dir.exists(args$input)){
     
     Dat <- Dat %>% bind_rows(Res$data)
   }
+  
+  
+  # Test overall
+  if(args$method == 'gsea'){
+    res <- terms_enrichment(dat = Dat, method = args$method, test = 'wilcoxon',
+                            alternative = args$alternative, min_size = args$min_size)
+  }else if(args$method == 'test_go'){
+    res <- terms_enrichment(dat = Dat, method = args$method,
+                            description = '', algorithm = 'weight01',
+                            statatistic = 'ks', node_size = args$min_size)
+  }else{
+    stop("ERROR: --method must be 'gsea' or 'test_go'", call. = TRUE)
+  }
+  filename <- file.path(args$outdir, 'overall.enrichments.txt')
+  write_tsv(res, path = filename)
+  
+  Dat <- Dat %>% bind_rows(Res$data)
+  
 }else if(file.exists(args$input)){
+  cat("Input is a file\n")
   Res <- gw_test_enrichments(input = args$input, annotations = args$annotations,
                              closest = args$closest, dist_thres = args$dist_thres,
                              score_column = args$score_column,
