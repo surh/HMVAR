@@ -1,3 +1,5 @@
+#!/usr/bin/env Rscript
+
 # (C) Copyright 2019 Sur Herrera Paredes
 # 
 # This file is part of HMVAR.
@@ -116,21 +118,21 @@ gw_test_enrichments <- function(input, annotations, closest,
     genes <- gw.test$score
     names(genes) <- gw.test$gene_id
     bp.res <- test_go(genes = genes,
-                      annots = annots,
+                      annots = gw.test %>% select(gene_id, terms),
                       ontology = 'BP',
                       algorithm = 'weight01',
                       statistic = 'ks',
                       node_size = min_size,
                       score_threshold = 1e-5)
     cc.res <- test_go(genes = genes,
-                      annots = annots,
+                      annots = gw.test %>% select(gene_id, terms),
                       ontology = 'CC',
                       algorithm = 'weight01',
                       statistic = 'ks',
                       node_size = min_size,
                       score_threshold = 1e-5)
     mf.res <- test_go(genes = genes,
-                      annots = annots,
+                      annots = gw.test %>% select(gene_id, terms),
                       ontology = 'MF',
                       algorithm = 'weight01',
                       statistic = 'ks',
@@ -265,39 +267,39 @@ process_arguments <- function(){
   return(args)
 }
 
-count_vars <- function(d){
-  n.variants <- nrow(d)
-  n.sig <- sum(d$type %in% c("int", "both"))
-  n.outside <- sum(d$dist > 0)
-  tibble(chr = unique(d$chr),
-         start = unique(d$start),
-         end = unique(d$end),
-         n.variants = n.variants,
-         n.sig = n.sig,
-         n.outside = n.outside)
-}
+# count_vars <- function(d){
+#   n.variants <- nrow(d)
+#   n.sig <- sum(d$type %in% c("int", "both"))
+#   n.outside <- sum(d$dist > 0)
+#   tibble(chr = unique(d$chr),
+#          start = unique(d$start),
+#          end = unique(d$end),
+#          n.variants = n.variants,
+#          n.sig = n.sig,
+#          n.outside = n.outside)
+# }
 
-metawas_gene_counts <- function(metawas, closest, annot, outdir = "./", prefix = NULL){
-  # Match everything per gene
-  all <- metawas %>% full_join(closest, by = c("chr", "ps"))
-  
-  cat("\tCleaning annotation...\n")
-  annot <- annot %>%
-    select(gene_id, predicted_gene_name, eggNOG_annot)
-  
-  
-  Genes <- all %>%
-    split(.$gene_id) %>%
-    map_dfr(~count_vars(.), .id = "gene_id") %>%
-    arrange(chr, start) %>%
-    left_join(annot, by = "gene_id")
-  
-  filename <- paste0(c(prefix, "gene_metawas_counts.txt"), collapse = ".")
-  filename <- file.path(outdir, filename)
-  write_tsv(Genes, filename)
-  
-  return(filename)
-}
+# metawas_gene_counts <- function(metawas, closest, annot, outdir = "./", prefix = NULL){
+#   # Match everything per gene
+#   all <- metawas %>% full_join(closest, by = c("chr", "ps"))
+# 
+#   cat("\tCleaning annotation...\n")
+#   annot <- annot %>%
+#     select(gene_id, predicted_gene_name, eggNOG_annot)
+# 
+# 
+#   Genes <- all %>%
+#     split(.$gene_id) %>%
+#     map_dfr(~count_vars(.), .id = "gene_id") %>%
+#     arrange(chr, start) %>%
+#     left_join(annot, by = "gene_id")
+# 
+#   filename <- paste0(c(prefix, "gene_metawas_counts.txt"), collapse = ".")
+#   filename <- file.path(outdir, filename)
+#   write_tsv(Genes, filename)
+# 
+#   return(filename)
+# }
 
 #' Sums named vectors by name
 #'
@@ -308,24 +310,24 @@ metawas_gene_counts <- function(metawas, closest, annot, outdir = "./", prefix =
 #' @export
 #'
 #' @examples
-sum_vecs <- function(a, b){
-  if(is.null(a)){
-    return(b)
-  }
-  if(is.null(b)){
-    return(a)
-  }
-  
-  new <- tibble(term = names(a), count = a) %>%
-    full_join(tibble(term = names(b), count = b), by = "term")
-  new <- new %>%
-    bind_cols(count = new %>% select(-term) %>% rowSums(na.rm = TRUE)) %>%
-    select(term, count)
-  vec <- new$count
-  names(vec) <- new$term
-  
-  return(vec)
-}
+# sum_vecs <- function(a, b){
+#   if(is.null(a)){
+#     return(b)
+#   }
+#   if(is.null(b)){
+#     return(a)
+#   }
+# 
+#   new <- tibble(term = names(a), count = a) %>%
+#     full_join(tibble(term = names(b), count = b), by = "term")
+#   new <- new %>%
+#     bind_cols(count = new %>% select(-term) %>% rowSums(na.rm = TRUE)) %>%
+#     select(term, count)
+#   vec <- new$count
+#   names(vec) <- new$term
+#  
+#    return(vec)
+# }
 
 # args <- list(input = "~/micropopgen/exp/2019/2019-03-29.hmp_metawas_data/Supragingival.plaque/metawas/lmmpcs/Porphyromonas_sp_57899_lmm.results.txt",
 #              closest = "~/micropopgen/exp/2019/2019-03-29.hmp_metawas_data/Supragingival.plaque/closest/Porphyromonas_sp_57899.closest",
@@ -392,7 +394,7 @@ if(dir.exists(args$input)){
     filename <- file.path(args$outdir, filename)
     write_tsv(Res$res, path = filename)
     
-    Dat <- Dat %>% bind_rows(Res$res)
+    Dat <- Dat %>% bind_rows(Res$data)
   }
 }else if(file.exists(args$input)){
   Res <- gw_test_enrichments(input = args$input, annotations = args$annotations,

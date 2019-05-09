@@ -36,6 +36,7 @@ https://github.com/surh/HMVAR/issues/12).
 (Issue https://github.com/surh/HMVAR/issues/18).
 25. Function `test_go` added (Issue https://github.com/surh/HMVAR/issues/16
 https://github.com/surh/HMVAR/issues/14).
+26. Function `terms_enrichments`.
 
 # 0.1-0
 1. Added exectuable script to perform mktest.

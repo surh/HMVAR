@@ -365,3 +365,94 @@ gsea <- function(dat, test = 'wilcoxon', alternative = 'greater', min_size = 3){
   return(dat)
 }
 
+#' Enrichment analysis of annotation terms
+#' 
+#' Takes a data.frame or tibble with one gene per row, annotations
+#' per gene, and a score per gene. It performs enrichment analysis
+#' via \link{gsea} or \link{test_go}.
+#'
+#' @param dat A data.frame or tibble. It must have columns 'gene_id',
+#' 'terms' and 'score'. Values in 'gene_id' must be unique.
+#' @param method Either 'gsea' or 'test_go'.
+#' @param ... Extra parameters for \link{gsea} or \link{test_go}. If
+#' `method == 'test_go'` parameters 'genes', 'scores' and 'ontology'
+#' are already provided by this function.
+#'
+#' @return A tibble with columnns 'term', 'size', 'statistic', and
+#' 'p.value'. If all the terms have GO-like IDs, then columns 'ontology'
+#' and 'annotation' will be otbained from GO.db.
+#' 
+#' @export
+#' @importFrom magrittr %>%
+terms_enrichment <- function(dat, method = 'gsea', ...){
+  if(!is.data.frame(dat)){
+    stop("ERROR: dat must be a data.frame or tibble", call. = TRUE)
+  }
+  if(!(c('gene_id', 'terms', 'score') %in% colnames(dat))){
+    stop("ERROR: dat must have columns 'gene_id', 'terms' and 'score'.", call. = TRUE)
+  }
+  if(any(duplicated(dat$gene_id))){
+    stop("ERROR: values in 'gene_id' must be unique.", call. = TRUE)
+  }
+  
+  if(method == 'gsea'){
+    res <- gsea(dat = dat, ...)
+    
+    # If terms are GO match with annotations
+    if(all(stringr::str_detect(res$term, "^GO:[0-9]{7}"))){
+      res <- res %>%
+        purrr::pmap_dfr(function(term, size, statistic, p.value){
+          t <- GO.db::GOTERM[[term]]
+          if(!is.null(t)){
+            ontology <- t@Ontology
+            annotation <- t@Term
+          }else{
+            ontology <- NA
+            annotation <- NA
+          }
+          tibble::tibble(term = term,
+                         size = size,
+                         statistic = statistic,
+                         p.value = p.value,
+                         ontology = ontology,
+                         annotation = annotation)})
+    }
+    
+  }else if(method == 'test_go'){
+    genes <- dat$score
+    names(genes) <- dat$gene_id
+    bp.res <- test_go(genes = genes,
+                      annots = dat %>% dplyr::select(gene_id, terms),
+                      ontology = 'BP',
+                      ...)
+    cc.res <- test_go(genes = genes,
+                      annots = dat %>% dplyr::select(gene_id, terms),
+                      ontology = 'CC',
+                      ...)
+    mf.res <- test_go(genes = genes,
+                      annots = dat %>% dplyr::select(gene_id, terms),
+                      ontology = 'MF',
+                      ...)
+    
+    res <- topGO::GenTable(bp.res$topgo_data,
+                           p.value = bp.res$topgo_res,
+                           topNodes = length(bp.res$topgo_res@score)) %>%
+      dplyr::bind_cols(ontology = rep('BP', length(bp.res$topgo_res@score))) %>%
+      dplyr::bind_rows(topGO::GenTable(cc.res$topgo_data,
+                                       p.value = cc.res$topgo_res,
+                                       topNodes = length(cc.res$topgo_res@score)) %>%
+                         dplyr::bind_cols(ontology = rep('CC', length(cc.res$topgo_res@score)))) %>%
+      dplyr::bind_rows(topGO::GenTable(mf.res$topgo_data,
+                                       p.value = mf.res$topgo_res,
+                                       topNodes = length(mf.res$topgo_res@score)) %>%
+                         dplyr::bind_cols(ontology = rep('MF', length(mf.res$topgo_res@score)))) %>%
+      tibble::as_tibble() %>%
+      dplyr::select(term = GO.ID, size = Annotated, p.value, ontology, annotation = Term) %>%
+      dplyr::mutate(p.value = as.numeric(p.value)) %>%
+      dplyr::arrange(p.value)
+  }else{
+    stop("ERROR: method must be 'gsea' or 'test_go'", call. = TRUE)
+  }
+  
+  return(res)
+}
