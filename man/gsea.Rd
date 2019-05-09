@@ -52,7 +52,7 @@ dat <- tibble::tibble(gene_id = paste('gene', 1:10, sep = ''),
                                 'term6',
                                 'term6',
                                 'term6,term2',
-                                'term6.term7',
+                                'term6,term7',
                                 'term6,term2'),
                       score = 1:10)
 dat

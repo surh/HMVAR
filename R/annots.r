@@ -325,7 +325,7 @@ term_gsea <- function(genes, scores, test = "wilcoxon", alternative = "greater",
 #'                                 'term6',
 #'                                 'term6',
 #'                                 'term6,term2',
-#'                                 'term6.term7',
+#'                                 'term6,term7',
 #'                                 'term6,term2'),
 #'                       score = 1:10)
 #' dat
