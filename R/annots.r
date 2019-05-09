@@ -266,7 +266,7 @@ term_gsea <- function(genes, scores, test = "wilcoxon", alternative = "greater",
   ii <- names(scores) %in% genes
   
   if(sum(ii) < min_size){
-    return(NULL)
+    return(tibble::tibble(size = sum(ii), statistic = NA, p.value = NA))
   }
   
   if(test == 'wilcoxon'){
@@ -359,6 +359,7 @@ gsea <- function(dat, test = 'wilcoxon', alternative = 'greater', min_size = 3){
                    alternative = alternative,
                    min_size = min_size,
                    .id = "term") %>%
+    filter(!is.na(statistic)) %>%
     dplyr::arrange(p.value)
   
   return(dat)
