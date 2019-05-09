@@ -15,15 +15,150 @@
 # You should have received a copy of the GNU General Public License
 # along with HMVAR.  If not, see <http://www.gnu.org/licenses/>.
 
-
-# Copyright (C) 2019 Sur Herrera Paredes
-# Performs functional enrichment on metawas hits from eggnog annotations
-# Based on script from /home/sur/micropopgen/exp/2019/2019-01-29.metawas_enrichment/
-
 library(tidyverse)
 library(argparser)
 library(HMVAR)
 
+gw_test_enrichments <- function(input, annotations, closest,
+                                dist_thres = 500, score_column = 'p.value',
+                                gene_score = 'min', alternative = 'less',
+                                annot_column = 'GO_terms', method = 'gsea',
+                                min_size = 3){
+  
+  # Read test
+  col_specs <- rlang::list2(chr = col_character(),
+                            ps = col_integer(),
+                            rs = col_character(),
+                            gene_id = col_character(),
+                            !!score_column := col_double())
+  gw.test <- read_tsv(args$input,
+                      col_types = do.call(cols, col_specs))
+  
+  # Reading closest
+  if(!is.na(closest)){
+    
+    if(!all(c('chr', 'ps') %in% colnames(gw.test))){
+      stop("ERROR: if closest is provided, input must have 'chr' and 'ps' columns.", call. = TRUE)
+    }
+    if(!(gene_score %in% c('min', 'max'))){
+      stop("ERROR: gene_score must be 'min' or 'max'", call. = TRUE)
+    }
+    
+    closest <- read_tsv(closest,
+                        col_names = c("chr", "ps", "ps2", "chr2",
+                                      "start", "end", "gene_id", "dist"),
+                        col_types = cols(.default = col_number(),
+                                         chr = col_character(),
+                                         chr2 = col_character(),
+                                         gene_id = col_character())) %>%
+      select(-ps2, -chr2)
+    # closest
+    
+    # Match genes and tests
+    # Remove too distant features
+    closest <- closest %>%
+      filter(abs(dist) <= dist_thres) %>%
+      select(gene_id, chr, ps)
+    # Match features to genes
+    gw.test <- gw.test %>%
+      left_join(closest, by = c('chr', 'ps'))
+    # Get lowest score per gene
+    
+    score_sel_fun <- match.fun(gene_score)
+    gw.test <- gw.test %>%
+      split(.$gene_id) %>%
+      map_dfr(~ tibble(!!score_column := score_sel_fun(.x[,score_column, drop = TRUE])),
+              score_column = score_column, .id = 'gene_id')
+  }else if(!('gene_id' %in% colnames(gw.test))){
+    stop("ERROR: if closest not provided, input must have 'gene_id' column.", call. = TRUE)
+  }
+  
+  # Read annotations
+  annots <- read_eggnog(annotations) %>%
+    select(gene_id = query_name, everything()) %>%
+    select(gene_id, terms = annot_column)
+  #### CUSTOM FOR TESTS ####
+  annots <- annots %>%
+    mutate(gene_id = str_replace(string = gene_id,
+                                 pattern = "\\([+-]\\)_[0-9]",
+                                 replacement = ""))
+  ##########
+  # Match genes with annotations
+  gw.test <- annots %>%
+    right_join(gw.test, by = "gene_id") %>%
+    select(gene_id, terms, score = score_column)
+  
+  # Test
+  if(method == 'gsea'){
+    res <- gsea(dat = gw.test, test = 'wilcoxon', alternative = alternative, min_size = min_size)
+    
+    # If terms are GO match with annotations
+    if(all(str_detect(res$term, "^GO:[0-9]{7}"))){
+      res <- res %>%
+        pmap_dfr(function(term, size, statistic, p.value){
+          t <- GO.db::GOTERM[[term]]
+          if(!is.null(t)){
+            ontology <- t@Ontology
+            annotation <- t@Term
+          }else{
+            ontology <- NA
+            annotation <- NA
+          }
+          tibble(term = term,
+                 size = size,
+                 statistic = statistic,
+                 p.value = p.value,
+                 ontology = ontology,
+                 annotation = annotation)})
+    }
+    
+  }else if(method == 'test_go'){
+    genes <- gw.test$score
+    names(genes) <- gw.test$gene_id
+    bp.res <- test_go(genes = genes,
+                      annots = annots,
+                      ontology = 'BP',
+                      algorithm = 'weight01',
+                      statistic = 'ks',
+                      node_size = min_size,
+                      score_threshold = 1e-5)
+    cc.res <- test_go(genes = genes,
+                      annots = annots,
+                      ontology = 'CC',
+                      algorithm = 'weight01',
+                      statistic = 'ks',
+                      node_size = min_size,
+                      score_threshold = 1e-5)
+    mf.res <- test_go(genes = genes,
+                      annots = annots,
+                      ontology = 'MF',
+                      algorithm = 'weight01',
+                      statistic = 'ks',
+                      node_size = min_size,
+                      score_threshold = 1e-5)
+    
+    res <- topGO::GenTable(bp.res$topgo_data,
+                           p.value = bp.res$topgo_res,
+                           topNodes = length(bp.res$topgo_res@score)) %>%
+      bind_cols(ontology = rep('BP', length(bp.res$topgo_res@score))) %>%
+      bind_rows(topGO::GenTable(cc.res$topgo_data,
+                                p.value = cc.res$topgo_res,
+                                topNodes = length(cc.res$topgo_res@score)) %>%
+                  bind_cols(ontology = rep('CC', length(cc.res$topgo_res@score)))) %>%
+      bind_rows(topGO::GenTable(mf.res$topgo_data,
+                                p.value = mf.res$topgo_res,
+                                topNodes = length(mf.res$topgo_res@score)) %>%
+                  bind_cols(ontology = rep('MF', length(mf.res$topgo_res@score)))) %>%
+      as_tibble() %>%
+      select(term = GO.ID, size = Annotated, p.value, ontology, annotation = Term) %>%
+      mutate(p.value = as.numeric(p.value)) %>%
+      arrange(p.value)
+  }else{
+    stop("ERROR: method must be 'gsea' or 'test_go'", call. = TRUE)
+  }
+  
+  return(list(data = gw.test, res = res))
+}
 
 process_arguments <- function(){
   p <- arg_parser(paste("Calculate DoS statistics on a single genome or a
@@ -208,156 +343,16 @@ args <- list(input = "~/micropopgen/exp/2019/2019-03-29.hmp_metawas_data/Supragi
 
 # dir.create(args$outdir)
 
-
 if(dir.exists(args$input)){
   
 }else if(file.exists(args$input)){
-  input <- args$input
-  annotations <- args$annotations
-  closest <- args$closest
-  dist_thres <- args$dist_thres
-  score_column <- args$score_column
-  annot_column <- args$annot_column
-  method <- args$method
-  alternative <- args$alternative
-  min_size <- args$min_size
-  gene_score <- args$gene_score
-  
-  # Read test
-  col_specs <- rlang::list2(chr = col_character(),
-                            ps = col_integer(),
-                            rs = col_character(),
-                            gene_id = col_character(),
-                            !!score_column := col_double())
-  
-  gw.test <- read_tsv(args$input,
-                      col_types = do.call(cols, col_specs))
-  # gw.test
-  
-  # Reading closest
-  if(!is.na(closest)){
-    
-    if(!all(c('chr', 'ps') %in% colnames(gw.test))){
-      stop("ERROR: if closest is provided, input must have 'chr' and 'ps' columns.", call. = TRUE)
-    }
-    if(!(gene_score %in% c('min', 'max'))){
-      stop("ERROR: gene_score must be 'min' or 'max'", call. = TRUE)
-    }
-    
-    closest <- read_tsv(closest,
-                        col_names = c("chr", "ps", "ps2", "chr2",
-                                      "start", "end", "gene_id", "dist"),
-                        col_types = cols(.default = col_number(),
-                                         chr = col_character(),
-                                         chr2 = col_character(),
-                                         gene_id = col_character())) %>%
-      select(-ps2, -chr2)
-    # closest
-    
-    # Match genes and tests
-    # Remove too distant features
-    closest <- closest %>%
-      filter(abs(dist) <= dist_thres) %>%
-      select(gene_id, chr, ps)
-    # Match features to genes
-    gw.test <- gw.test %>%
-      left_join(closest, by = c('chr', 'ps'))
-    # Get lowest score per gene
-    
-    score_sel_fun <- match.fun(gene_score)
-    gw.test <- gw.test %>%
-      split(.$gene_id) %>%
-      map_dfr(~ tibble(!!score_column := score_sel_fun(.x[,score_column, drop = TRUE])),
-              score_column = score_column, .id = 'gene_id')
-  }else if(!('gene_id' %in% colnames(gw.test))){
-    stop("ERROR: if closest not provided, input must have 'gene_id' column.", call. = TRUE)
-  }
-  
-  # Read annotations
-  annots <- read_eggnog(annotations) %>%
-    select(gene_id = query_name, everything()) %>%
-    select(gene_id, terms = annot_column)
-  #### CUSTOM FOR TESTS ####
-  annots <- annots %>%
-    mutate(gene_id = str_replace(string = gene_id,
-                                          pattern = "\\([+-]\\)_[0-9]",
-                                          replacement = ""))
-  ##########
-  # Match genes with annotations
-  gw.test <- annots %>%
-    right_join(gw.test, by = "gene_id") %>%
-    select(gene_id, terms, score = score_column)
-  # gw.test
-  
-  if(method == 'gsea'){
-    res <- gsea(dat = gw.test, test = 'wilcoxon', alternative = alternative, min_size = min_size)
-    
-    # If terms are GO match with annotations
-    if(all(str_detect(res$term, "^GO:[0-9]{7}"))){
-      res <- res %>%
-        pmap_dfr(function(term, size, statistic, p.value){
-          t <- GO.db::GOTERM[[term]]
-          if(!is.null(t)){
-            ontology <- t@Ontology
-            annotation <- t@Term
-          }else{
-            ontology <- NA
-            annotation <- NA
-          }
-          tibble(term = term,
-                 size = size,
-                 statistic = statistic,
-                 p.value = p.value,
-                 ontology = ontology,
-                 annotation = annotation)})
-    }
-    
-  }else if(method == 'test_go'){
-    genes <- gw.test$score
-    names(genes) <- gw.test$gene_id
-    bp.res <- test_go(genes = genes,
-                      annots = annots,
-                      ontology = 'BP',
-                      algorithm = 'weight01',
-                      statistic = 'ks',
-                      node_size = min_size,
-                      score_threshold = 1e-5)
-    cc.res <- test_go(genes = genes,
-                      annots = annots,
-                      ontology = 'CC',
-                      algorithm = 'weight01',
-                      statistic = 'ks',
-                      node_size = min_size,
-                      score_threshold = 1e-5)
-    mf.res <- test_go(genes = genes,
-                      annots = annots,
-                      ontology = 'MF',
-                      algorithm = 'weight01',
-                      statistic = 'ks',
-                      node_size = min_size,
-                      score_threshold = 1e-5)
-    
-    res <- topGO::GenTable(bp.res$topgo_data,
-                           p.value = bp.res$topgo_res,
-                           topNodes = length(bp.res$topgo_res@score)) %>%
-      bind_cols(ontology = rep('BP', length(bp.res$topgo_res@score))) %>%
-      bind_rows(topGO::GenTable(cc.res$topgo_data,
-                                p.value = cc.res$topgo_res,
-                                topNodes = length(cc.res$topgo_res@score)) %>%
-                  bind_cols(ontology = rep('CC', length(cc.res$topgo_res@score)))) %>%
-      bind_rows(topGO::GenTable(mf.res$topgo_data,
-                                p.value = mf.res$topgo_res,
-                                topNodes = length(mf.res$topgo_res@score)) %>%
-                  bind_cols(ontology = rep('MF', length(mf.res$topgo_res@score)))) %>%
-      as_tibble() %>%
-      select(term = GO.ID, size = Annotated, p.value, ontology, annotation = Term) %>%
-      mutate(p.value = as.numeric(p.value)) %>%
-      arrange(p.value)
-  }else{
-    stop("ERROR: method must be 'gsea' or 'test_go'", call. = TRUE)
-  }
-  
-  
+  Res <- gw_test_enrichments(input = args$input, annotations = args$annotations,
+                             closest = args$closest, dist_thres = args$dist_thres,
+                             score_column = args$score_column,
+                             gene_score = args$gene_score,
+                             alternative = args$alternative,
+                             annot_column = args$annot_column,
+                             method = args$method, min_size = args$min_size)
   
 }else{
   stop("ERROR: input doesn't exist")
