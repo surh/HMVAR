@@ -445,26 +445,26 @@ if(dir.exists(args$input)){
   
   if(method == 'gsea'){
     res <- gsea(dat = gw.test, test = 'wilcoxon', alternative = alternative, min_size = min_size)
-    res <- res %>%
-      pmap_dfr(function(term, size, statistic, p.value){
-        t <- GO.db::GOTERM[[term]]
-        if(!is.null(t)){
-          ontology <- t@Ontology
-          annotation <- t@Term
-        }else{
-          ontology <- NA
-          annotation <- NA
-        }
-        tibble(term = term,
-               size = size,
-               statistic = statistic,
-               p.value = p.value,
-               ontology = ontology,
-               annotation = annotation)
-      })
-    # res.gsea <- res
     
-
+    # If terms are GO match with annotations
+    if(all(str_detect(res$term, "^GO:[0-9]{7}"))){
+      res <- res %>%
+        pmap_dfr(function(term, size, statistic, p.value){
+          t <- GO.db::GOTERM[[term]]
+          if(!is.null(t)){
+            ontology <- t@Ontology
+            annotation <- t@Term
+          }else{
+            ontology <- NA
+            annotation <- NA
+          }
+          tibble(term = term,
+                 size = size,
+                 statistic = statistic,
+                 p.value = p.value,
+                 ontology = ontology,
+                 annotation = annotation)})
+    }
     
   }else if(method == 'test_go'){
     genes <- gw.test$score
