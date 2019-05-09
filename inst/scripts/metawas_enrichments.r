@@ -89,7 +89,7 @@ process_arguments <- function(){
                                  "to associate a gene to a feature."),
                     type = "numeric",
                     default = 500)
-  p <- add_argument(p, "--count_thres", help = paste("This is the minimum number of genes with",
+  p <- add_argument(p, "--min_size", help = paste("This is the minimum number of genes with",
                                                      "a given annotation, for that annotation to",
                                                      "be tested"),
                     type = "numeric",
@@ -332,12 +332,12 @@ args <- list(input = "~/micropopgen/exp/2019/2019-03-29.hmp_metawas_data/Supragi
              closest = "~/micropopgen/exp/2019/2019-03-29.hmp_metawas_data/Supragingival.plaque/closest/Porphyromonas_sp_57899.closest",
              annotations = "~/micropopgen/exp/2019/2019-04-01.hmp_subsite_annotations/hmp.subsite_annotations/Porphyromonas_sp_57899.emapper.annotations",
              dist_thres = 500,
-             count_thres = 3,
+             min_size = 3,
              outdir = "metawas_enrichments",
              suffix = ".txt$",
              score_column = 'p_lrt.lmmpcs',
              annot_column = 'GO_terms',
-             alternative = 'greater',
+             alternative = 'less',
              method = 'gsea')
 
 
@@ -370,79 +370,249 @@ args <- list(input = "~/micropopgen/exp/2019/2019-03-29.hmp_metawas_data/Supragi
 if(dir.exists(args$input)){
   
 }else if(file.exists(args$input)){
+  input <- args$input
+  annotations <- args$annotations
+  closest <- args$closest
+  dist_thres <- args$dist_thres
+  score_column <- args$score_column
+  annot_column <- args$annot_column
+  method <- args$method
+  alternative <- args$alternative
+  min_size <- args$min_size
   
+  
+  # Read test
   col_specs <- rlang::list2(chr = col_character(),
                             ps = col_integer(),
                             rs = col_character(),
                             gene_id = col_character(),
-                            !!args$score_column := col_double())
+                            !!score_column := col_double())
   
   gw.test <- read_tsv(args$input,
                       col_types = do.call(cols, col_specs))
-  gw.test
+  # gw.test
+  
+  # Reading closest
+  if(!is.na(closest)){
+    
+    if(!all(c('chr', 'ps') %in% colnames(gw.test))){
+      stop("ERROR: if closest is provided, input must have 'chr' and 'ps' columns.", call. = TRUE)
+    }
+    
+    closest <- read_tsv(closest,
+                        col_names = c("chr", "ps", "ps2", "chr2",
+                                      "start", "end", "gene_id", "dist"),
+                        col_types = cols(.default = col_number(),
+                                         chr = col_character(),
+                                         chr2 = col_character(),
+                                         gene_id = col_character())) %>%
+      select(-ps2, -chr2)
+    # closest
+    
+    # Match genes and tests
+    # Remove too distant features
+    closest <- closest %>%
+      filter(abs(dist) <= dist_thres) %>%
+      select(gene_id, chr, ps)
+    # Match features to genes
+    gw.test <- gw.test %>%
+      left_join(closest, by = c('chr', 'ps'))
+    # Get lowest score per gene
+    
+    gw.test <- gw.test %>%
+      split(.$gene_id) %>%
+      map_dfr(~ tibble(!!score_column := min(.x[,score_column, drop = TRUE])),
+              score_column = score_column, .id = 'gene_id')
+  }else if(!('gene_id' %in% colnames(gw.test))){
+    stop("ERROR: if closest not provided, input must have 'gene_id' column.", call. = TRUE)
+  }
+  
+  # Read annotations
+  annots <- read_eggnog(annotations) %>%
+    select(gene_id = query_name, everything()) %>%
+    select(gene_id, terms = annot_column)
+  #### CUSTOM FOR TESTS ####
+  annots <- annots %>%
+    mutate(gene_id = str_replace(string = gene_id,
+                                          pattern = "\\([+-]\\)_[0-9]",
+                                          replacement = ""))
+  ##########
+  # Match genes with annotations
+  gw.test <- annots %>%
+    right_join(gw.test, by = "gene_id") %>%
+    select(gene_id, terms, score = score_column)
+  # gw.test
+  
+  if(method == 'gsea'){
+    res <- gsea(dat = gw.test, test = 'wilcoxon', alternative = alternative, min_size = min_size)
+    res.gsea <- res
+    
+
+    
+  }else if(method == 'test_go'){
+    genes <- gw.test$score
+    names(genes) <- gw.test$gene_id
+    bp.res <- test_go(genes = genes,
+                      annots = annots,
+                      ontology = 'BP',
+                      algorithm = 'weight01',
+                      statistic = 'ks',
+                      node_size = min_size,
+                      score_threshold = 1e-5)
+    cc.res <- test_go(genes = genes,
+                      annots = annots,
+                      ontology = 'CC',
+                      algorithm = 'weight01',
+                      statistic = 'ks',
+                      node_size = min_size,
+                      score_threshold = 1e-5)
+    mf.res <- test_go(genes = genes,
+                      annots = annots,
+                      ontology = 'MF',
+                      algorithm = 'weight01',
+                      statistic = 'ks',
+                      node_size = min_size,
+                      score_threshold = 1e-5)
+    
+    res <- topGO::GenTable(bp.res$topgo_data,
+                           p.value = bp.res$topgo_res,
+                           topNodes = length(bp.res$topgo_res@score)) %>%
+      bind_cols(ontology = rep('BP', length(bp.res$topgo_res@score))) %>%
+      bind_rows(topGO::GenTable(cc.res$topgo_data,
+                                p.value = cc.res$topgo_res,
+                                topNodes = length(cc.res$topgo_res@score)) %>%
+                  bind_cols(ontology = rep('CC', length(cc.res$topgo_res@score)))) %>%
+      bind_rows(topGO::GenTable(mf.res$topgo_data,
+                                p.value = mf.res$topgo_res,
+                                topNodes = length(mf.res$topgo_res@score)) %>%
+                  bind_cols(ontology = rep('MF', length(mf.res$topgo_res@score)))) %>%
+      as_tibble() %>%
+      select(term = GO.ID, size = Annotated, p.value, ontology, annotation = Term) %>%
+      mutate(p.value = as.numeric(p.value)) %>%
+      arrange(p.value)
+    res
+    go <- 'GO:0016887'
+    go <- 'GO:0009128'
+    go <- 'GO:0046034'
+    res %>% filter(term == go)
+    res.gsea %>% filter(term == go)
+    
+    
+    gos <- c('GO:0006119',
+    'GO:1903579',
+    'GO:0061722',
+    'GO:0009777',
+    'GO:0006757',
+    'GO:0019660',
+    'GO:0006754',
+    'GO:1903580',
+    'GO:1903578',
+    'GO:1990966',
+    'GO:0046034')
+    
+    gene_list <- ls(bp.res$topgo_data@graph@nodeData@data$`GO:0046034`$genes)
+    annots %>% filter(gene_id %in% gene_list) %>%
+      print(n = 33) %>%
+      filter(str_detect(terms, go, negate = TRUE)) %>%
+      filter(str_detect(terms, gos[1], negate = TRUE)) %>%
+      filter(str_detect(terms, gos[2], negate = TRUE)) %>%
+      filter(str_detect(terms, gos[3], negate = TRUE)) %>%
+      filter(str_detect(terms, gos[4], negate = TRUE)) %>%
+      filter(str_detect(terms, gos[5], negate = TRUE)) %>%
+      filter(str_detect(terms, gos[6], negate = TRUE)) %>%
+      filter(str_detect(terms, gos[7], negate = TRUE)) -> a
+    
+    gos <- c(GO.db::GOBPOFFSPRING[['GO:0046034']], 'GO:0046034')
+    gos <- c(GO.db::GOBPCHILDREN[['GO:0046034']], 'GO:0046034')
+    ii <- rep(FALSE, nrow(annots))
+    for(g in gos){
+      ii <- ii | str_detect(annots$terms, g)
+    }
+    sum(ii, na.rm = TRUE)
+    
+    res
+    res.gsea
+    
+    res %>% full_join(res.gsea, by = 'term') %>%
+      mutate(p.value.x = -log10(p.value.x), p.value.y = -log10(p.value.y)) %>%
+      ggplot(aes(x = p.value.x, y = p.value.y)) + geom_point()
+     
+    bp.res <- test_go(genes = genes,
+                      annots = annots,
+                      ontology = 'BP',
+                      algorithm = 'weight01',
+                      statistic = 'ks',
+                      node_size = min_size,
+                      score_threshold = 0.5)
+    r2 <- topGO::GenTable(bp.res$topgo_data, p.value = bp.res$topgo_res, topNodes = length(bp.res$topgo_res@score))
+  }else{
+    stop("ERROR: method must be 'gsea' or 'test_go'", call. = TRUE)
+  }
+  
+  
   
 }else{
   stop("ERROR: input doesn't exist")
 }
 
 
-# Read data
-cat("Reading lmm...\n")
-metawas <- read_tsv(args$lmmres,
-                    col_types = cols(.default = col_double(),
-                                     chr = col_character(),
-                                     rs = col_character(),
-                                     allele1 = col_character(),
-                                     allele0 = col_character(),
-                                     type = col_character())) %>%
-  select(-starts_with("logl_H1"), -starts_with("l_mle"))
+# # Read data
+# cat("Reading lmm...\n")
+# metawas <- read_tsv(args$lmmres,
+#                     col_types = cols(.default = col_double(),
+#                                      chr = col_character(),
+#                                      rs = col_character(),
+#                                      allele1 = col_character(),
+#                                      allele0 = col_character(),
+#                                      type = col_character())) %>%
+#   select(-starts_with("logl_H1"), -starts_with("l_mle"))
 # metawas
-cat("Reading closest...\n")
-closest <- read_tsv(args$closest,
-                    col_names = c("chr", "ps", "ps2", "chr2", "start", "end", "gene_id", "dist"),
-                    col_types = cols(.default = col_number(),
-                                     chr = col_character(),
-                                     chr2 = col_character(),
-                                     gene_id = col_character())) %>%
-  select(-ps2, -chr2)
+# cat("Reading closest...\n")
+# closest <- read_tsv(args$closest,
+#                     col_names = c("chr", "ps", "ps2", "chr2", "start", "end", "gene_id", "dist"),
+#                     col_types = cols(.default = col_number(),
+#                                      chr = col_character(),
+#                                      chr2 = col_character(),
+#                                      gene_id = col_character())) %>%
+#   select(-ps2, -chr2)
 # closest
 
 # Get genes
-cat("Getting gene lists...\n")
-genes_tested <- closest %>%
-  filter(abs(dist) <= args$dist_thres) %>%
-  select(gene_id) %>% unique()
-sig_genes <- closest %>%
-  left_join(metawas %>%
-              filter(type %in% c("int", "both")) %>%
-              select(chr, rs, ps),
-            by = c("chr", "ps")) %>%
-  filter(!is.na(rs)) %>%
-  filter(abs(dist) <= args$dist_thres) %>%
-  select(gene_id) %>%
-  unique() %>%
-  unlist()
+# cat("Getting gene lists...\n")
+# genes_tested <- closest %>%
+#   filter(abs(dist) <= args$dist_thres) %>%
+#   select(gene_id) %>% unique()
+# sig_genes <- closest %>%
+#   left_join(metawas %>%
+#               filter(type %in% c("int", "both")) %>%
+#               select(chr, rs, ps),
+#             by = c("chr", "ps")) %>%
+#   filter(!is.na(rs)) %>%
+#   filter(abs(dist) <= args$dist_thres) %>%
+#   select(gene_id) %>%
+#   unique() %>%
+#   unlist()
 
-cat("Reading annot file...\n")
-# annot <- read_tsv(annot_file, comment = "#", col_names = FALSE)
-annot <- read_tsv(args$annotations,
-                  comment = "#",
-                  col_names = c("query_name", "seed_eggNOG_ortholog", "seed_ortholog_evalue",
-                                "seed_ortholog_score",	"predicted_gene_name", "GO_terms",
-                                "KEGG_KOs", "BiGG_reactions", "Annotation_tax_scope", "OGs",
-                                "bestOG|evalue|score", "COG_cat", "eggNOG_annot"),
-                  col_types = cols(.default = col_character(),
-                                   seed_ortholog_score = col_double(),
-                                   seed_ortholog_evalue = col_double()))
+# cat("Reading annot file...\n")
+# # annot <- read_tsv(annot_file, comment = "#", col_names = FALSE)
+# annot <- read_tsv(args$annotations,
+#                   comment = "#",
+#                   col_names = c("query_name", "seed_eggNOG_ortholog", "seed_ortholog_evalue",
+#                                 "seed_ortholog_score",	"predicted_gene_name", "GO_terms",
+#                                 "KEGG_KOs", "BiGG_reactions", "Annotation_tax_scope", "OGs",
+#                                 "bestOG|evalue|score", "COG_cat", "eggNOG_annot"),
+#                   col_types = cols(.default = col_character(),
+#                                    seed_ortholog_score = col_double(),
+#                                    seed_ortholog_evalue = col_double()))
 # annot
 # Reformat gene name
-cat("Reformatting annotation...\n")
-annot <- annot %>%
-  mutate(gene_id = str_replace(string = query_name,
-                               pattern = "\\([+-]\\)_[0-9]",
-                               replacement = "")) %>%
-  select(gene_id, everything(), -query_name, -seed_ortholog_evalue, -seed_ortholog_score,
-         -Annotation_tax_scope)
+# cat("Reformatting annotation...\n")
+# annot <- annot %>%
+#   mutate(gene_id = str_replace(string = query_name,
+#                                pattern = "\\([+-]\\)_[0-9]",
+#                                replacement = "")) %>%
+#   select(gene_id, everything(), -query_name, -seed_ortholog_evalue, -seed_ortholog_score,
+#          -Annotation_tax_scope)
 # annot
 
 # Select onl tested genes
