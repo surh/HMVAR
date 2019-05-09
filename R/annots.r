@@ -375,7 +375,7 @@ gsea <- function(dat, test = 'wilcoxon', alternative = 'greater', min_size = 3){
 #' 'terms' and 'score'. Values in 'gene_id' must be unique.
 #' @param method Either 'gsea' or 'test_go'.
 #' @param ... Extra parameters for \link{gsea} or \link{test_go}. If
-#' `method == 'test_go'` parameters 'genes', 'scores' and 'ontology'
+#' `method = 'test_go'` parameters 'genes', 'scores' and 'ontology'
 #' are already provided by this function.
 #'
 #' @return A tibble with columnns 'term', 'size', 'statistic', and

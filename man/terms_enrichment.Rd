@@ -13,7 +13,7 @@ terms_enrichment(dat, method = "gsea", ...)
 \item{method}{Either 'gsea' or 'test_go'.}
 
 \item{...}{Extra parameters for \link{gsea} or \link{test_go}. If
-`method == 'test_go'` parameters 'genes', 'scores' and 'ontology'
+`method = 'test_go'` parameters 'genes', 'scores' and 'ontology'
 are already provided by this function.}
 }
 \value{
