@@ -445,7 +445,24 @@ if(dir.exists(args$input)){
   
   if(method == 'gsea'){
     res <- gsea(dat = gw.test, test = 'wilcoxon', alternative = alternative, min_size = min_size)
-    res.gsea <- res
+    res <- res %>%
+      pmap_dfr(function(term, size, statistic, p.value){
+        t <- GO.db::GOTERM[[term]]
+        if(!is.null(t)){
+          ontology <- t@Ontology
+          annotation <- t@Term
+        }else{
+          ontology <- NA
+          annotation <- NA
+        }
+        tibble(term = term,
+               size = size,
+               statistic = statistic,
+               p.value = p.value,
+               ontology = ontology,
+               annotation = annotation)
+      })
+    # res.gsea <- res
     
 
     
@@ -490,61 +507,6 @@ if(dir.exists(args$input)){
       select(term = GO.ID, size = Annotated, p.value, ontology, annotation = Term) %>%
       mutate(p.value = as.numeric(p.value)) %>%
       arrange(p.value)
-    res
-    go <- 'GO:0016887'
-    go <- 'GO:0009128'
-    go <- 'GO:0046034'
-    res %>% filter(term == go)
-    res.gsea %>% filter(term == go)
-    
-    
-    gos <- c('GO:0006119',
-    'GO:1903579',
-    'GO:0061722',
-    'GO:0009777',
-    'GO:0006757',
-    'GO:0019660',
-    'GO:0006754',
-    'GO:1903580',
-    'GO:1903578',
-    'GO:1990966',
-    'GO:0046034')
-    
-    gene_list <- ls(bp.res$topgo_data@graph@nodeData@data$`GO:0046034`$genes)
-    annots %>% filter(gene_id %in% gene_list) %>%
-      print(n = 33) %>%
-      filter(str_detect(terms, go, negate = TRUE)) %>%
-      filter(str_detect(terms, gos[1], negate = TRUE)) %>%
-      filter(str_detect(terms, gos[2], negate = TRUE)) %>%
-      filter(str_detect(terms, gos[3], negate = TRUE)) %>%
-      filter(str_detect(terms, gos[4], negate = TRUE)) %>%
-      filter(str_detect(terms, gos[5], negate = TRUE)) %>%
-      filter(str_detect(terms, gos[6], negate = TRUE)) %>%
-      filter(str_detect(terms, gos[7], negate = TRUE)) -> a
-    
-    gos <- c(GO.db::GOBPOFFSPRING[['GO:0046034']], 'GO:0046034')
-    gos <- c(GO.db::GOBPCHILDREN[['GO:0046034']], 'GO:0046034')
-    ii <- rep(FALSE, nrow(annots))
-    for(g in gos){
-      ii <- ii | str_detect(annots$terms, g)
-    }
-    sum(ii, na.rm = TRUE)
-    
-    res
-    res.gsea
-    
-    res %>% full_join(res.gsea, by = 'term') %>%
-      mutate(p.value.x = -log10(p.value.x), p.value.y = -log10(p.value.y)) %>%
-      ggplot(aes(x = p.value.x, y = p.value.y)) + geom_point()
-     
-    bp.res <- test_go(genes = genes,
-                      annots = annots,
-                      ontology = 'BP',
-                      algorithm = 'weight01',
-                      statistic = 'ks',
-                      node_size = min_size,
-                      score_threshold = 0.5)
-    r2 <- topGO::GenTable(bp.res$topgo_data, p.value = bp.res$topgo_res, topNodes = length(bp.res$topgo_res@score))
   }else{
     stop("ERROR: method must be 'gsea' or 'test_go'", call. = TRUE)
   }
