@@ -26,8 +26,6 @@ gw_test_enrichments <- function(input, annotations, closest,
                                 gene_score = 'min', alternative = 'less',
                                 annot_column = 'GO_terms', method = 'gsea',
                                 min_size = 3){
-  attach(args)
-  
   # Read test
   cat("\tReading genome-wide test...\n")
   col_specs <- rlang::list2(chr = col_character(),
@@ -35,7 +33,7 @@ gw_test_enrichments <- function(input, annotations, closest,
                             rs = col_character(),
                             gene_id = col_character(),
                             !!score_column := col_double())
-  gw.test <- read_tsv(args$input,
+  gw.test <- read_tsv(input,
                       col_types = do.call(cols, col_specs))
   
   # Reading closest
@@ -230,19 +228,19 @@ process_arguments <- function(){
 #              method = 'gsea',
 #              gene_score = 'min')
 
-args <- list(input = "inputs/Streptococcus_mitis_58288_lmm.results.txt",
-             closest = "closest/Streptococcus_mitis_58288.closest",
-             annotations = "annotations/Streptococcus_mitis_58288.emapper.annotations",
-             dist_thres = 500,
-             min_size = 3,
-             outdir = "output_1file_test_go",
-             suffix = "_lmm.results.txt$",
-             score_column = 'p_lrt.lmmpcs',
-             annot_column = 'GO_terms',
-             alternative = 'less',
-             method = 'test_go',
-             gene_score = 'min')
-# args <- process_arguments()
+# args <- list(input = "inputs/Streptococcus_mitis_58288_lmm.results.txt",
+#              closest = "closest/Streptococcus_mitis_58288.closest",
+#              annotations = "annotations/Streptococcus_mitis_58288.emapper.annotations",
+#              dist_thres = 500,
+#              min_size = 3,
+#              outdir = "output_1file_testgo",
+#              suffix = "_lmm.results.txt$",
+#              score_column = 'p_lrt.lmmpcs',
+#              annot_column = 'GO_terms',
+#              alternative = 'less',
+#              method = 'test_go',
+#              gene_score = 'min')
+args <- process_arguments()
 
 if(!dir.exists(args$outdir)){
   dir.create(args$outdir)
@@ -282,9 +280,11 @@ if(dir.exists(args$input)){
       cat("Input:", input, "\n")
       stop("ERROR: missing or extra closest or annotation file")
     }
-    
-    Res <- gw_test_enrichments(input = input, annotations = annotations,
-                               closest = closest, dist_thres = args$dist_thres,
+    cat(input, "\n")
+    Res <- gw_test_enrichments(input = file.path(args$input, input),
+                               annotations = file.path(args$annotations, annotations),
+                               closest = file.path(args$closest, closest),
+                               dist_thres = args$dist_thres,
                                score_column = args$score_column,
                                gene_score = args$gene_score,
                                alternative = args$alternative,
@@ -340,44 +340,4 @@ if(dir.exists(args$input)){
   stop("ERROR: input doesn't exist")
 }
 
-# 
-# # Metawas gene counts
-# cat("Counting genes...\n")
-# metawas_gene_counts(metawas = metawas,
-#                     closest = closest,
-#                     annot = annot,
-#                     outdir = args$outdir,
-#                     prefix = args$prefix)
-# 
-# # Test GO
-# if(nrow(annot) > 0){
-#   cat("Test GO...\n")
-#   process_annotation(annot = annot,
-#                      sig_genes = sig_genes,
-#                      annotation = "GO_terms",
-#                      outdir = args$outdir,
-#                      prefix = args$prefix,
-#                      test = TRUE,
-#                      count_thres = args$count_thres,
-#                      match_go = TRUE)
-#   # Test KO
-#   cat("Test KO...\n")
-#   process_annotation(annot = annot,
-#                      sig_genes = sig_genes,
-#                      annotation = "KEGG_KOs",
-#                      outdir = args$outdir,
-#                      prefix = args$prefix,
-#                      test = TRUE,
-#                      count_thres = args$count_thres,
-#                      match_go = FALSE)
-#   # Test eggNOG
-#   cat("Test OG...\n")
-#   process_annotation(annot = annot,
-#                      sig_genes = sig_genes,
-#                      annotation = "OGs",
-#                      outdir = args$outdir,
-#                      prefix = args$prefix,
-#                      test = TRUE,
-#                      count_thres = args$count_thres,
-#                      match_go = FALSE)
-# }
+warnings()
