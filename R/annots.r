@@ -283,6 +283,9 @@ term_gsea <- function(genes, scores, test = "wilcoxon", alternative = "greater",
   if(sum(ii) < min_size){
     return(tibble::tibble(size = sum(ii), statistic = NA, p.value = NA))
   }
+  if(sum(!ii) < 1){
+    return(tibble::tibble(size = sum(ii), statistic = NA, p.value = NA))
+  }
   
   if(test == 'wilcoxon'){
     res <- wilcox.test(scores[ii], scores[!ii], alternative = alternative)

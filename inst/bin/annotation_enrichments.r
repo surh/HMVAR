@@ -92,7 +92,8 @@ gw_test_enrichments <- function(input, annotations, closest,
   # Match genes with annotations
   gw.test <- annots %>%
     right_join(gw.test, by = "gene_id") %>%
-    select(gene_id, terms, score = score_column)
+    select(gene_id, terms, score = score_column) %>%
+    filter(!is.na(score))
   cat("\tGenes with annotation: ", sum(!is.na(gw.test$terms)), "\n")
   
   # test
