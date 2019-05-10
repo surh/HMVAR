@@ -121,7 +121,12 @@ gene_sel_fun <- function(thres){
 #' @param ... Other arguments to specific methods
 #'
 #' @return A list with elements topgo_data and topgo_res of class
-#' topGOdata and topGOresult respecitveley
+#' topGOdata and topGOresult respecitveley. If the topGOdata object
+#' cannot be created, it will return a list with two NULL entries.
+#' If the topGOdata can be created but the test cannot be performed.
+#' The topgo_data will contain the topGOdata object and the topgo_res
+#' element will be NULL. It will issue warnings anytime that the
+#' topgo_res element is NULL
 #' 
 #' @export
 #' @importClassesFrom topGO topGOdata
@@ -185,20 +190,30 @@ test_go.numeric <- function(genes, annots,
 
   topGO::groupGOTerms()
   
-  # Create topGO data
-  go_data <- new("topGOdata",
-                 description = description,
-                 ontology = ontology,
-                 allGenes = genes,
-                 geneSelectionFun = gene_sel_fun(score_threshold),
-                 nodeSize = node_size,
-                 annot = topGO::annFUN.gene2GO,
-                 gene2GO = annots)
+  go_data <- tryCatch(new("topGOdata",
+                          description = description,
+                          ontology = ontology,
+                          allGenes = genes,
+                          geneSelectionFun = gene_sel_fun(score_threshold),
+                          nodeSize = node_size,
+                          annot = topGO::annFUN.gene2GO,
+                          gene2GO = annots),
+                      error = function(e) NULL)
   
-  # perform topGO test
-  go_res <- topGO::runTest(go_data,
-                           algorithm = algorithm,
-                           statistic = statistic)
+  if(class(go_data) == "topGOdata"){
+    # perform topGO test
+    go_res <- tryCatch(topGO::runTest(go_data,
+                                      algorithm = algorithm,
+                                      statistic = statistic),
+                       error = function(e){
+                         warning("topGO::runTest failed")
+                         return(NULL)})
+  }else if(class(go_data) == "NULL"){
+    warning("topGOdata object couldn't be created")
+    go_res <- NULL
+  }else{
+    stop("ERROR: unexpected error", call. = TRUE)
+  }
   
   return(list(topgo_data = go_data, topgo_res = go_res))
 }
@@ -434,22 +449,48 @@ terms_enrichment <- function(dat, method = 'gsea', ...){
                       ontology = 'MF',
                       ...)
     
-    res <- topGO::GenTable(bp.res$topgo_data,
-                           p.value = bp.res$topgo_res,
-                           topNodes = length(bp.res$topgo_res@score)) %>%
-      dplyr::bind_cols(ontology = rep('BP', length(bp.res$topgo_res@score))) %>%
-      dplyr::bind_rows(topGO::GenTable(cc.res$topgo_data,
-                                       p.value = cc.res$topgo_res,
-                                       topNodes = length(cc.res$topgo_res@score)) %>%
-                         dplyr::bind_cols(ontology = rep('CC', length(cc.res$topgo_res@score)))) %>%
-      dplyr::bind_rows(topGO::GenTable(mf.res$topgo_data,
-                                       p.value = mf.res$topgo_res,
-                                       topNodes = length(mf.res$topgo_res@score)) %>%
-                         dplyr::bind_cols(ontology = rep('MF', length(mf.res$topgo_res@score)))) %>%
-      tibble::as_tibble() %>%
-      dplyr::select(term = GO.ID, size = Annotated, p.value, ontology, annotation = Term) %>%
-      dplyr::mutate(p.value = as.numeric(p.value)) %>%
-      dplyr::arrange(p.value)
+    res <- tibble::tibble(term = as.character(NA),
+                          size = as.numeric(NA),
+                          p.value = as.numeric(NA),
+                          ontology = as.character(NA),
+                          annotation = as.character(NA)) %>%
+      dplyr::filter(!is.na(term))
+    
+    
+    if(class(bp.res$topgo_res) == "topGOresult"){
+      res <- res %>%
+        dplyr::bind_rows(topGO::GenTable(bp.res$topgo_data,
+                                         p.value = bp.res$topgo_res,
+                                         topNodes = length(bp.res$topgo_res@score)) %>%
+                           dplyr::bind_cols(ontology = rep('BP', length(bp.res$topgo_res@score))) %>%
+                           tibble::as_tibble() %>%
+                           dplyr::select(term = GO.ID, size = Annotated, p.value, ontology, annotation = Term) %>%
+                           dplyr::mutate(p.value = as.numeric(p.value)))
+    }
+    if(class(cc.res$topgo_res) == "topGOresult"){
+      res <- res %>%
+        dplyr::bind_rows(topGO::GenTable(cc.res$topgo_data,
+                                         p.value = cc.res$topgo_res,
+                                         topNodes = length(cc.res$topgo_res@score)) %>%
+                           dplyr::bind_cols(ontology = rep('CC', length(cc.res$topgo_res@score))) %>%
+                           tibble::as_tibble() %>%
+                           dplyr::select(term = GO.ID, size = Annotated, p.value, ontology, annotation = Term) %>%
+                           dplyr::mutate(p.value = as.numeric(p.value)))
+    }
+    if(class(mf.res$topgo_res) == "topGOresult"){
+      res <- res %>%
+        dplyr::bind_rows(topGO::GenTable(mf.res$topgo_data,
+                                         p.value = mf.res$topgo_res,
+                                         topNodes = length(mf.res$topgo_res@score)) %>%
+                           dplyr::bind_cols(ontology = rep('MF', length(mf.res$topgo_res@score))) %>%
+                           tibble::as_tibble() %>%
+                           dplyr::select(term = GO.ID, size = Annotated, p.value, ontology, annotation = Term) %>%
+                           dplyr::mutate(p.value = as.numeric(p.value)))
+    }
+    
+    # Format
+    res <- res %>% dplyr::arrange(p.value)
+    
   }else{
     stop("ERROR: method must be 'gsea' or 'test_go'", call. = TRUE)
   }

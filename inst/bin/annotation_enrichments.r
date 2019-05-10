@@ -26,6 +26,7 @@ gw_test_enrichments <- function(input, annotations, closest,
                                 gene_score = 'min', alternative = 'less',
                                 annot_column = 'GO_terms', method = 'gsea',
                                 min_size = 3){
+  attach(args)
   
   # Read test
   cat("\tReading genome-wide test...\n")
@@ -229,19 +230,19 @@ process_arguments <- function(){
 #              method = 'gsea',
 #              gene_score = 'min')
 
-# args <- list(input = "inputs/Streptococcus_mitis_58288_lmm.results.txt",
-#              closest = "closest/Streptococcus_mitis_58288.closest",
-#              annotations = "annotations/Streptococcus_mitis_58288.emapper.annotations",
-#              dist_thres = 500,
-#              min_size = 3,
-#              outdir = "output_1file_gsea/",
-#              suffix = "_lmm.results.txt$",
-#              score_column = 'p_lrt.lmmpcs',
-#              annot_column = 'GO_terms',
-#              alternative = 'less',
-#              method = 'gsea',
-#              gene_score = 'min')
-args <- process_arguments()
+args <- list(input = "inputs/Streptococcus_mitis_58288_lmm.results.txt",
+             closest = "closest/Streptococcus_mitis_58288.closest",
+             annotations = "annotations/Streptococcus_mitis_58288.emapper.annotations",
+             dist_thres = 500,
+             min_size = 3,
+             outdir = "output_1file_test_go",
+             suffix = "_lmm.results.txt$",
+             score_column = 'p_lrt.lmmpcs',
+             annot_column = 'GO_terms',
+             alternative = 'less',
+             method = 'test_go',
+             gene_score = 'min')
+# args <- process_arguments()
 
 if(!dir.exists(args$outdir)){
   dir.create(args$outdir)
@@ -323,6 +324,7 @@ if(dir.exists(args$input)){
                              alternative = args$alternative,
                              annot_column = args$annot_column,
                              method = args$method, min_size = args$min_size)
+  
   cat("============data=================\n")
   print(Res$data)
   cat("=============res=================\n")
