@@ -291,7 +291,7 @@ if(dir.exists(args$input)){
                                annot_column = args$annot_column,
                                method = args$method, min_size = args$min_size)
     
-    filename <- paste0(prefix, ".enrichments.txt")
+    filename <- paste0(str_replace(prefix, '^\\^', ''), ".enrichments.txt")
     filename <- file.path(args$outdir, filename)
     write_tsv(Res$res, path = filename)
     
