@@ -352,6 +352,9 @@ term_gsea <- function(genes, scores, test = "wilcoxon", alternative = "greater",
 #' gsea(dat, min_size = 2)
 #' gsea(dat, min_size = 3, test = 'ks', alternative = 'less')
 gsea <- function(dat, test = 'wilcoxon', alternative = 'greater', min_size = 3){
+  if(!is.data.frame(dat)){
+    stop("ERROR: dat must be a data.frame or tibble", call. = TRUE)
+  }
   if(!all(c('gene_id', 'terms', 'score') %in% colnames(dat))){
     stop("ERROR: missing columns", call. = TRUE)
   }
@@ -503,9 +506,46 @@ terms_enrichment <- function(dat, method = 'gsea', ...){
 
 
 
+#' Sign test
+#' 
+#' Performs sign test of a score for all annotation terms in a set of genes
+#' that occurr a minimum number of times.
+#'
+#' @param dat A data.frame or tibble. It must contain one row per gene
+#' and columns 'gene_id', 'terms', and 'score'. Column 'terms' must be
+#' of type character and each entry must be a comma-separated character
+#' string of all the terms that annotate the corresponding gene.
+#' @param alternative The alternative hypothesis to test. Either 'greater',
+#' 'less' or 'two.sided'. It  corresponds to option 'alternative' in
+#' \link{binom.test} or \link{ks.test} which is used to determine if the number
+#' of positive scores for a given term is more than expected given the overall
+#' number of positive scores. Genes with score == 0 are removed prior to
+#' any analysis. 
+#' @param min_size The minimum number of genes in the group for the test
+#' to be performed. Basically if the number of genes that appear in
+#' 'scores' is less than 'min_size', the test won't be performed.
+#'
+#' @return A tibble with elements: term (the annotation term ID), n_scucesses
+#' (the number of positive scores in that term), expected (the expected number
+#' of positive scores given the number of genes in the term and the overall
+#' probability of a positive score), n_trials (the number of genes annotated
+#' with the corresponding term), p_success (the overall proability of a
+#' positive score among all genes in dat) , and p.value (the p-value of the test).
+#' The tibble is sorted by increasing p-value.
+#' 
+#' @export
+#' @importFrom magrittr %>%
+#'
+#' @examples
 sign_test <- function(dat, alternative = 'two.sided', min_size = 3){
+  if(!is.data.frame(dat)){
+    stop("ERROR: dat must be a data.frame or tibble", call. = TRUE)
+  }
   if(!all(c('gene_id', 'terms', 'score') %in% colnames(dat))){
     stop("ERROR: missing columns", call. = TRUE)
+  }
+  if(any(duplicated(dat$gene_id))){
+    stop("ERROR: values in 'gene_id' must be unique.", call. = TRUE)
   }
   
   # Clean all non-informative scores

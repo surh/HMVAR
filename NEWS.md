@@ -37,8 +37,9 @@ https://github.com/surh/HMVAR/issues/12).
 25. Function `test_go` added (Issue https://github.com/surh/HMVAR/issues/16
 https://github.com/surh/HMVAR/issues/14).
 26. Function `terms_enrichments`.
-27. `metawas_enrichments.r` script converted into executable
-`annotation_enrichments.r`. Issue (https://github.com/surh/HMVAR/issues/15)
+27. `metawas_enrichments.r` script converted into executable.
+`annotation_enrichments.r`. Issue (https://github.com/surh/HMVAR/issues/15).
+28. Adding `sign_test` function. Issue (https://github.com/surh/HMVAR/issues/19).
 
 # 0.1-0
 1. Added exectuable script to perform mktest.
