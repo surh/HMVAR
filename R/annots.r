@@ -500,3 +500,56 @@ terms_enrichment <- function(dat, method = 'gsea', ...){
   
   return(res)
 }
+
+
+
+sign_test <- function(dat, alternative = 'two.sided', min_size = 3){
+  if(!all(c('gene_id', 'terms', 'score') %in% colnames(dat))){
+    stop("ERROR: missing columns", call. = TRUE)
+  }
+  
+  # Clean all non-informative scores
+  dat <- dat %>%
+    dplyr::filter(!is.na(score)) %>%
+    dplyr::filter(score != 0)
+  
+  # Get background prob
+  p.success <- sum(dat$score > 0) / nrow(dat)
+  
+  # Separate scores and annotations
+  scores <- dat$score
+  names(scores) <- dat$gene_id
+  dat <- dat %>% dplyr::select(-score)
+  
+  # Expand annotations
+  dat <- dat %>%
+    purrr::pmap_dfr(expand_annot) %>%
+    dplyr::filter(!is.na(term))
+  
+  # Clean background
+  scores <- scores[ names(scores) %in% unique(dat$gene_id) ]
+  
+  # Test
+  dat <- dat %>%
+    split(.$term) %>%
+    purrr::map(~ .x$gene_id) %>%
+    purrr::keep(~length(.x) >= min_size) %>%
+    purrr::map_dfr(function(x, scores, p.success, alternative = 'two.sided'){
+      successes <- sum(scores[x] > 0)
+      trials <- length(x)
+      test <- binom.test(x = successes, n = trials,
+                         p = p.success, alternative = alternative)
+      
+      tibble::tibble(n_successes = successes,
+                     expected = n_trials * p.success,
+                     n_trials = trials,
+                     p_success = p.success,
+                     .value = test$p.value)
+    }, scores = scores,
+    p.success = p.success,
+    alternative = alternative,
+    .id = 'term') %>%
+    dplyr::arrange(p.value)
+  
+  return(dat)
+}
