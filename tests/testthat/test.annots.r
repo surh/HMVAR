@@ -121,3 +121,21 @@ test_that("GSEA", {
   expect_error(gsea(d.bad),
                info = "Bad column name")
 })
+
+test_that('Sign test', {
+  d <- tibble::tibble(gene_id = paste('gene', 1:10, sep = ''),
+                      terms = c('term1,term2,term3',
+                                NA,
+                                'term2,term3,term4',
+                                'term3',
+                                'term4,term5',
+                                'term6',
+                                'term6',
+                                'term6,term2',
+                                'term6.term7',
+                                'term6,term2'),
+                      score = 1:10)
+  
+  sign_test(d, min_size = 2)
+  
+})
