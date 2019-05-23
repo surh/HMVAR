@@ -123,6 +123,7 @@ test_that("GSEA", {
 })
 
 test_that('Sign test', {
+  # Basic usage. Compare everything except p-values
   d <- tibble::tibble(gene_id = paste('gene', 1:10, sep = ''),
                       terms = c('term1,term2,term3',
                                 NA,
@@ -132,10 +133,20 @@ test_that('Sign test', {
                                 'term6',
                                 'term6',
                                 'term6,term2',
-                                'term6.term7',
+                                'term6,term7',
                                 'term6,term2'),
-                      score = 1:10)
+                      score = -5:4)
+  e <- tibble::tibble(term = c('term2', 'term3', 'term4', 'term6'),
+                      n_successes = as.integer(c(2, 0, 0, 4)),
+                      expected = c(4, 3, 2, 4) * (4 / 9),
+                      n_trials = as.integer(c(4, 3, 2, 4)),
+                      p_success = rep(4/9, 4))
   
-  sign_test(d, min_size = 2)
+  expect_identical(sign_test(d, min_size = 2) %>%
+                     dplyr::select(-p.value) %>%
+                     dplyr::arrange(term),
+                   e %>%
+                     dplyr::arrange(term),
+                   info = 'basic usage')
   
 })
