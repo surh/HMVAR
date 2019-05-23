@@ -582,7 +582,7 @@ sign_test <- function(dat, alternative = 'two.sided', min_size = 3){
                          p = p.success, alternative = alternative)
       
       tibble::tibble(n_successes = successes,
-                     expected = n_trials * p.success,
+                     expected = trials * p.success,
                      n_trials = trials,
                      p_success = p.success,
                      .value = test$p.value)
