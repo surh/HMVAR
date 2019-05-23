@@ -585,7 +585,7 @@ sign_test <- function(dat, alternative = 'two.sided', min_size = 3){
                      expected = trials * p.success,
                      n_trials = trials,
                      p_success = p.success,
-                     .value = test$p.value)
+                     p.value = test$p.value)
     }, scores = scores,
     p.success = p.success,
     alternative = alternative,
