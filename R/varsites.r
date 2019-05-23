@@ -74,7 +74,7 @@ determine_substitution_type <- function(info, clean = TRUE){
 #' and depth
 #' @param error_prob Baseline err probability
 #'
-#' @return
+#' @return A numeric vector of p-values
 #' 
 #' @importFrom magrittr %>%
 calculate_p_error <- function(dat, error_prob = 0.01){
