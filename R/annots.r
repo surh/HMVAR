@@ -269,7 +269,8 @@ test_go.numeric <- function(genes, annots,
 #' # Test
 #' term_gsea(genes, scores)
 #' term_gsea(genes, scores, test = 'ks', alternative = 'less')
-term_gsea <- function(genes, scores, test = "wilcoxon", alternative = "greater", min_size = 3){
+term_gsea <- function(genes, scores, test = "wilcoxon",
+                      alternative = "greater", min_size = 3){
   
   if(!is.character(genes)){
     stop("ERROR: genes must be a character vector", call. = TRUE)
@@ -380,7 +381,7 @@ gsea <- function(dat, test = 'wilcoxon', alternative = 'greater', min_size = 3){
                    alternative = alternative,
                    min_size = min_size,
                    .id = "term") %>%
-    filter(!is.na(statistic)) %>%
+    dplyr::filter(!is.na(statistic)) %>%
     dplyr::arrange(p.value)
   
   return(dat)
