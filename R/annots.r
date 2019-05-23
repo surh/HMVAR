@@ -538,6 +538,23 @@ terms_enrichment <- function(dat, method = 'gsea', ...){
 #' @importFrom magrittr %>%
 #'
 #' @examples
+#' # Make some fake data
+#' dat <- tibble::tibble(gene_id = paste('gene', 1:10, sep = ''),
+#'                       terms = c('term1,term2,term3',
+#'                                 NA,
+#'                                 'term2,term3,term4',
+#'                                 'term3',
+#'                                 'term4,term5',
+#'                                 'term6',
+#'                                 'term6',
+#'                                 'term6,term2',
+#'                                 'term6,term7',
+#'                                 'term6,term2'),
+#'                       score = -5:4)
+#' dat
+#' 
+#' # Test
+#' sign_test(dat, min_size = 2)
 sign_test <- function(dat, alternative = 'two.sided', min_size = 3){
   if(!is.data.frame(dat)){
     stop("ERROR: dat must be a data.frame or tibble", call. = TRUE)
