@@ -100,6 +100,9 @@ gw_test_enrichments <- function(input, annotations, closest,
   if(method == 'gsea'){
     res <- terms_enrichment(dat = gw.test, method = method, test = 'wilcoxon',
                             alternative = alternative, min_size = min_size)
+  }else if(method == 'sign_test'){
+    res <- terms_enrichment(dat = gw.test, method = 'sign_test',
+                            alternative = alternative, min_size = min_size)
   }else if(method == 'test_go'){
     res <- terms_enrichment(dat = gw.test, method = method,
                             description = '', algorithm = 'weight01',
@@ -196,7 +199,7 @@ process_arguments <- function(){
                     default = 'less')
   
   p <- add_argument(p, "--method",
-                    help = paste("Which HMVAR function to use. Either 'test_go' or 'gsea'"),
+                    help = paste("Which HMVAR function to use. Either 'test_go', 'sign_test', or 'gsea'"),
                     type = "character",
                     default = 'gsea')
 
@@ -206,8 +209,8 @@ process_arguments <- function(){
   
   # Process arguments
   args$suffix <- paste0(args$suffix, "$")
-  if(!(args$method %in% c('test_go', 'gsea'))){
-    stop("ERROR: --method must be 'test_go' or 'gsea'", call. = TRUE)
+  if(!(args$method %in% c('test_go', 'gsea', 'sign_test'))){
+    stop("ERROR: --method must be 'test_go', 'sign_test' or 'gsea'", call. = TRUE)
   }
   if(!(args$gene_score %in% c('min', 'max'))){
     stop("ERROR: --gene_score must be 'min' or 'max'")
@@ -304,12 +307,16 @@ if(dir.exists(args$input)){
   if(args$method == 'gsea'){
     res <- terms_enrichment(dat = Dat, method = args$method, test = 'wilcoxon',
                             alternative = args$alternative, min_size = args$min_size)
+  }else if(args$method == 'sign_test'){
+    res <- terms_enrichment(dat = Dat, method = args$method,
+                            alternative = args$alternative,
+                            min_size = args$min_size)
   }else if(args$method == 'test_go'){
     res <- terms_enrichment(dat = Dat, method = args$method,
                             description = '', algorithm = 'weight01',
                             statatistic = 'ks', node_size = args$min_size)
   }else{
-    stop("ERROR: --method must be 'gsea' or 'test_go'", call. = TRUE)
+    stop("ERROR: --method must be 'gsea', 'sign_test' or 'test_go'", call. = TRUE)
   }
   filename <- file.path(args$outdir, 'overall.enrichments.txt')
   write_tsv(res, path = filename)
