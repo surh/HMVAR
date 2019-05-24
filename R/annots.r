@@ -387,6 +387,46 @@ gsea <- function(dat, test = 'wilcoxon', alternative = 'greater', min_size = 3){
   return(dat)
 }
 
+#' Annotate GO terms
+#' 
+#' Internal function
+#'
+#' @param dat A data.frame or tibble
+#' @param colname Name of the column with the terms
+#'
+#' @return A data .frame or tibble
+#' 
+#' @importFrom magrittr %>%
+annotate_gos <- function(dat, colname = 'term'){
+  
+  # Get terms
+  terms <- dat[,colname, drop = TRUE] 
+  names(terms) <- terms
+  
+  # If terms are GO match with annotations
+  if(any(stringr::str_detect(terms, "^GO:[0-9]{7}"))){
+    dat <- dat %>%
+      dplyr::left_join(terms %>%
+                         purrr::map_dfr(function(x){
+                           t <- GO.db::GOTERM[[x]]
+                           if(!is.null(t)){
+                             ontology <- t@Ontology
+                             annotation <- t@Term
+                           }else{
+                             ontology <- NA
+                             annotation <- NA
+                           }
+                           tibble::tibble(ontology = ontology,
+                                          annotation = annotation)},
+                           .id = colname),
+                       by = colname)
+    
+    
+  }
+    
+  return(dat)
+}
+
 #' Enrichment analysis of annotation terms
 #' 
 #' Takes a data.frame or tibble with one gene per row, annotations
@@ -395,13 +435,17 @@ gsea <- function(dat, test = 'wilcoxon', alternative = 'greater', min_size = 3){
 #'
 #' @param dat A data.frame or tibble. It must have columns 'gene_id',
 #' 'terms' and 'score'. Values in 'gene_id' must be unique.
-#' @param method Either 'gsea' or 'test_go'.
-#' @param ... Extra parameters for \link{gsea} or \link{test_go}. If
+#' @param method Either 'gsea', 'sign_test', or 'test_go'.
+#' @param ... Extra parameters for \link{gsea}, 
+#' \link{sign_test} or \link{test_go}. If
 #' `method = 'test_go'` parameters 'genes', 'scores' and 'ontology'
 #' are already provided by this function.
 #'
-#' @return A tibble with columnns 'term', 'size', 'statistic', and
-#' 'p.value'. If at least one term has GO-like IDs, then columns 'ontology'
+#' @return A tibble. If method 'gsea' or 'test_go' was used it will have
+#' columnns 'term', 'size', 'statistic', and 'p.value'. If method 'sign_test'
+#' was used, the tibble will have columns 'term', 'n_successes', 'expected',
+#' 'n_trials', 'p_success', and 'p.value'. In any case, 
+#' if at least one term has GO-like IDs, then columns 'ontology'
 #' and 'annotation' will be otbained from GO.db.
 #' 
 #' @export
@@ -420,26 +464,30 @@ terms_enrichment <- function(dat, method = 'gsea', ...){
   if(method == 'gsea'){
     res <- gsea(dat = dat, ...)
     
-    # If terms are GO match with annotations
-    if(any(stringr::str_detect(res$term, "^GO:[0-9]{7}"))){
-      res <- res %>%
-        purrr::pmap_dfr(function(term, size, statistic, p.value){
-          t <- GO.db::GOTERM[[term]]
-          if(!is.null(t)){
-            ontology <- t@Ontology
-            annotation <- t@Term
-          }else{
-            ontology <- NA
-            annotation <- NA
-          }
-          tibble::tibble(term = term,
-                         size = size,
-                         statistic = statistic,
-                         p.value = p.value,
-                         ontology = ontology,
-                         annotation = annotation)})
-    }
+    # # If terms are GO match with annotations
+    # if(any(stringr::str_detect(res$term, "^GO:[0-9]{7}"))){
+    #   res <- res %>%
+    #     purrr::pmap_dfr(function(term, size, statistic, p.value){
+    #       t <- GO.db::GOTERM[[term]]
+    #       if(!is.null(t)){
+    #         ontology <- t@Ontology
+    #         annotation <- t@Term
+    #       }else{
+    #         ontology <- NA
+    #         annotation <- NA
+    #       }
+    #       tibble::tibble(term = term,
+    #                      size = size,
+    #                      statistic = statistic,
+    #                      p.value = p.value,
+    #                      ontology = ontology,
+    #                      annotation = annotation)})
+    # }
+    res <- annotate_gos(dat = res, colname = 'term')
     
+  }else if(method == 'sign_test'){
+    res <- sign_test(dat = dat, ...)
+    res <- annotate_gos(dat = res, colname = 'term')
   }else if(method == 'test_go'){
     genes <- dat$score
     names(genes) <- dat$gene_id

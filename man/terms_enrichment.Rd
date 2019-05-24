@@ -10,15 +10,19 @@ terms_enrichment(dat, method = "gsea", ...)
 \item{dat}{A data.frame or tibble. It must have columns 'gene_id',
 'terms' and 'score'. Values in 'gene_id' must be unique.}
 
-\item{method}{Either 'gsea' or 'test_go'.}
+\item{method}{Either 'gsea', 'sign_test', or 'test_go'.}
 
-\item{...}{Extra parameters for \link{gsea} or \link{test_go}. If
+\item{...}{Extra parameters for \link{gsea}, 
+\link{sign_test} or \link{test_go}. If
 `method = 'test_go'` parameters 'genes', 'scores' and 'ontology'
 are already provided by this function.}
 }
 \value{
-A tibble with columnns 'term', 'size', 'statistic', and
-'p.value'. If at least one term has GO-like IDs, then columns 'ontology'
+A tibble. If method 'gsea' or 'test_go' was used it will have
+columnns 'term', 'size', 'statistic', and 'p.value'. If method 'sign_test'
+was used, the tibble will have columns 'term', 'n_successes', 'expected',
+'n_trials', 'p_success', and 'p.value'. In any case, 
+if at least one term has GO-like IDs, then columns 'ontology'
 and 'annotation' will be otbained from GO.db.
 }
 \description{
