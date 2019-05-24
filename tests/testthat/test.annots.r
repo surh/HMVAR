@@ -149,4 +149,13 @@ test_that('Sign test', {
                      dplyr::arrange(term),
                    info = 'basic usage')
   
+  expect_error(sign_test(as.matrix(d)),
+               info = "Wrong input type")
+  
+  expect_error(sign_test(d %>% dplyr::select(gene = gene_id, dplyr::everything())),
+               info = 'Bad column names')
+  
+  expect_error(sign_test(rbind(d,d)),
+               info = 'Non-unique gene_ids')
+  
 })
