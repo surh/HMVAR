@@ -13,7 +13,7 @@ and depth}
 \item{error_prob}{Baseline err probability}
 }
 \value{
-
+A numeric vector of p-values
 }
 \description{
 Internal function used to estimate prob that minor allele

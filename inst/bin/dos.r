@@ -41,7 +41,7 @@ process_arguments <- function(){
                                  "the tab-delimited files."),
                     type = "character")
   p <- add_argument(p, "outdir",
-                    help = paste("This should be the outpu directory for the output"),
+                    help = paste("This should be the output directory for the output"),
                     type = "character")
   
   # Optional arguments

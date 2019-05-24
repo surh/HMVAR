@@ -46,7 +46,12 @@ a common threshold would be 0.05.}
 }
 \value{
 A list with elements topgo_data and topgo_res of class
-topGOdata and topGOresult respecitveley
+topGOdata and topGOresult respecitveley. If the topGOdata object
+cannot be created, it will return a list with two NULL entries.
+If the topGOdata can be created but the test cannot be performed.
+The topgo_data will contain the topGOdata object and the topgo_res
+element will be NULL. It will issue warnings anytime that the
+topgo_res element is NULL
 }
 \description{
 Performs Gene Ontology (GO) enrichment analysis via

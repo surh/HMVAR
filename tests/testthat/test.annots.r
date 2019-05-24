@@ -121,3 +121,41 @@ test_that("GSEA", {
   expect_error(gsea(d.bad),
                info = "Bad column name")
 })
+
+test_that('Sign test', {
+  # Basic usage. Compare everything except p-values
+  d <- tibble::tibble(gene_id = paste('gene', 1:10, sep = ''),
+                      terms = c('term1,term2,term3',
+                                NA,
+                                'term2,term3,term4',
+                                'term3',
+                                'term4,term5',
+                                'term6',
+                                'term6',
+                                'term6,term2',
+                                'term6,term7',
+                                'term6,term2'),
+                      score = -5:4)
+  e <- tibble::tibble(term = c('term2', 'term3', 'term4', 'term6'),
+                      n_successes = as.integer(c(2, 0, 0, 4)),
+                      expected = c(4, 3, 2, 4) * (4 / 9),
+                      n_trials = as.integer(c(4, 3, 2, 4)),
+                      p_success = rep(4/9, 4))
+  
+  expect_identical(sign_test(d, min_size = 2) %>%
+                     dplyr::select(-p.value) %>%
+                     dplyr::arrange(term),
+                   e %>%
+                     dplyr::arrange(term),
+                   info = 'basic usage')
+  
+  expect_error(sign_test(as.matrix(d)),
+               info = "Wrong input type")
+  
+  expect_error(sign_test(d %>% dplyr::select(gene = gene_id, dplyr::everything())),
+               info = 'Bad column names')
+  
+  expect_error(sign_test(rbind(d,d)),
+               info = 'Non-unique gene_ids')
+  
+})
