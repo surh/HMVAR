@@ -17,6 +17,43 @@
 
 # Generic midas management functions
 
+#' Checks loaded midas data
+#' 
+#' Internal
+#' 
+#' @param Dat A MIDAS data
+#'
+#' @return TRUE if all tests pass
+check_midas_data <- function(Dat){
+  
+  # Check name of elements
+  if(!all(c('info', 'freq', 'depth') %in% names(Dat))){
+    stop("ERROR: The midas_data object must have elements c('info', 'freq', 'depth')", call. = TRUE)
+  }
+  
+  # Check element types
+  if(!tibble::is_tibble(Dat$info))
+    stop("ERROR: info must be a tibble.", call. = TRUE)
+  if(!tibble::is_tibble(Dat$freq))
+    stop("ERROR: freq must be a tibble.", call. = TRUE)
+  if(!tibble::is_tibble(Dat$depth))
+    stop("ERROR: depth must be a tibble.", call. = TRUE)
+  
+  # Check dimensions of freq and depth
+  if(any(dim(Dat$freq) != dim(Dat$depth)))
+    stop("ERROR: freq and depth must have matching dimmensions.", call. = TRUE)
+  
+  # Check names of samples and site ids
+  if(any(colnames(Dat$freq) != colnames(Dat$depth)))
+    stop("ERROR: column names of depth and freq don't match")
+  if(any(Dat$freq$site_id != Dat$depth$site_id))
+    stop("ERROR: site_id differs between freq and depth.", call. = TRUE)
+  if(any(Dat$info$site_id != Dat$freq$site_id))
+    stop("ERROR: site_id differens between info and freq")
+  
+  return(TRUE)
+}
+
 #' Read MIDAS abundance file
 #' 
 #' Reads either the snps_depth.txt or snps_freq.txt
@@ -40,6 +77,51 @@ read_midas_abun <- function(file){
   #                                           collapse = ''))
   
   return(abun)
+}
+
+#' Get all MIDAS data from a gene
+#' 
+#' Returns a list similar to the one by \link{read_midas_data} but
+#' only with sites from a given gene.
+#'
+#' @param Dat A list. See output from \link{read_midas_data}
+#' @param gene Name of the gene to be extracted, must exist in
+#' 'gene_id' column of the 'info' element from Dat.
+#' @param depth_thres Minimum depth trheshold.
+#' @param freq_thres Freq threshold.
+#'
+#' @return A tibble that results of merging the info, dat and freq elements
+#' of Dat. Plus allele assignments.
+#' 
+#' @export
+#' @importFrom magrittr %>%
+#'
+#' @examples
+gene_midas_data <- function(Dat, gene, depth_thres = 1, freq_thres = 0.5){
+  # gene <- genes[1]
+  check_midas_data(Dat)
+  
+  # Get allele_freq and data from genes
+  i <- Dat$info %>%
+    dplyr::filter(gene_id == gene)
+  f <- Dat$freq %>%
+    dplyr::filter(site_id %in% i$site_id) %>%
+    arrange(match(site_id, i$site_id))
+  d <- Dat$depth %>%
+    dplyr::filter(site_id %in% i$site_id) %>%
+    arrange(match(site_id, i$site_id))
+  all_sites <- match_freq_and_depth(freq = f, depth = d, info = i,
+                                    map = NULL, depth_thres = depth_thres)
+  all_sites <- all_sites %>%
+    dplyr::select(-snp_type, -site_type, -amino_acids, -gene_id, - ref_id)
+  
+  
+  all_sites <- assign_allele(all_sites,
+                             depth_thres = depth_thres,
+                             freq_thres = freq_thres,
+                             sequence = TRUE, na_rm = TRUE)
+  
+  return(all_sites)
 }
 
 #' Read midas snp merge data
