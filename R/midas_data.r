@@ -95,8 +95,6 @@ read_midas_abun <- function(file){
 #' 
 #' @export
 #' @importFrom magrittr %>%
-#'
-#' @examples
 gene_midas_data <- function(Dat, gene, depth_thres = 1, freq_thres = 0.5){
   # gene <- genes[1]
   check_midas_data(Dat)
