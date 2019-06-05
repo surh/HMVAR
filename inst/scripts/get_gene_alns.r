@@ -57,7 +57,7 @@ map
 
 mkres_files <- list.files(mkdir)
 for(mkres_file in mkres_files){
-  mkres_file <- mkres_files[6]
+  # mkres_file <- mkres_files[6]
   spec <- str_replace(mkres_file, "_mktest.txt$", '')
   cat(spec, "\n")
   mkres_file <- file.path(mkdir, mkres_file)
@@ -88,7 +88,7 @@ for(mkres_file in mkres_files){
     
     # Get every gene
     for(gene in genome_feats$gene_id){
-      gene <- genome_feats$gene_id[1]
+      # gene <- genome_feats$gene_id[1]
       # Get ref sequence
       gene_pos <- genome_feats %>%
         filter(gene_id == gene) %>%
@@ -116,6 +116,8 @@ for(mkres_file in mkres_files){
       
       
       filename <- paste0(gene, '.aln.fasta')
+      if(file.exists(filename))
+        stop(paste("ERROR: file", filename, "exists"), call. = TRUE)
       seqinr::write.fasta(aln$seq, aln$nam, file.out = filename)
     }
     
