@@ -19,7 +19,8 @@ library(tidyverse)
 # library(seqinr)
 library(HMVAR)
 
-setwd("~/micropopgen/exp/2019/today4/")
+# setwd("~/micropopgen/exp/2019/today4/")
+setwd("/godot/users/sur/exp/fraserv/2019/today5/")
 
 # depth_thres <- 1
 # freq_thres <- 0.5
@@ -27,9 +28,12 @@ setwd("~/micropopgen/exp/2019/today4/")
 # keep_last_codon <- TRUE
 
 
-mkdir <- "../2019-04-02.hmp_mktest_data/Buccal.mucosa/results/"
-genome_dir <- "~/micropopgen/data/genomes/midas_db_v1.2/hmp.subsite/"
-closest_dir <- "../today3/hmp.subsite.closest/"
+# mkdir <- "../2019-04-02.hmp_mktest_data/Buccal.mucosa/results/"
+# genome_dir <- "~/micropopgen/data/genomes/midas_db_v1.2/hmp.subsite/"
+# closest_dir <- "../today3/hmp.subsite.closest/"
+mkdir <- "../2019-04-02.hmp_subsite_mktest/Buccal.mucosa/results/"
+genome_dir <- "~/micropopgen/data/midas_db_v1.2/rep_genomes/"
+closest_dir <- "hmp.subsite.closest/"
 
 mkres_files <- list.files(mkdir)
 for(mkres_file in mkres_files){
@@ -42,7 +46,7 @@ for(mkres_file in mkres_files){
                                      gene_id = col_character()))
   mkres <- mkres %>% 
     filter(p.value < 0.1)
-  mkres
+  # mkres
   if(nrow(mkres) > 0){
     cat("\tYES\n")
   }
