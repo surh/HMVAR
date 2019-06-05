@@ -20,7 +20,7 @@ library(tidyverse)
 library(HMVAR)
 
 # setwd("~/micropopgen/exp/2019/today4/")
-setwd("/godot/users/sur/exp/fraserv/2019/today5/")
+# setwd("/godot/users/sur/exp/fraserv/2019/today5/")
 
 depth_thres <- 1
 freq_thres <- 0.5
