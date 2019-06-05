@@ -115,7 +115,7 @@ for(mkres_file in mkres_files){
                           keep_last_codon = keep_last_codon)
       
       
-      filename <- paste0(gene, '.aln.fasta')
+      filename <- file.path(outdir, paste0(gene, '.aln.fasta'))
       if(file.exists(filename))
         stop(paste("ERROR: file", filename, "exists"), call. = TRUE)
       seqinr::write.fasta(aln$seq, aln$nam, file.out = filename)
