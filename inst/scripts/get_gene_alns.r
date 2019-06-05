@@ -20,7 +20,7 @@ library(tidyverse)
 library(HMVAR)
 
 # setwd("~/micropopgen/exp/2019/today4/")
-setwd("/godot/users/sur/exp/fraserv/2019/today5/")
+# setwd("/godot/users/sur/exp/fraserv/2019/today5/")
 
 depth_thres <- 1
 freq_thres <- 0.5
@@ -32,20 +32,19 @@ outdir <- 'results/'
 # genome_dir <- "~/micropopgen/data/genomes/midas_db_v1.2/hmp.subsite/"
 # closest_dir <- "../today3/hmp.subsite.closest/"
 
-mkdir <- "../2019-04-02.hmp_subsite_mktest/Buccal.mucosa/results/"
-genome_dir <- "~/micropopgen/data/midas_db_v1.2/rep_genomes/"
-closest_dir <- "hmp.subsite.closest/"
-map_file <- "../2019-04-02.hmp_subsite_mktest/Buccal.mucosa/map.txt"
-midas_dir <- "/godot/shared_data/metagenomes/hmp/midas/merge/2018-02-07.merge.snps.d.5/"
-group <- "Buccal.mucosa"
+# mkdir <- "../2019-04-02.hmp_subsite_mktest/Buccal.mucosa/results/"
+# genome_dir <- "~/micropopgen/data/midas_db_v1.2/rep_genomes/"
+# closest_dir <- "hmp.subsite.closest/"
+# map_file <- "../2019-04-02.hmp_subsite_mktest/Buccal.mucosa/map.txt"
+# midas_dir <- "/godot/shared_data/metagenomes/hmp/midas/merge/2018-02-07.merge.snps.d.5/"
+# group <- "Buccal.mucosa"
 
-# mkdir <- "mkres/"
-# genome_dir <- "genomes/"
-# closest_dir <- "closest/"
-# map_file <- "map.txt"
-# midas_dir <- "midas/"
-# outdir <- 'results/'
-
+mkdir <- "mkres/"
+genome_dir <- "genomes/"
+closest_dir <- "closest/"
+map_file <- "map.txt"
+midas_dir <- "midas/"
+outdir <- 'results/'
 group <- opts[1]
 
 if(!dir.exists(outdir)){
