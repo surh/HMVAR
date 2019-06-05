@@ -20,7 +20,7 @@ library(tidyverse)
 library(HMVAR)
 
 # setwd("~/micropopgen/exp/2019/today4/")
-# setwd("/godot/users/sur/exp/fraserv/2019/today5/")
+setwd("/godot/users/sur/exp/fraserv/2019/today5/")
 
 depth_thres <- 1
 freq_thres <- 0.5
@@ -31,17 +31,20 @@ outdir <- 'results/'
 # mkdir <- "../2019-04-02.hmp_mktest_data/Buccal.mucosa/results/"
 # genome_dir <- "~/micropopgen/data/genomes/midas_db_v1.2/hmp.subsite/"
 # closest_dir <- "../today3/hmp.subsite.closest/"
-# mkdir <- "../2019-04-02.hmp_subsite_mktest/Buccal.mucosa/results/"
-# genome_dir <- "~/micropopgen/data/midas_db_v1.2/rep_genomes/"
-# closest_dir <- "hmp.subsite.closest/"
-# map_file <- "../2019-04-02.hmp_subsite_mktest/Buccal.mucosa/map.txt"
-# midas_dir <- "/godot/shared_data/metagenomes/hmp/midas/merge/2018-02-07.merge.snps.d.5/"
-mkdir <- "mkres/"
-genome_dir <- "genomes/"
-closest_dir <- "closest/"
-map_file <- "map.txt"
-midas_dir <- "midas/"
-outdir <- 'results/'
+
+mkdir <- "../2019-04-02.hmp_subsite_mktest/Buccal.mucosa/results/"
+genome_dir <- "~/micropopgen/data/midas_db_v1.2/rep_genomes/"
+closest_dir <- "hmp.subsite.closest/"
+map_file <- "../2019-04-02.hmp_subsite_mktest/Buccal.mucosa/map.txt"
+midas_dir <- "/godot/shared_data/metagenomes/hmp/midas/merge/2018-02-07.merge.snps.d.5/"
+group <- "Buccal.mucosa"
+
+# mkdir <- "mkres/"
+# genome_dir <- "genomes/"
+# closest_dir <- "closest/"
+# map_file <- "map.txt"
+# midas_dir <- "midas/"
+# outdir <- 'results/'
 
 group <- opts[1]
 
@@ -70,22 +73,36 @@ for(mkres_file in mkres_files){
   if(nrow(mkres) > 0){
     cat("\tYES\n")
     
-    # Read midas snv data
-    Dat <- read_midas_data(midas_dir = file.path(midas_dir,spec),
-                           map = map,
-                           genes = mkres$gene_id)
-    
     # Read genome data
     genome_fasta <- seqinr::read.fasta(file.path(genome_dir, spec, 'genome.fna.gz'))
     genome_feats <- readr::read_tsv(file.path(genome_dir, spec, 'genome.features.gz'),
                                     col_types = readr::cols(.default = readr::col_character(),
                                                             start = readr::col_integer(),
                                                             end = readr::col_integer()))
+    closest <- read_tsv(file.path(closest_dir, paste0(spec, ".closest.txt")), col_names = FALSE,
+                        col_types = cols(.default = col_character(),
+                                         X2 = col_number(),
+                                         X3 = col_number(),
+                                         X8 = col_number(),
+                                         X9 = col_number(),
+                                         X13 = col_number()))
+    
+    # Select closest
+    closest <- closest %>%
+      filter(X4 %in% mkres$gene_id)
+    
     
     # Select genes
+    genes <- union(closest$X10, mkres$gene_id)
     genome_feats <- genome_feats %>%
-      filter(gene_id %in% mkres$gene_id)
+      filter(gene_id %in% genes)
     
+    # Read midas snv data
+    Dat <- read_midas_data(midas_dir = file.path(midas_dir,spec),
+                           map = map,
+                           genes = genes)
+    
+    dir.create(file.path(outdir, spec))
     # Get every gene
     for(gene in genome_feats$gene_id){
       # gene <- genome_feats$gene_id[1]
@@ -115,7 +132,7 @@ for(mkres_file in mkres_files){
                           keep_last_codon = keep_last_codon)
       
       
-      filename <- file.path(outdir, paste0(gene, '.aln.fasta'))
+      filename <- file.path(outdir,spec, paste0(gene, '.aln.fasta'))
       if(file.exists(filename))
         stop(paste("ERROR: file", filename, "exists"), call. = TRUE)
       seqinr::write.fasta(aln$seq, aln$nam, file.out = filename)
