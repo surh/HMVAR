@@ -16,16 +16,38 @@
 # along with HMVAR.  If not, see <http://www.gnu.org/licenses/>.
 
 library(tidyverse)
-library(seqinr)
+# library(seqinr)
 library(HMVAR)
 
-setwd("~/micropopgen/exp/2019/today2/")
+setwd("~/micropopgen/exp/2019/today4/")
 
-depth_thres <- 1
-freq_thres <- 0.5
-missing_as <- 'major'
-keep_last_codon <- TRUE
+# depth_thres <- 1
+# freq_thres <- 0.5
+# missing_as <- 'major'
+# keep_last_codon <- TRUE
 
+
+mkdir <- "../2019-04-02.hmp_mktest_data/Buccal.mucosa/results/"
+genome_dir <- "~/micropopgen/data/genomes/midas_db_v1.2/hmp.subsite/"
+closest_dir <- "../today3/hmp.subsite.closest/"
+
+mkres_files <- list.files(mkdir)
+for(mkres_file in mkres_files){
+  mkres_file <- mkres_files[6]
+  spec <- str_replace(mkres_file, "_mktest.txt$", '')
+  cat(spec, "\n")
+  mkres_file <- file.path(mkdir, mkres_file)
+  mkres <- read_tsv(mkres_file,
+                    col_types = cols(.default = col_double(),
+                                     gene_id = col_character()))
+  mkres <- mkres %>% 
+    filter(p.value < 0.1)
+  mkres
+  if(nrow(mkres) > 0){
+    cat("\tYES\n")
+  }
+  
+}
 
 map <- read_tsv('map.txt') %>%
   select(sample = ID, Group = Group)
