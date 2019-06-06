@@ -24,7 +24,7 @@ library(HMVAR)
 
 depth_thres <- 1
 freq_thres <- 0.5
-missing_as <- 'major'
+
 keep_last_codon <- TRUE
 outdir <- 'results/'
 
@@ -38,6 +38,8 @@ outdir <- 'results/'
 # map_file <- "../2019-04-02.hmp_subsite_mktest/Buccal.mucosa/map.txt"
 # midas_dir <- "/godot/shared_data/metagenomes/hmp/midas/merge/2018-02-07.merge.snps.d.5/"
 # group <- "Buccal.mucosa"
+# missing_as <- 'major'
+# filter_sample <- TRUE
 
 mkdir <- "mkres/"
 genome_dir <- "genomes/"
@@ -46,16 +48,21 @@ map_file <- "map.txt"
 midas_dir <- "midas/"
 outdir <- 'results/'
 group <- opts[1]
+missing_as <- opts[2]
+filter_samples <- opts[3]
 
 if(!dir.exists(outdir)){
   dir.create(outdir)
 }
 map <- read_tsv(map_file,
                 col_types = cols(.default = col_character()))
-map <- map %>%
-  select(sample = ID, Group) %>%
-  filter(Group == group)
-map
+if(filter_samples){
+  map <- map %>%
+    select(sample = ID, Group) %>%
+    filter(Group == group)
+  map
+}
+
 
 mkres_files <- list.files(mkdir)
 for(mkres_file in mkres_files){
