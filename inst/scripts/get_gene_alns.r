@@ -62,6 +62,7 @@ if(as.logical(filter_samples)){
 }
 map <- map %>%
   select(sample = ID, Group)
+map
 
 
 mkres_files <- list.files(mkdir)
