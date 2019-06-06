@@ -58,10 +58,10 @@ map <- read_tsv(map_file,
                 col_types = cols(.default = col_character()))
 if(as.logical(filter_samples)){
   map <- map %>%
-    select(sample = ID, Group) %>%
     filter(Group == group)
 }
-map
+map <- map %>%
+  select(sample = ID, Group)
 
 
 mkres_files <- list.files(mkdir)
