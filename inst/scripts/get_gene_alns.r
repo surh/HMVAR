@@ -56,12 +56,12 @@ if(!dir.exists(outdir)){
 }
 map <- read_tsv(map_file,
                 col_types = cols(.default = col_character()))
-if(filter_samples){
+if(as.logical(filter_samples)){
   map <- map %>%
     select(sample = ID, Group) %>%
     filter(Group == group)
-  map
 }
+map
 
 
 mkres_files <- list.files(mkdir)
