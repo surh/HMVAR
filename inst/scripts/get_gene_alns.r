@@ -21,19 +21,23 @@ library(HMVAR)
 
 depth_thres <- 1
 freq_thres <- 0.5
-
 keep_last_codon <- TRUE
 outdir <- 'results/'
-
-mkdir <- "mkres/"
 genome_dir <- "genomes/"
 closest_dir <- "closest/"
 map_file <- "map.txt"
 midas_dir <- "midas/"
 outdir <- 'results/'
+
 group <- opts[1]
 missing_as <- opts[2]
 filter_samples <- opts[3]
+
+# For mktest
+mkdir <- "mkres/"
+
+# For DoS
+mkdir <- "dosres/"
 
 if(!dir.exists(outdir)){
   dir.create(outdir)
@@ -52,14 +56,19 @@ map
 mkres_files <- list.files(mkdir)
 for(mkres_file in mkres_files){
   # mkres_file <- mkres_files[6]
-  spec <- str_replace(mkres_file, "_mktest.txt$", '')
+  # For mktest or DoS
+  # spec <- str_replace(mkres_file, "_mktest.txt$", '')
+  spec <- str_replace(mkres_file, ".DoS.table.txt$", '')
   cat(spec, "\n")
   mkres_file <- file.path(mkdir, mkres_file)
   mkres <- read_tsv(mkres_file,
                     col_types = cols(.default = col_double(),
                                      gene_id = col_character()))
+  # For mktest or DoS
+  # mkres <- mkres %>% 
+  #   filter(p.value < 0.1)
   mkres <- mkres %>% 
-    filter(p.value < 0.1)
+    filter(DoS.pvalue < 0.1)
   # mkres
   if(nrow(mkres) > 0){
     cat("\tYES\n")
