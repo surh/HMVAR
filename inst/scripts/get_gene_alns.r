@@ -135,7 +135,8 @@ for(mkres_file in mkres_files){
       filename <- file.path(outdir,spec, paste0(gene, '.aln.fasta'))
       if(file.exists(filename))
         stop(paste("ERROR: file", filename, "exists"), call. = TRUE)
-      seqinr::write.fasta(aln$seq, aln$nam, file.out = filename)
+      if(length(aln$seq) > 0)
+        seqinr::write.fasta(aln$seq, aln$nam, file.out = filename)
     }
     
   }
