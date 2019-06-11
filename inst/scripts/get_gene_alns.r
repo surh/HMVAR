@@ -61,9 +61,14 @@ for(mkres_file in mkres_files){
   spec <- str_replace(mkres_file, ".DoS.table.txt$", '')
   cat(spec, "\n")
   mkres_file <- file.path(mkdir, mkres_file)
+  # For mktest or DoS
+  # mkres <- read_tsv(mkres_file,
+  #                   col_types = cols(.default = col_double(),
+  #                                    gene_id = col_character()))
   mkres <- read_tsv(mkres_file,
                     col_types = cols(.default = col_double(),
-                                     gene_id = col_character()))
+                                     gene_id = col_character(),
+                                     spec = col_character()))
   # For mktest or DoS
   # mkres <- mkres %>% 
   #   filter(p.value < 0.1)
