@@ -138,6 +138,12 @@ Files$Files$pheno_file <- midas_bimbam$filenames$pheno_file
 Files$Files$snp_file <- midas_bimbam$filenames$snp_file
 rm(map)
 
+# Exit if not enough samples
+group_count <- table(midas_bimbam$Dat$pheno$phenotype)
+if(length(group_count) != 2 || any(group_count < 3)){
+  cat("Exiting because ther are not enough samples in two groups: (", group_count, ")...\n")
+  quit(save = "no")
+}
 
 if(args$impute){
   # Impute

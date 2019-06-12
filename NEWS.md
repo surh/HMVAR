@@ -43,6 +43,8 @@ https://github.com/surh/HMVAR/issues/14).
 and including it in `terms_enrichments` (Issue https://github.com/surh/HMVAR/issues/14),
 and to the `annotation_enrichments.r` executable
 (Issue Issue https://github.com/surh/HMVAR/issues/15).
+29. In `genome_metawas.r` executable. Exit if there are no two groups with at
+least three samples each.
 
 # 0.1-0
 1. Added exectuable script to perform mktest.
