@@ -45,6 +45,9 @@ and to the `annotation_enrichments.r` executable
 (Issue Issue https://github.com/surh/HMVAR/issues/15).
 29. In `genome_metawas.r` executable. Exit if there are no two groups with at
 least three samples each.
+30. Executable `mktest.r` can now handle cases when midas_dir exists but no samples
+match the mapping file. When this happens, it issues a warning and writes a header only
+output file.
 
 # 0.1-0
 1. Added exectuable script to perform mktest.

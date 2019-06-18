@@ -146,7 +146,14 @@ if(args$test){
                     Ps = Ps,
                     OR = test$estimate,
                     p.value = test$p.value))
-    })
+    }) %>%
+    bind_rows(tibble(gene_id = character(0),
+                     Dn = integer(0),
+                     Ds = integer(0),
+                     Pn = integer(0),
+                     Ps = integer(0),
+                     OR = numeric(0),
+                     p.value = numeric(0)))
 }
 
 # Write output
