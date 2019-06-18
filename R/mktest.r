@@ -368,6 +368,12 @@ determine_snp_dist <- function(info, freq, depth, map,
   # Process freq_thres
   if(freq_thres < 0 || freq_thres > 1)
     stop("ERROR: freq_thres must have values in [0, 1]", call. = TRUE)
+  if(ncol(freq) <= 1 || ncol(depth) <= 1){
+    rlang::warn("\tWARNING:There are no samples in freq or depth. Returning empty tibble")
+    info <- info %>% dplyr::filter(is.na(site_id) & !is.na(site_id)) %>%
+      bind_cols(distribution = factor(levels = c('Fixed', 'Invariant', 'Polymorphic')))
+    return(info)
+  }
   
   freq_thres <- min(freq_thres, 1 - freq_thres)
   
@@ -444,15 +450,20 @@ determine_snp_dist <- function(info, freq, depth, map,
 #'                  .id = "gene_id")
 #' mktable
 mkvalues <- function(info){
-  
-  tab <- info %>% 
-    dplyr::select(snp_effect, distribution) %>%
-    table(exclude = NULL, useNA = 'always')
-  
-  return(dplyr::tibble(Dn = tab['non-synonymous', 'Fixed'],
-                       Ds = tab['synonymous', 'Fixed'],
-                       Pn = tab['non-synonymous', 'Polymorphic'],
-                       Ps = tab['synonymous', 'Polymorphic']))
+  if(nrow(info) < 1){
+    rlang::warn("\tWARNING: No SNPs for mkvalues. Returning empty tibble.\n")
+    return( tibble::tibble(Dn = integer(0), Ds = integer(0),
+                           Pn = integer(0), Ps = integer(0)))
+  }else{
+    tab <- info %>% 
+      dplyr::select(snp_effect, distribution) %>%
+      table(exclude = NULL, useNA = 'always')
+    
+    return(dplyr::tibble(Dn = tab['non-synonymous', 'Fixed'],
+                         Ds = tab['synonymous', 'Fixed'],
+                         Pn = tab['non-synonymous', 'Polymorphic'],
+                         Ps = tab['synonymous', 'Polymorphic']))
+  }
 }
 
 #' Perform McDonald-Kreitman test on MIDAS SNPs
@@ -593,7 +604,10 @@ calculate_mktable <- function(info, freq, depth, map, depth_thres = 1, freq_thre
   Res <- info %>%
     split(.$gene_id) %>%
     purrr::map_dfr(mkvalues,
-                   .id = "gene_id")
+                   .id = "gene_id") %>%
+    dplyr::bind_rows(tibble::tibble(gene_id = character(0),
+                                    Dn = integer(0), Ds = integer(0),
+                                    Pn = integer(0), Ps = integer(0)))
   
   return(Res)
 }
