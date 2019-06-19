@@ -48,6 +48,7 @@ least three samples each.
 30. Executable `mktest.r` can now handle cases when midas_dir exists but no samples
 match the mapping file. When this happens, it issues a warning and writes a header only
 output file.
+31. Giving command line options to `manhattan_type.r` via `stitch_file,r`
 
 # 0.1-0
 1. Added exectuable script to perform mktest.
