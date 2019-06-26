@@ -266,9 +266,15 @@ if(dir.exists(args$input)){
   
   # Get closest and annotation files
   closest_files <- list.files(args$closest)
-  closest_files <- str_subset(closest_files, pattern = prefixes)
+  cat("Total ", length(closest_files), " closest files\n")
+  # cat(head(closest_files), "\n")
+  closest_files <- prefixes %>% map(~str_subset(closest_files, .)) %>% unlist %>% unique
+  cat("Found ", length(closest_files), " closest files\n")
   annot_files <- list.files(args$annotations)
-  annot_files <- str_subset(annot_files, pattern = prefixes)
+  cat("Total ", length(annot_files), " annotation files\n")
+  # cat(head(annot_files), "\n")
+  annot_files <- annot_files <- prefixes %>% map(~str_subset(annot_files, .)) %>% unlist %>% unique
+  cat("Found ", length(annot_files), " annotation files\n")
   if(length(closest_files) < length(inputs) || length(annot_files) < length(inputs)){
     stop("ERROR: number of closest ot annotation files is less than number of input files.")
   }
