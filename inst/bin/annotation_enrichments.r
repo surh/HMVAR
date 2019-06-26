@@ -269,8 +269,8 @@ if(dir.exists(args$input)){
   closest_files <- str_subset(closest_files, pattern = prefixes)
   annot_files <- list.files(args$annotations)
   annot_files <- str_subset(annot_files, pattern = prefixes)
-  if(length(closest_files) != length(inputs) || length(annot_files) != length(inputs)){
-    stop("ERROR: number of closest, annotation or input files does not match.")
+  if(length(closest_files) < length(inputs) || length(annot_files) < length(inputs)){
+    stop("ERROR: number of closest ot annotation files is less than number of input files.")
   }
   
   Dat <- tibble()
