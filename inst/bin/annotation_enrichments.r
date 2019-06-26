@@ -274,6 +274,9 @@ if(dir.exists(args$input)){
   annot_files <- list.files(args$annotations)
   cat("Total ", length(annot_files), " annotation files\n")
   cat(head(annot_files), "\n")
+  cat("======================\n")
+  cat(head(prefixes), "\n")
+  cat("======================\n")
   annot_files <- str_subset(annot_files, pattern = prefixes)
   cat("Found ", length(annot_files), " annotation files\n")
   
