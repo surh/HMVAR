@@ -51,6 +51,7 @@ output file.
 31. Giving command line options to `manhattan_type.r` via `stitch_file,r`
 32. Glitches in `annotation_enrichments.r` executable. Allowing for more annotation
 or closest files than input files. Also dealing with different order of files.
+Discard rows in closest files that have a dot (.) in the gene id column.
 
 # 0.1-0
 1. Added exectuable script to perform mktest.

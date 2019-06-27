@@ -54,7 +54,8 @@ gw_test_enrichments <- function(input, annotations, closest,
                                          chr = col_character(),
                                          chr2 = col_character(),
                                          gene_id = col_character())) %>%
-      select(-ps2, -chr2)
+      select(-ps2, -chr2) %>%
+      filter(gene_id != '.')
     # closest
     
     # Match genes and tests
@@ -147,7 +148,12 @@ process_arguments <- function(){
                                                  "directory. It must match the same type",
                                                  "as <input>. If a single file it should",
                                                  "be a tab-delimited file produced by bedtools'",
-                                                 "closestBed. If a directory is passed, then",
+                                                 "closestBed.",
+                                                 "Followng the BEDtools convention, a dot (.) in the",
+                                                 "seventh column (gene_id) is interpreted as no gene",
+                                                 "being close to the given SNP and all rows with a dot",
+                                                 "on the seventh column are filtered out.",
+                                                 "If a directory is passed, then",
                                                  "for each input file in the <input> directory,",
                                                  "a file that has the same prefix will be expected.",
                                                  "E.g. if an inout file is of the form",
@@ -219,32 +225,19 @@ process_arguments <- function(){
   return(args)
 }
 
-# args <- list(input = "~/micropopgen/exp/2019/2019-03-29.hmp_metawas_data/Supragingival.plaque/metawas/lmmpcs/Porphyromonas_sp_57899_lmm.results.txt",
-#              closest = "~/micropopgen/exp/2019/2019-03-29.hmp_metawas_data/Supragingival.plaque/closest/Porphyromonas_sp_57899.closest",
-#              annotations = "~/micropopgen/exp/2019/2019-04-01.hmp_subsite_annotations/hmp.subsite_annotations/Porphyromonas_sp_57899.emapper.annotations",
-#              dist_thres = 500,
-#              min_size = 3,
-#              outdir = "metawas_enrichments",
-#              suffix = ".txt$",
-#              score_column = 'p_lrt.lmmpcs',
-#              annot_column = 'GO_terms',
-#              alternative = 'less',
-#              method = 'gsea',
-#              gene_score = 'min')
-
-# args <- list(input = "inputs/Streptococcus_mitis_58288_lmm.results.txt",
-#              closest = "closest/Streptococcus_mitis_58288.closest",
-#              annotations = "annotations/Streptococcus_mitis_58288.emapper.annotations",
-#              dist_thres = 500,
-#              min_size = 3,
-#              outdir = "output_1file_testgo",
-#              suffix = "_lmm.results.txt$",
-#              score_column = 'p_lrt.lmmpcs',
-#              annot_column = 'GO_terms',
-#              alternative = 'less',
-#              method = 'test_go',
-#              gene_score = 'min')
 args <- process_arguments()
+# args <- list(input = "../lmmres/",
+#              outdir = "test/",
+#              suffix = "_lmm.results.txt",
+#              closest = "../closest/",
+#              annotations = "../annots/",
+#              dist_thres = 500,
+#              min_size = 3,
+#              annot_column = "GO_terms",
+#              score_column = "p_lrt.lmmpcs",
+#              gene_score = 'min',
+#              alternative = 'less',
+#              method = 'gsea')
 
 if(!dir.exists(args$outdir)){
   dir.create(args$outdir)
