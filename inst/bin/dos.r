@@ -221,8 +221,12 @@ if(dir.exists(args$input)){
         pval_col <- 'p.value'
       }
       
-      dos <- calculate_dos(dat = dat, test = TRUE, clean = FALSE)
-      write_outputs(dat = dos, infile = input, suffix = args$suffix, outdir = args$outdir, pval_col = pval_col)
+      if(nrow(dat) > 0){
+        dos <- calculate_dos(dat = dat, test = TRUE, clean = FALSE)
+        write_outputs(dat = dos, infile = input, suffix = args$suffix, outdir = args$outdir, pval_col = pval_col)
+      }else{
+        cat(input, " did not have enough lines.\n")
+      }
     }else if(args$dir_type == 'midas'){
       # Each input is a midas merge dir
       dos <- midas_dos(midas_dir = input,
@@ -264,8 +268,12 @@ if(dir.exists(args$input)){
       pval_col <- 'p.value'
     }
      
-    dos <- calculate_dos(dat = dat, test = TRUE, clean = FALSE)
-    write_outputs(dat = dos, infile = args$input, suffix = args$suffix, outdir = args$outdir, pval_col = pval_col)
+    if(nrow(dat) > 0){
+      dos <- calculate_dos(dat = dat, test = TRUE, clean = FALSE)
+      write_outputs(dat = dos, infile = args$input, suffix = args$suffix, outdir = args$outdir, pval_col = pval_col)
+    }else{
+      cat(input, " did not have enough lines.\n")
+    }
 }else{
   stop("ERROR: input doesn't exist")
 }
