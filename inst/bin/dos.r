@@ -245,7 +245,9 @@ if(dir.exists(args$input)){
     if(nrow(dos) > 0){
       cat("\tbinding...\n")
       dos$input <- input
+      cat("dim dos:", dim(dos), "\n")
       Res <- Res %>% bind_rows(dos)
+      cat("dim Res:", dim(Res), "\n")
     }
   }
   # Write combined
