@@ -139,7 +139,7 @@ write_outputs <- function(dat, infile, suffix, outdir, pval_col){
   # Write table
   filename <- paste0(c(prefix, "DoS.table.txt"), collapse = ".")
   filename <- file.path(outdir, filename)
-  write_tsv(dos, filename)
+  write_tsv(dat, filename)
   
   # Produce plots
   if(sum(!is.na(dat$DoS)) > 1){
@@ -226,7 +226,7 @@ if(dir.exists(args$input)){
         dos <- calculate_dos(dat = dat, test = TRUE, clean = FALSE)
         write_outputs(dat = dos, infile = input, suffix = args$suffix, outdir = args$outdir, pval_col = pval_col)
       }else{
-        cat(input, " did not have enough lines.\n")
+        cat("\t", input, " did not have enough lines.\n")
         dos <- tibble()
       }
     }else if(args$dir_type == 'midas'){
@@ -252,6 +252,7 @@ if(dir.exists(args$input)){
   }
   # Write combined
   cat("Writing combined...\n")
+  cat("===", dim(Res), "===\n")
   write_outputs(dat = Res, infile = "summary", suffix = '$', outdir = args$outdir, pval_col = pval_col)
 }else if(file.exists(args$input)){
     # Input is file
