@@ -227,7 +227,7 @@ if(dir.exists(args$input)){
         write_outputs(dat = dos, infile = input, suffix = args$suffix, outdir = args$outdir, pval_col = pval_col)
       }else{
         cat(input, " did not have enough lines.\n")
-        next
+        dos <- tibble()
       }
     }else if(args$dir_type == 'midas'){
       # Each input is a midas merge dir
@@ -242,9 +242,11 @@ if(dir.exists(args$input)){
     }else{
       stop("ERROR: --dir_type must be tabs or midas.")
     }
-    cat("\tbinding...\n")
-    dos$input <- input
-    Res <- Res %>% bind_rows(dos)
+    if(nrow(dos) > 0){
+      cat("\tbinding...\n")
+      dos$input <- input
+      Res <- Res %>% bind_rows(dos)
+    }
   }
   # Write combined
   cat("Writing combined...\n")
