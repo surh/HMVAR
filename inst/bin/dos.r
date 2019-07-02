@@ -226,6 +226,7 @@ if(dir.exists(args$input)){
         write_outputs(dat = dos, infile = input, suffix = args$suffix, outdir = args$outdir, pval_col = pval_col)
       }else{
         cat(input, " did not have enough lines.\n")
+        next
       }
     }else if(args$dir_type == 'midas'){
       # Each input is a midas merge dir
