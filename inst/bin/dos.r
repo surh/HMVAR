@@ -207,6 +207,8 @@ if(dir.exists(args$input)){
                                        Ds = col_integer(),
                                        Pn = col_integer(),
                                        Ps = col_integer()))
+      dat <- dat %>%
+        select(gene_id, Dn, Ds, Pn, Ps)
       
       if(!is.null(args$genes)){
         dat <- dat %>%
@@ -247,6 +249,9 @@ if(dir.exists(args$input)){
                                      Ds = col_integer(),
                                      Pn = col_integer(),
                                      Ps = col_integer()))
+    dat <- dat %>%
+      select(gene_id, Dn, Ds, Pn, Ps)
+    
     
     if(!is.null(args$genes)){
       dat <- dat %>%
