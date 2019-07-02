@@ -222,6 +222,7 @@ if(dir.exists(args$input)){
       }
       
       if(nrow(dat) > 0){
+        cat("\tCalculating DoS.\n")
         dos <- calculate_dos(dat = dat, test = TRUE, clean = FALSE)
         write_outputs(dat = dos, infile = input, suffix = args$suffix, outdir = args$outdir, pval_col = pval_col)
       }else{
@@ -241,10 +242,12 @@ if(dir.exists(args$input)){
     }else{
       stop("ERROR: --dir_type must be tabs or midas.")
     }
+    cat("\tbinding...\n")
     dos$input <- input
     Res <- Res %>% bind_rows(dos)
   }
   # Write combined
+  cat("Writing combined...\n")
   write_outputs(dat = Res, infile = "summary", suffix = '$', outdir = args$outdir, pval_col = pval_col)
 }else if(file.exists(args$input)){
     # Input is file
@@ -270,10 +273,11 @@ if(dir.exists(args$input)){
     }
      
     if(nrow(dat) > 0){
+      cat("\tcaluclating DoS.\n")
       dos <- calculate_dos(dat = dat, test = TRUE, clean = FALSE)
       write_outputs(dat = dos, infile = args$input, suffix = args$suffix, outdir = args$outdir, pval_col = pval_col)
     }else{
-      cat(input, " did not have enough lines.\n")
+      cat("\t",input, " did not have enough lines.\n")
     }
 }else{
   stop("ERROR: input doesn't exist")
