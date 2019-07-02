@@ -282,3 +282,5 @@ if(dir.exists(args$input)){
 }else{
   stop("ERROR: input doesn't exist")
 }
+
+warnings()
