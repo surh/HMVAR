@@ -288,7 +288,7 @@ term_gsea <- function(genes, scores, test = "wilcoxon",
                           bg.median = NA,
                           bg.mean = NA,
                           statistic = NA,
-                          p.value = NA)))
+                          p.value = NA))
   }
   if(sum(!ii) < 1){
     return(tibble::tibble(size = sum(ii),
