@@ -8,9 +8,8 @@ mkres_dir <- "mkres/"
 annot_dir <- "annots/"
 suffix <- "_mktest.txt$"
 filter_fixed <- FALSE
-annot_column <- "GO_terms"
-outdir <- "enrichments"
-
+annot_column <- "predicted_gene_name"
+outdir <- "gene"
 
 
 mkres_files <- list.files(mkres_dir)
@@ -98,6 +97,7 @@ for(i in 1:length(mkres_files)){
     cat("Testing\n")
     res <- gsea(gw.test, test = 'wilcoxon', alternative = 'two.sided', min_size = 3) %>%
       filter(!is.na(p.value))
+    res <- HMVAR:::annotate_gos(res, colname = 'term')
     
     if(nrow(res) > 0){
       filename <- paste0(str_replace(prefix, '^\\^', ''), ".enrichments.txt")
@@ -110,8 +110,8 @@ for(i in 1:length(mkres_files)){
   Dat <- Dat %>% bind_rows(gw.test)
 }
 
-sign(res$mean - res$bg.mean)
-res
+# sign(res$mean - res$bg.mean)
+# res
 
 
 Dat
@@ -122,4 +122,16 @@ Res <- gsea(dat = Dat,
             alternative = 'two.sided',
             min_size = 3) %>%
   filter(!is.na(p.value))
+Res <- HMVAR:::annotate_gos(Res, colname = 'term')
 Res
+filename <- file.path(outdir, "summary.enrichments.txt")
+write_tsv(Res, path = filename)
+
+
+Res %>% 
+  select(-median, -bg.median, -statistic) %>%
+  mutate(sign = sign(mean - bg.mean)) %>%
+  select(-mean, -bg.mean) %>%
+  # filter(p.adjust(p.value, 'fdr') < 0.5) %>%
+  print(n = 100)
+
