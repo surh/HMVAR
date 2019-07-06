@@ -3,17 +3,18 @@ library(tidyverse)
 library(HMVAR)
 
 
-setwd("/godot/users/sur/exp/fraserv/2019/today2/")
-mkres_dir <- "mkres/"
+setwd("/godot/users/sur/exp/fraserv/2019/today/")
+mkres_dir <- "dos/"
 annot_dir <- "annots/"
-suffix <- "_mktest.txt$"
+suffix <- ".DoS.table.txt$"
 filter_fixed <- FALSE
-annot_column <- "predicted_gene_name"
-outdir <- "gene"
+annot_column <- "GO_terms"
+outdir <- "GO"
 
 
 mkres_files <- list.files(mkres_dir)
 mkres_files <- str_subset(mkres_files, pattern = suffix)
+mkres_files <- setdiff(mkres_files,"summary.DoS.table.txt")
 prefixes <- str_replace(mkres_files, suffix, "")
 prefixes <- paste0("^", prefixes)
 dir.create(outdir)
@@ -43,18 +44,9 @@ for(i in 1:length(mkres_files)){
     stop("ERROR: missing or extra annotation file")
   }
   cat(input, "\n")
-  # Res <- gw_test_enrichments(input = file.path(args$input, input),
-  #                            annotations = file.path(args$annotations, annotations),
-  #                            closest = file.path(args$closest, closest),
-  #                            dist_thres = args$dist_thres,
-  #                            score_column = args$score_column,
-  #                            gene_score = args$gene_score,
-  #                            alternative = args$alternative,
-  #                            annot_column = args$annot_column,
-  #                            method = args$method, min_size = args$min_size)
   
   # Read test
-  cat("\tReading mkres...\n")
+  cat("\tReading DoS...\n")
   mkres <- read_tsv(file.path(mkres_dir, input),
                     col_types = cols(gene_id = col_character(),
                                      .default = col_double())) %>%
@@ -82,7 +74,7 @@ for(i in 1:length(mkres_files)){
   # Calculate score
   cat("Calculate signed -log10(p-value)...\n")
   mkres <- mkres %>%
-    mutate(score = sign(log(OR)) * (-log10(p.value)))
+    mutate(score = sign(DoS) * (-log10(p.value)))
   
   # Match genes with annotations
   cat("Match genes with annotations \n")
@@ -112,6 +104,8 @@ for(i in 1:length(mkres_files)){
 
 # sign(res$mean - res$bg.mean)
 # res
+filename <- file.path(outdir, "all_genes_terms_and_scores.txt")
+write_tsv(Dat, path = filename)
 
 
 Dat
