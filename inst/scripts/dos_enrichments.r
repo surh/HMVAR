@@ -8,8 +8,8 @@ mkres_dir <- "dos/"
 annot_dir <- "annots/"
 suffix <- ".DoS.table.txt$"
 filter_fixed <- FALSE
-annot_column <- "GO_terms"
-outdir <- "GO"
+annot_column <- "predicted_gene_name"
+outdir <- "gene"
 
 
 mkres_files <- list.files(mkres_dir)
