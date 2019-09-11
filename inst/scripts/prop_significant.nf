@@ -30,7 +30,7 @@ reader = genomes.newReader()
 GENOMES = []
 // INTERVALS = []
 while(str = reader.readLine()){
-  NAMES = NAMES + [tuple(str,
+  GENOMES = GENOMES + [tuple(str,
     file("${params.metawas_dir}/${str}${params.metwas_suffix}"),
     file("${params.midas_dir}/${str}/snps_info.txt"))]
 }
@@ -45,7 +45,7 @@ process prop_sig{
     pattern: "sig_nums.txt", saveAs: {"${genome}.txt"}
 
   input:
-  set genome, metawas, info from genomes
+  set genome, metawas, info from GENOMES
 
   output:
   file "freq_vs_pval.png"
