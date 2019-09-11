@@ -41,6 +41,8 @@ process prop_sig{
     pattern: "freq_vs_pval.png", saveAs: {"${genome}.png"}
   publishDir "${params.outdir}/plots/facets", mode: 'rellink',
     pattern: "freq_vs_pval.facets.png", saveAs: {"${genome}.png"}
+  publishDir "${params.outdir}/plots/bars", mode: 'rellink',
+    pattern: "sig_freqs.png", saveAs: {"${genome}.png"}
   publishDir "${params.outdir}/counts", mode: 'rellink',
     pattern: "sig_nums.txt", saveAs: {"${genome}.txt"}
 
@@ -50,6 +52,7 @@ process prop_sig{
   output:
   file "freq_vs_pval.png"
   file "freq_vs_pval.facets.png"
+  file "sig_freqs.png"
   file "sig_nums.txt"
 
   """
