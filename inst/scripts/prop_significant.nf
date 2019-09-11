@@ -31,7 +31,7 @@ GENOMES = []
 // INTERVALS = []
 while(str = reader.readLine()){
   GENOMES = GENOMES + [tuple(str,
-    file("${params.metawas_dir}/${str}${params.metwas_suffix}"),
+    file("${params.metawas_dir}/${str}${params.metawas_suffix}"),
     file("${params.midas_dir}/${str}/snps_info.txt"))]
 }
 
