@@ -72,6 +72,7 @@ p1 <- ggplot(metawas, aes(x = af, y = p_lrt, col = snp_effect)) +
                                                inverse = function(x) 10^(-x),
                                                breaks = function(x){
                                                  rng <- range(x)
+                                                 rng[is.infinite(rng)] <- 0
                                                  breaks <- seq(rng[1], rng[2], length.out = 5)
                                                  10^(-breaks)
                                                })) +
@@ -86,6 +87,7 @@ p1 <- ggplot(metawas, aes(x = af, y = p_lrt, col = snp_effect)) +
                                                inverse = function(x) 10^(-x),
                                                breaks = function(x){
                                                  rng <- range(x)
+                                                 rng[is.infinite(rng)] <- 0
                                                  breaks <- seq(rng[1], rng[2], length.out = 5)
                                                  10^(-breaks)
                                                })) +
