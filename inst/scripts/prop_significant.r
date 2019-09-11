@@ -40,9 +40,10 @@ metawas <- read_tsv(metawas_file,
                                      ps = col_number(),
                                      n_miss = col_number(),
                                      af = col_number(),
-                                     logl_H1 = col_number(),
+                                     logl_H1 = col_double(),
                                      l_mle = col_number(),
-                                     p_lrt = col_number()))
+                                     p_lrt = col_number()),
+                    na = c("", "na", "nan", "inf", "NA", "-nan"))
 metawas <- metawas %>%
   select(site_id = rs, ref_id = chr, ref_pos = ps, everything()) %>%
   left_join(info, by = c("site_id", "ref_id", "ref_pos")) %>%
