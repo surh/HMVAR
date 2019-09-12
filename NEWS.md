@@ -43,6 +43,16 @@ https://github.com/surh/HMVAR/issues/14).
 and including it in `terms_enrichments` (Issue https://github.com/surh/HMVAR/issues/14),
 and to the `annotation_enrichments.r` executable
 (Issue Issue https://github.com/surh/HMVAR/issues/15).
+29. In `genome_metawas.r` executable. Exit if there are no two groups with at
+least three samples each.
+30. Executable `mktest.r` can now handle cases when midas_dir exists but no samples
+match the mapping file. When this happens, it issues a warning and writes a header only
+output file.
+31. Giving command line options to `manhattan_type.r` via `stitch_file,r`
+32. Glitches in `annotation_enrichments.r` executable. Allowing for more annotation
+or closest files than input files. Also dealing with different order of files.
+33. Bug fixed in `dos.r` when directory is passed. Print the combined results
+instead of last species only.
 
 # 0.1-0
 1. Added exectuable script to perform mktest.
