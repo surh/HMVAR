@@ -80,10 +80,14 @@ gene_snv_aln <- function(snps, seq, missing_as = 'major', strand = '+', keep_las
     alleles <- snps %>%
       split(.$ref_pos) %>%
       purrr:::map_chr(~ 'N')
+  }else if(missing_as == 'gap'){
+    alleles <- snps %>%
+      split(.$ref_pos) %>%
+      purrr:::map_chr(~ '-')
   }else{
-    stop("ERROR: missing_as must be 'major', 'ref', or 'N'.", call. = TRUE)
+    stop("ERROR: missing_as must be 'major', 'ref', 'N', or 'gap.", call. = TRUE)
   }
-  
+
   # 
   # dat <- snps %>%
   #   split(.$sample)
@@ -119,7 +123,7 @@ gene_snv_aln <- function(snps, seq, missing_as = 'major', strand = '+', keep_las
     alleles = alleles)
   
   # Reverse_complement
-  if(gene_pos$strand == '-'){
+  if(strand == '-'){
     aln <- aln %>%
       purrr::map(~rev(chartr('TGCAtgca', 'ACGTacgt', .x)))
   }
