@@ -12,9 +12,8 @@ gc()
 map <- map %>% filter(sample %in% colnames(Dat$freq))
 map$Group %>% table
 
-
-fst <- calculate_fst(sites = Dat$info$site_id[1:10], Dat = Dat, map = map, depth_thres = 1)
-fst
+# fst <- calculate_fst(sites = Dat$info$site_id[1:10], Dat = Dat, map = map, depth_thres = 1)
+# fst
 
 fst <- NULL
 start_time <- date()
