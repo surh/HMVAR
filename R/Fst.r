@@ -77,3 +77,17 @@ site_fst <- function(freq, support, info,
                  a = a, b = b,  c = c)
   
 }
+
+# Tidyverse based function removed because it takes too much time.
+# Probably if I join first it would be faster
+# calculate_fst <- function(sites, Dat, map, depth_thres = 1, method = "Weir-Cockerham"){
+#   res <- sites %>%
+#     purrr::map_dfr(function(site, Dat, map, depth_thres = 1, method = "Weir-Cockerham"){
+#       dat <- Dat %>%
+#         purrr::map(function(d, site){d %>% filter(site_id == site)}, site = site)
+#       site_fst(freq = dat$freq, depth = dat$depth,
+#                info = dat$info, map = map, depth_thres = depth_thres)
+#     }, Dat = Dat, map = map, depth_thres = 1, method = method, .id = "site_id")
+#   
+#   return(res)
+# }

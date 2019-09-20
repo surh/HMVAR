@@ -41,21 +41,6 @@ ref_window_fst <- function(ref, w_size, s_size){
   return(Res)
 }
 
-
-  
-
-calculate_fst <- function(sites, Dat, map, depth_thres = 1, method = "Weir-Cockerham"){
-  res <- sites %>%
-    purrr::map_dfr(function(site, Dat, map, depth_thres = 1, method = "Weir-Cockerham"){
-      dat <- Dat %>%
-        purrr::map(function(d, site){d %>% filter(site_id == site)}, site = site)
-      site_fst(freq = dat$freq, depth = dat$depth,
-               info = dat$info, map = map, depth_thres = depth_thres)
-    }, Dat = Dat, map = map, depth_thres = 1, method = method, .id = "site_id")
-  
-  return(res)
-}
-
 map <- read_tsv("midas/map.txt")
 map <- map %>% select(sample=ID, Group)
 
