@@ -3,44 +3,6 @@ library(tidyverse)
 setwd("~/micropopgen/exp/2019/today")
 devtools::document(pkg = "~/micropopgen/src/HMVAR/")
 
-ref_window_fst <- function(ref, w_size, s_size){
-  Res <- NULL
-  left_ii <- 1
-  right_ii <- 2
-  for(start in seq(from = 1, to = max(ref$ref_pos) - s_size + 1, by = s_size)){
-    end <- start + w_size
-    
-    for(curr_left in left_ii:nrow(ref)){
-      if(ref$ref_pos[curr_left] >= start)
-        break
-    }
-    
-    for(curr_right in right_ii:nrow(ref)){
-      if(ref$ref_pos[curr_right] > end - 1)
-        break
-    }
-    
-    window <- ref[(curr_left):(curr_right - 1), ] %>%
-      filter(!is.na(Fst))
-    # window %>% print(n = w_size)
-    
-    res <- tibble(start = start, end = end,
-                  ref_id = unique(window$ref_id),
-                  n_sites = nrow(window),
-                  Fst = sum(window$a / sum(window$a + window$b + window$c)))
-    Res <- Res %>%
-      bind_rows(res)
-    left_ii <- curr_left
-    right_ii <- curr_right - 1
-  }
-  Res <- Res %>%
-    mutate(Fst = replace(Fst, Fst < 0, 0))
-  # Res
-  # ref %>% filter(ref_pos >= 901 & ref_pos < 1901) %>% filter(!is.na(Fst)) %>% nrow
-  
-  return(Res)
-}
-
 map <- read_tsv("midas/map.txt")
 map <- map %>% select(sample=ID, Group)
 

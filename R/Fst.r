@@ -91,3 +91,70 @@ site_fst <- function(freq, support, info,
 #   
 #   return(res)
 # }
+
+#' Sliding window Fst calculation
+#' 
+#' Takes a tibble that has the a, b, and c parameters of
+#' for Fst calculation (Weir & Cockerham 1984) and calculates
+#' Fst over a sliding window. It only worts for a single
+#' contig.
+#'
+#' @param dat A tibble with columns 'ref_id', 
+#' 'ref_pos', 'a', 'b' and 'c'.
+#' @param w_size Window size in bp.
+#' @param s_size Step size in bp.
+#' @param sorted logical indicating if the sites in dat.
+#' are already in sorted ascending order by ref_pos.
+#'
+#' @return A tibble
+#' @export
+#' 
+#' @importFrom magrittr %>%
+window_fst <- function(dat, w_size = 1000, s_size = 300, sorted = FALSE){
+  if(length(unique(dat$ref_id)))
+    stop("ERROR: dat must have only one value in ref_id")
+  
+  if(!sorted){
+    dat <- dat %>%
+      dplyr::arrange(ref_pos)
+  }
+  
+  
+  Res <- NULL
+  left_ii <- 1
+  right_ii <- 2
+  for(start in seq(from = 1,
+                   to = max(dat$ref_pos) - s_size + 1,
+                   by = s_size)){
+    end <- start + w_size
+    
+    for(curr_left in left_ii:nrow(dat)){
+      if(dat$ref_pos[curr_left] >= start)
+        break
+    }
+    
+    for(curr_right in right_ii:nrow(dat)){
+      if(dat$ref_pos[curr_right] > end - 1)
+        break
+    }
+    
+    window <- dat[(curr_left):(curr_right - 1), ] %>%
+      dplyr::filter(!is.na(Fst))
+    # window %>% print(n = w_size)
+    
+    res <- tibble::tibble(start = start, end = end,
+                          ref_id = unique(window$ref_id),
+                          n_sites = nrow(window),
+                          Fst = sum(window$a / sum(window$a + window$b + window$c)))
+    Res <- Res %>%
+      dplyr::bind_rows(res)
+    left_ii <- curr_left
+    right_ii <- curr_right - 1
+  }
+  Res <- Res %>%
+    dplyr::mutate(Fst = replace(Fst, Fst < 0, 0))
+  # Res
+  # dat %>% filter(ref_pos >= 901 & ref_pos < 1901) %>% filter(!is.na(Fst)) %>% nrow
+  
+  return(Res)
+}
