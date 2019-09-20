@@ -7,7 +7,8 @@ site_fst <- function(freq, depth, info, map, depth_thres, method = "Weir-Cockerh
                               depth = depth,
                               info = info,
                               map = map,
-                              depth_thres = depth_thres)
+                              depth_thres = depth_thres,
+                              verbose = FALSE)
   
   # Using Weir-Cockerham 1984 method
   # Get basic quantities
@@ -59,6 +60,26 @@ map$Group %>% table
 
 fst <- calculate_fst(sites = Dat$info$site_id[1:10], Dat = Dat, map = map, depth_thres = 1)
 fst
+
+fst <- NULL
+for(i in 1:nrow(Dat$info)){
+  f <- site_fst(freq = Dat$freq[i,],
+                depth = Dat$depth[i,],
+                info = Dat$info[i,],
+                map = map,
+                depth_thres = 1)
+  f$site_id <- Dat$info$site_id[i]
+  f$ref_id <- Dat$info$ref_id[i]
+  f$ref_pos <- Dat$info$ref_pos[i]
+  fst <- fst %>%
+    bind_rows(f)
+}
+fst
+
+snp_effects <- determine_snp_effect(info = Dat$info %>%
+                                      select(site_id, major_allele, minor_allele, amino_acids) %>%
+                                      filter(!is.na(amino_acids)))
+
 
 w_size <- 1000
 s_size <- 100
