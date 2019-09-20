@@ -42,7 +42,7 @@
 #' @return A tibble
 #' @export
 #' 
-#' @importFrom magrittr %?%
+#' @importFrom magrittr %>%
 site_fst <- function(freq, support, info,
                      map, support_thres = 1,
                      method = "Weir-Cockerham"){

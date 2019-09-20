@@ -1,6 +1,7 @@
 library(HMVAR)
 library(tidyverse)
 setwd("~/micropopgen/exp/2019/today")
+devtools::document(pkg = "~/micropopgen/src/HMVAR/")
 
 ref_window_fst <- function(ref, w_size, s_size){
   Res <- NULL

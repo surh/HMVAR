@@ -5,7 +5,7 @@
 \title{Match freq and depth}
 \usage{
 match_freq_and_depth(freq, depth, info = NULL, map = NULL,
-  depth_thres = 1)
+  depth_thres = 1, verbose = TRUE)
 }
 \arguments{
 \item{freq}{A site by sample data frame or tibble. Must contain a column
@@ -22,6 +22,9 @@ named "sample".}
 
 \item{depth_thres}{Minimum sequence coverage (depth) for a site to be kept
 in the final output.}
+
+\item{verbose}{logical indicating whether progress messages should be
+printed.}
 }
 \value{
 A data frame or tibble with columns site_id, freq, depth, and one
