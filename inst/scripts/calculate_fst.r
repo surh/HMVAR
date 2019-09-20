@@ -159,32 +159,25 @@ ref
 
 w_fst <- fst %>%
   split(.$ref_id) %>%
-  purrr::map_dfr(ref_window_fst, w_size = 1000, s_size = 300)
+  purrr::map_dfr(ref_window_fst, w_size = 1000, s_size = 300) 
 
 
+p1 <- ggplot(w_fst, aes(x = (start + end) / 2, y = Fst)) +
+  facet_grid(~ ref_id, scales = "free_x", space = "free_x") +
+  # geom_point(aes(size = n_sites)) +
+  geom_point() +
+  geom_hline(yintercept = 0.25, color = "red", size = 2) +
+  ggplot2::theme(panel.background = ggplot2::element_blank(), 
+                 panel.grid = ggplot2::element_blank(),
+                 axis.text = ggplot2::element_text(color = "black"), 
+                 axis.title = ggplot2::element_text(color = "black", face = "bold"), 
+                 axis.line.x.bottom = ggplot2::element_line(),
+                 axis.line.y.left = ggplot2::element_line())
+p1
 
-refs <- Dat$info %>%
-  split(.$ref_id)
-ref <- refs[[1]]
-
-ref
-Sites <- seq(from = 1, to = max(ref$ref_pos) - w_size + 1, by = s_size) %>%
-  purrr::map(function(start, w_size, info, Dat, map, depth_thres = 1){
-    sites <- info %>% filter(ref_pos >= start & ref_pos < start + w_size) %>%
-      dplyr::select(site_id) %>%
-      unlist
-    
-    res <- calculate_fst(sites = sites, Dat = Dat, map = map, depth_thres = depth_thres)
-    
-    tibble::tibble(start = start, end = start + w_size,
-                   n_loci <- length(sites),
-                   Fst = sum(res$a) / (sum(res$a + res$b + res$c)))
-    
-  }, w_size = w_size, info = ref, Dat = Dat, map = map, depth_thres = 1)
-
-# hist(Sites %>% map_int(length))
-
-
-Sites %>%
-  purrr::map_dfr(function)
+p1 <- ggplot(w_fst, aes(x = Fst, y = n_sites)) +
+  geom_point() +
+  geom_smooth(method = "loess") +
+  AMOR::theme_blackbox() 
+p1
 
