@@ -53,6 +53,7 @@ output file.
 or closest files than input files. Also dealing with different order of files.
 33. Bug fixed in `dos.r` when directory is passed. Print the combined results
 instead of last species only.
+34. Added `verbose` option to `match_freq_and_depth`
 
 # 0.1-0
 1. Added exectuable script to perform mktest.
