@@ -52,7 +52,31 @@ map$Group %>% table
 fst <- calculate_fst(sites = Dat$info$site_id[1:10], Dat = Dat, map = map, depth_thres = 1)
 fst
 
+w_size <- 1000
+s_size <- 100
+
+refs <- Dat$info %>%
+  split(.$ref_id)
+ref <- refs[[1]]
+
+ref
+Sites <- seq(from = 1, to = max(ref$ref_pos) - w_size + 1, by = s_size) %>%
+  purrr::map(function(start, w_size, info, Dat, map, depth_thres = 1){
+    sites <- info %>% filter(ref_pos >= start & ref_pos < start + w_size) %>%
+      dplyr::select(site_id) %>%
+      unlist
+    
+    res <- calculate_fst(sites = sites, Dat = Dat, map = map, depth_thres = depth_thres)
+    
+    tibble::tibble(start = start, end = start + w_size,
+                   n_loci <- length(sites),
+                   Fst = sum(res$a) / (sum(res$a + res$b + res$c)))
+    
+  }, w_size = w_size, info = ref, Dat = Dat, map = map, depth_thres = 1)
+
+# hist(Sites %>% map_int(length))
 
 
-
+Sites %>%
+  purrr::map_dfr(function)
 
