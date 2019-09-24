@@ -12,8 +12,38 @@ gc()
 map <- map %>% filter(sample %in% colnames(Dat$freq))
 map$Group %>% table
 
-# fst <- calculate_fst(sites = Dat$info$site_id[1:10], Dat = Dat, map = map, depth_thres = 1)
-# fst
+
+i <- 1
+freq <- Dat$freq[i,]
+support <- Dat$depth[i,]
+info <- Dat$info[i, ]
+map <- map
+support_thres <- 1
+method = "Fst_pool"
+
+dat <- match_freq_and_depth(freq = freq,
+                            depth = support,
+                            info = info,
+                            map = map,
+                            depth_thres = support_thres,
+                            verbose = FALSE)
+
+# Make pools
+dat <- dat %>%
+  split(.$Group) %>%
+  purrr::map_dfr(function(d){
+    tibble::tibble(site_id = unique(d$site_id),
+                   depth = sum(d$depth),
+                   freq = sum(d$depth * d$freq) / sum(d$depth),
+                   count = sum(round(d$freq * d$depth)),
+                   n_ind = nrow(d))
+  }, .id = "Group")
+dat
+
+
+
+
+
 
 fst <- NULL
 start_time <- date()

@@ -37,7 +37,7 @@
 #' @param support_thres Minimum value in support tibble to keep a sample
 #' for this site
 #' @param method The method to calculate Fst. Currently only the
-#' Weir-Cockerham method from 1984 is implemented.
+#' Weir-Cockerham method from 1984, and the Fstpool methods are implemented.
 #'
 #' @return A tibble
 #' @export
@@ -53,29 +53,56 @@ site_fst <- function(freq, support, info,
                               depth_thres = support_thres,
                               verbose = FALSE)
   
-  # Using Weir-Cockerham 1984 method
-  # Get basic quantities
-  n_i <- table(dat$Group)
-  p_i <- dat %>% split(.$Group) %>% purrr::map_dbl(~mean(.$freq))
-  p_i <- p_i[names(n_i)]
-  r <- length(n_i)
-  n_mean <- nrow(dat) / r
-  n_c <- ((r * n_mean) - (sum(n_i ^ 2) / (r * n_mean))) / (r - 1)
-  # p_mean <- sum(n_i * p_i) / (r * n_mean)
-  p_mean <- mean(dat$freq)
-  S_sqrd <- sum(n_i * ((p_i - p_mean) ^ 2)) / ((r-1) * n_mean)
-  h_mean <- 0
+  if(method == "Weir-Cockerham"){
+    # Using Weir-Cockerham 1984 method
+    # Get basic quantities
+    n_i <- table(dat$Group)
+    p_i <- dat %>% split(.$Group) %>% purrr::map_dbl(~mean(.$freq))
+    p_i <- p_i[names(n_i)]
+    r <- length(n_i)
+    n_mean <- nrow(dat) / r
+    n_c <- ((r * n_mean) - (sum(n_i ^ 2) / (r * n_mean))) / (r - 1)
+    # p_mean <- sum(n_i * p_i) / (r * n_mean)
+    p_mean <- mean(dat$freq)
+    S_sqrd <- sum(n_i * ((p_i - p_mean) ^ 2)) / ((r-1) * n_mean)
+    h_mean <- 0
+    
+    # Calculate parts
+    a <- (n_mean / n_c) * (S_sqrd - (1 / (n_mean - 1)) * ((p_mean * (1 - p_mean)) - ((r - 1) * S_sqrd / r) - (h_mean / 4)))
+    b <- (n_mean / (n_mean - 1)) * (p_mean * (1 - p_mean) - ((r - 1) * S_sqrd / r) - ((2 * n_mean - 1) * h_mean / (4 * n_mean)) )
+    c <- h_mean / 2
+    
+    res <- tibble::tibble(r = r, n_mean = n_mean, n_c = n_c,
+                          p_mean = p_mean, S_sqrd = S_sqrd,
+                          h_mean = h_mean,
+                          a = a, b = b,  c = c)
+  }else if(method == "Fstpool"){
+    # Parameters
+    C_1 <- sum(dat$depth)
+    C_2 <- sum(dat$depth ^ 2)
+    D_2 <- sum((dat$depth / dat$n_ind) + ((dat$n_ind - 1) / dat$n_ind))
+    D_2ast <- sum(dat$depth * (dat$depth + dat$n_ind + 1) / dat$n_ind) / C_1 
+    pi_k <- sum(dat$depth * dat$freq) / sum(dat$depth)
+    n_c <- ((C_1 - C_2) / C_1) / (D_2 - D_2ast)
+    
+    # MSI assume only bi-allelic sites
+    MSI <- (1 / (C_1 - D_2)) * 2 * sum(dat$depth * dat$freq * (1 - dat$freq))
+    
+    # MSP assume bi-allelic sites
+    MSP <- (1 / (D_2 - D_2ast)) * 2 * sum(dat$depth * (dat$freq - pi_k) ^2)
+    
+    
+    res <- tibble::tibble(r = nrow(dat),
+                          n_c = n_c,
+                          p_mean = pi_k,
+                          MSI = MSI,
+                          MSP = MSP)
+    
+  }else{
+    stop("ERROR: Invalid method", call. = TRUE)
+  }
   
-  # Calculate parts
-  a <- (n_mean / n_c) * (S_sqrd - (1 / (n_mean - 1)) * ((p_mean * (1 - p_mean)) - ((r - 1) * S_sqrd / r) - (h_mean / 4)))
-  b <- (n_mean / (n_mean - 1)) * (p_mean * (1 - p_mean) - ((r - 1) * S_sqrd / r) - ((2 * n_mean - 1) * h_mean / (4 * n_mean)) )
-  c <- h_mean / 2
-  
-  tibble::tibble(r = r, n_mean = n_mean, n_c = n_c,
-                 p_mean = p_mean, S_sqrd = S_sqrd,
-                 h_mean = h_mean,
-                 a = a, b = b,  c = c)
-  
+  return(res)
 }
 
 # Tidyverse based function removed because it takes too much time.
