@@ -96,13 +96,13 @@ site_fst <- function(freq, support, info,
     D_2 <- sum((dat$depth / dat$n_ind) + ((dat$n_ind - 1) / dat$n_ind))
     D_2ast <- sum(dat$depth * (dat$depth + dat$n_ind + 1) / dat$n_ind) / C_1 
     pi_k <- sum(dat$depth * dat$freq) / sum(dat$depth)
-    n_c <- ((C_1 - C_2) / C_1) / (D_2 - D_2ast)
+    n_c <- (C_1 - C_2/ C_1) / (D_2 - D_2ast)
     
     # MSI assume only bi-allelic sites
     MSI <- (1 / (C_1 - D_2)) * 2 * sum(dat$depth * dat$freq * (1 - dat$freq))
     
     # MSP assume bi-allelic sites
-    MSP <- (1 / (D_2 - D_2ast)) * 2 * sum(dat$depth * (dat$freq - pi_k) ^2)
+    MSP <- (1 / (D_2 - D_2ast)) * 2 * sum(dat$depth * (dat$freq - pi_k) ^ 2)
     
     
     res <- tibble::tibble(r = nrow(dat),

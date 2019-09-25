@@ -1,5 +1,6 @@
 library(HMVAR)
 library(tidyverse)
+library(poolfstat)
 setwd("~/micropopgen/exp/2019/today")
 # devtools::document(pkg = "~/micropopgen/src/HMVAR/")
 
@@ -98,6 +99,61 @@ fst_pool <- calculate_fst(Dat = list(info = Dat$info[1:10000, ],
                           verbose = TRUE)
 
 
+
+readcoverage <- (Dat$depth[1:10000,] %>%
+                   select(-site_id) %>%
+                   as.matrix())
+refallele.readcount <- readcoverage - round((Dat$freq[1:10000,] %>%
+                                               select(-site_id) %>%
+                                               as.matrix()) * readcoverage)
+
+readcoverage
+refallele.readcount
+
+groups <- setNames(map$Group, nm = map$sample)
+groups <- groups[colnames(readcoverage)]
+readcoverage <- AMOR::pool_samples(readcoverage, groups)
+refallele.readcount <- AMOR::pool_samples(refallele.readcount, groups)
+
+Dat.pooldata <- new("pooldata",
+                    npools = 4,
+                    nsnp = 10000,
+                    refallele.readcount = refallele.readcount,
+                    readcoverage = readcoverage,
+                    snp.info = Dat$info[1:10000,] %>% select(ref_id, ref_pos, major_allele, minor_allele) %>% as.matrix(),
+                    poolsizes = table(groups) %>% as.vector(),
+                    poolnames = colnames(readcoverage))
+FSTpool <- computeFST(pooldata = Dat.pooldata, method = "Anova")
+FSTpool$snp.FST
+
+fst_pool$fst$FSTpool <- FSTpool$snp.FST
+fst_pool$fst$Fst <- fst$fst$Fst
+fst_pool$fst <- fst_pool$fst %>%
+  mutate(FSTpool = replace(FSTpool, FSTpool < 0, 0))
+fst_pool$fst
+
+p1 <- ggplot(fst_pool$fst, aes(x= Fst_pool, y = FSTpool)) +
+  geom_point() +
+  AMOR::theme_blackbox()
+p1
+
+p1 <- ggplot(fst_pool$fst, aes(x= Fst, y = Fst_pool)) +
+  geom_point() +
+  AMOR::theme_blackbox()
+p1
+
+pairs(fst_pool$fst[,9:11])
+
+fst_pool$fst %>%
+  gather(key = "Estimator", value = "Fst", Fst, Fst_pool, FSTpool) %>%
+  ggplot(aes(x = ref_pos, y = Fst)) +
+  facet_grid(Estimator ~ .) +
+  geom_point()
+
+p1 <- ggplot(fst_pool$fst, aes(x = ref_pos, y = Fst)) +
+  geom_point() +
+  AMOR::theme_blackbox()
+p1
 
 
 # summary(fst$Fst)
