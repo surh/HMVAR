@@ -143,6 +143,8 @@ read_midas_data <- function(midas_dir, map, genes = NULL, cds_only = TRUE){
 #' named "sample".
 #' @param depth_thres Minimum sequence coverage (depth) for a site to be kept
 #' in the final output.
+#' @param verbose logical indicating whether progress messages should be
+#' printed.
 #'
 #' @return A data frame or tibble with columns site_id, freq, depth, and one
 #' column per column in info and map.
@@ -158,7 +160,8 @@ read_midas_data <- function(midas_dir, map, genes = NULL, cds_only = TRUE){
 #'                         sample1 = c(1,0,1,1), sample2 = c(4,1,1,0),
 #'                         sample3=c(0,0,0,1))
 #' match_freq_and_depth(freq, depth, depth_thres = 1)
-match_freq_and_depth <- function(freq, depth, info = NULL, map = NULL, depth_thres = 1){
+match_freq_and_depth <- function(freq, depth, info = NULL, map = NULL, depth_thres = 1,
+                                 verbose = TRUE){
   if(!("site_id" %in% colnames(freq))){
     stop("ERROR: freq mut contain a site_id column", call. = TRUE)
   }
@@ -166,23 +169,27 @@ match_freq_and_depth <- function(freq, depth, info = NULL, map = NULL, depth_thr
     stop("ERROR: depth mut contain a site_id column", call. = TRUE)
   }
   
-  cat("\tReformatting data...\n")
+  if(verbose)
+    cat("\tReformatting data...\n")
   depth <- depth %>% tidyr::gather(key = "sample", value = 'depth', -site_id)
   freq <- freq %>% tidyr::gather(key = "sample", value = 'freq', -site_id)
   
-  cat("\tMatching freq and depth...\n")
+  if(verbose)
+    cat("\tMatching freq and depth...\n")
   dat <- depth %>%
     dplyr::inner_join(freq, by = c("site_id", "sample")) %>%
     dplyr::filter(depth >= depth_thres)
   
   if(!is.null(map)){
-    cat("\tMatching map...\n")
+    if(verbose)
+      cat("\tMatching map...\n")
     dat <- dat %>%
       dplyr::left_join(map, by = "sample")
   }
   
   if(!is.null(info)){
-    cat("\tMatching info...\n")
+    if(verbose)
+      cat("\tMatching info...\n")
     dat <- dat %>%
       dplyr::left_join(info, by = "site_id")
   }
