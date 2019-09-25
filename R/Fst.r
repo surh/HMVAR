@@ -16,6 +16,98 @@
 # along with HMVAR.  If not, see <http://www.gnu.org/licenses/>
 
 
+
+
+
+
+
+#' Calculate Fixation Index (Fst)
+#' 
+#' Calculates Fst from imported midas data
+#'
+#' @param Dat A MIDAS dataset. Imported into R with \link{read_midas_data}
+#' @param map A tibble with columns sample and Group corresponding
+#' to sample names in MIDAS dataset and sample population respectiveley.
+#' @param method Weir-Cockerham or Fstpool.
+#' @param support_thres calculate_fst uses the \code{depth} slot of
+#' the MIDAS data as a 'support' value to decide if a site in a given
+#' sample will be considered. If it corresponds to depth, this is the
+#' minimum coverage at a site at a given sample.
+#' @param w_size Window size in bp. If both w_size and s_size
+#' are numeric. Fst/Fst^{pool} values are calculated for a sliding
+#' window.
+#' @param s_size Window step size in bp. If both w_size and s_size
+#' are numeric. Fst/Fst^{pool} values are calculated for a sliding
+#' window.
+#' @param sorted Logical indicating if sites are sorted in ascending
+#' orderby ref_pos within each ref_id. Only used if sliding windows are calculated
+#' @param verbose Logical indicating if progress during site level calculations
+#' must be printed.
+#'
+#' @return A list with tibbles fst and w_fst corresponding to site
+#' and window level Fst calculations. w_fst is NULL if no window
+#' calculations are performed.
+#' 
+#' @export
+#' @importFrom magrittr %>%
+calculate_fst <- function(Dat, map,
+                          method = "Weir-Cockerham",
+                          support_thres = 1,
+                          w_size = NULL,
+                          s_size = NULL,
+                          sorted = FALSE,
+                          verbose = TRUE){
+  fst <- NULL
+  for(i in 1:nrow(Dat$info)){
+    f <- site_fst(freq = Dat$freq[i,],
+                  support = Dat$depth[i,],
+                  info = Dat$info[i,],
+                  map = map,
+                  support_thres = support_thres,
+                  method = method)
+    
+    f$site_id <- Dat$info$site_id[i]
+    f$ref_id <- Dat$info$ref_id[i]
+    f$ref_pos <- Dat$info$ref_pos[i]
+    fst <- fst %>%
+      dplyr::bind_rows(f)
+    
+    if(verbose && ((i %% 1000) == 0))
+      cat(i, "\n")
+  }
+  
+  if(method == "Weir-Cockerham"){
+    if(verbose)
+      cat("Calculating Fst.\n")
+    fst <- fst %>%
+      dplyr::mutate(Fst = a / (a + b + c)) %>%
+      dplyr::mutate(Fst = replace(Fst, Fst < 0, 0))
+  }else if(method == "Fstpool"){
+    if(verbose)
+      cat("Calculating Fst_pool.\n")
+    fst <- fst %>%
+      dplyr::mutate(Fst_pool = (MSP - MSI) / (MSP + ((n_c - 1) * MSI)) ) %>%
+      dplyr::mutate(Fst_pool = replace(Fst_pool, Fst_pool < 0, 0))
+  }
+  
+  w_fst <- NULL
+  if(is.numeric(w_size) && is.numeric(s_size)){
+    if(verbose)
+      cat("Calculating multilocus Fst across sliding window.\n")
+    w_fst <- fst %>%
+      split(.$ref_id) %>%
+      purrr::map_dfr(ref_window_fst, w_size = 1000, s_size = 300, sorted = sorted) 
+  }
+  
+  return(list(fst = fst, w_fst = w_fst))
+}
+
+
+
+
+
+
+
 #' Fixation Index (Fst) for one site
 #' 
 #' Takes allele frequency data from one site only

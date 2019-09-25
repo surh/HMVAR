@@ -29,56 +29,6 @@ map$Group %>% table
 #                             depth_thres = support_thres,
 #                             verbose = FALSE)
 
-calculate_fst <- function(Dat, map,
-                          method = "Weir-Cockerham",
-                          support_thres = 1,
-                          w_size = NULL,
-                          s_size = NULL,
-                          sorted = FALSE,
-                          verbose = TRUE){
-  fst <- NULL
-  # start_time <- date()
-  # start_time
-  for(i in 1:nrow(Dat$info)){
-    f <- site_fst(freq = Dat$freq[i,],
-                  support = Dat$depth[i,],
-                  info = Dat$info[i,],
-                  map = map,
-                  support_thres = support_thres,
-                  method = method)
-    
-    f$site_id <- Dat$info$site_id[i]
-    f$ref_id <- Dat$info$ref_id[i]
-    f$ref_pos <- Dat$info$ref_pos[i]
-    fst <- fst %>%
-      dplyr::bind_rows(f)
-    
-    if(verbose && ((i %% 1000) == 0))
-      cat(i, "\n")
-  }
-  # end_time <- date()
-  # end_time
-  
-  if(method == "Weir-Cockerham"){
-    fst <- fst %>%
-      dplyr::mutate(Fst = a / (a + b + c)) %>%
-      dplyr::mutate(Fst = replace(Fst, Fst < 0, 0))
-  }else if(method == "Fstpool"){
-    fst <- fst %>%
-      dplyr::mutate(Fst_pool = (MSP - MSI) / (MSP + ((n_c - 1) * MSI)) ) %>%
-      dplyr::mutate(Fst_pool = replace(Fst_pool, Fst_pool < 0, 0))
-  }
-    
-  if(is.numeric(w_size) && is.numeric(s_size)){
-    w_fst <- fst %>%
-      split(.$ref_id) %>%
-      purrr::map_dfr(ref_window_fst, w_size = 1000, s_size = 300, sorted = sorted) 
-  }else{
-    return(list(fst = fst, w_fst = NULL))
-  }
-  
-  return(list(fst = fst, w_fst = w_fst))
-}
 
 fst <- calculate_fst(Dat = list(info = Dat$info[1:10000, ],
                                 depth = Dat$depth[1:10000,],
