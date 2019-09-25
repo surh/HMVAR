@@ -15,12 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with HMVAR.  If not, see <http://www.gnu.org/licenses/>
 
-
-
-
-
-
-
 #' Calculate Fixation Index (Fst)
 #' 
 #' Calculates Fst from imported midas data
@@ -102,12 +96,6 @@ calculate_fst <- function(Dat, map,
   return(list(fst = fst, w_fst = w_fst))
 }
 
-
-
-
-
-
-
 #' Fixation Index (Fst) for one site
 #' 
 #' Takes allele frequency data from one site only
@@ -132,7 +120,6 @@ calculate_fst <- function(Dat, map,
 #' 'Weir-Cockerham' method from 1984, and the 'Fstpool' methods are implemented.
 #'
 #' @return A tibble
-#' @export
 #' 
 #' @importFrom magrittr %>%
 site_fst <- function(freq, support, info,
