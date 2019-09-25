@@ -37,7 +37,7 @@
 #' @param support_thres Minimum value in support tibble to keep a sample
 #' for this site
 #' @param method The method to calculate Fst. Currently only the
-#' Weir-Cockerham method from 1984, and the Fstpool methods are implemented.
+#' 'Weir-Cockerham' method from 1984, and the 'Fstpool' methods are implemented.
 #'
 #' @return A tibble
 #' @export
@@ -76,7 +76,20 @@ site_fst <- function(freq, support, info,
                           p_mean = p_mean, S_sqrd = S_sqrd,
                           h_mean = h_mean,
                           a = a, b = b,  c = c)
+    # res <- res %>%
+    #   dplyr::mutate(Fst = a / (a + b + c))
   }else if(method == "Fstpool"){
+    # Make pools
+    dat <- dat %>%
+      split(.$Group) %>%
+      purrr::map_dfr(function(d){
+        tibble::tibble(#site_id = unique(d$site_id),
+                       depth = sum(d$depth),
+                       freq = sum(d$depth * d$freq) / sum(d$depth),
+                       count = sum(round(d$freq * d$depth)),
+                       n_ind = nrow(d))
+      }, .id = "Group")
+    
     # Parameters
     C_1 <- sum(dat$depth)
     C_2 <- sum(dat$depth ^ 2)
@@ -97,7 +110,8 @@ site_fst <- function(freq, support, info,
                           p_mean = pi_k,
                           MSI = MSI,
                           MSP = MSP)
-    
+    # res <- res %>%
+    #   dplyr::mutate(Fst_pool = (MSP - MSI) / (MSP + ((n_c - 1) * MSI)) )
   }else{
     stop("ERROR: Invalid method", call. = TRUE)
   }
@@ -171,8 +185,17 @@ window_fst <- function(dat, w_size = 1000, s_size = 300, sorted = FALSE){
     
     res <- tibble::tibble(start = start, end = end,
                           ref_id = unique(window$ref_id),
-                          n_sites = nrow(window),
-                          Fst = sum(window$a / sum(window$a + window$b + window$c)))
+                          n_sites = nrow(window))
+    
+    if(is.numeric(window$a) && is.numeric(window$b) && is.numeric(window$c)){
+      res <- res %>%
+        dplyr::mutate(Fst = sum(window$a / sum(window$a + window$b + window$c)))
+    }
+    if(is.numeric(window$n_c) && is.numeric(window$MSI && is.numeric(window$MSP))){
+      res <- res %>%
+        dplyr::mutate(Fst_pool = sum(window$MSP - window$MSI) / sum(window$MSP + ((window$n_c - 1) * window$MSI)))
+    }
+    
     Res <- Res %>%
       dplyr::bind_rows(res)
     left_ii <- curr_left

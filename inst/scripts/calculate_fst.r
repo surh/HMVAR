@@ -13,63 +13,71 @@ map <- map %>% filter(sample %in% colnames(Dat$freq))
 map$Group %>% table
 
 
-i <- 1
-freq <- Dat$freq[i,]
-support <- Dat$depth[i,]
-info <- Dat$info[i, ]
-map <- map
-support_thres <- 1
-method = "Fst_pool"
+# i <- 1
+# freq <- Dat$freq[i,]
+# support <- Dat$depth[i,]
+# info <- Dat$info[i, ]
+# map <- map
+# support_thres <- 1
+# method = "Fst_pool"
+# 
+# dat <- match_freq_and_depth(freq = freq,
+#                             depth = support,
+#                             info = info,
+#                             map = map,
+#                             depth_thres = support_thres,
+#                             verbose = FALSE)
 
-dat <- match_freq_and_depth(freq = freq,
-                            depth = support,
-                            info = info,
-                            map = map,
-                            depth_thres = support_thres,
-                            verbose = FALSE)
-
-# Make pools
-dat <- dat %>%
-  split(.$Group) %>%
-  purrr::map_dfr(function(d){
-    tibble::tibble(site_id = unique(d$site_id),
-                   depth = sum(d$depth),
-                   freq = sum(d$depth * d$freq) / sum(d$depth),
-                   count = sum(round(d$freq * d$depth)),
-                   n_ind = nrow(d))
-  }, .id = "Group")
-dat
-
-
-
-
-
-
-fst <- NULL
-start_time <- date()
-start_time
-for(i in 1:nrow(Dat$info)){
-  f <- site_fst(freq = Dat$freq[i,],
-                depth = Dat$depth[i,],
-                info = Dat$info[i,],
-                map = map,
-                depth_thres = 1)
-  f$site_id <- Dat$info$site_id[i]
-  f$ref_id <- Dat$info$ref_id[i]
-  f$ref_pos <- Dat$info$ref_pos[i]
-  fst <- fst %>%
-    bind_rows(f)
+calculate_fst <- function(Dat, method = "Weir-Cockerham",
+                          support_thres = 1,
+                          w_size = NULL,
+                          s_size = NULL,
+                          sorted = FALSE,
+                          verbose = TRUE){
+  fst <- NULL
+  # start_time <- date()
+  # start_time
+  for(i in 1:nrow(Dat$info)){
+    f <- site_fst(freq = Dat$freq[i,],
+                  depth = Dat$depth[i,],
+                  info = Dat$info[i,],
+                  map = map,
+                  support_thres = support_thres,
+                  method = method)
+    
+    f$site_id <- Dat$info$site_id[i]
+    f$ref_id <- Dat$info$ref_id[i]
+    f$ref_pos <- Dat$info$ref_pos[i]
+    fst <- fst %>%
+      dplyr::bind_rows(f)
+    
+    if(verbose && ((i %% 1000) == 0))
+      cat(i, "\n")
+  }
+  # end_time <- date()
+  # end_time
   
-  if((i %% 1000) == 0)
-    cat(i, "\n")
+  if(method == ""){
+    fst <- fst %>%
+      dplyr::mutate(Fst = a / (a + b + c)) %>%
+      dplyr::mutate(Fst = replace(Fst, Fst < 0, 0))
+  }else if(method == ""){
+    fst <- fst %>%
+      dplyr::mutate(Fst_pool = (MSP - MSI) / (MSP + ((n_c - 1) * MSI)) ) %>%
+      dplyr::mutate(Fst_pool = replace(Fst_poo1, Fst_pool < 0, 0))
+  }
+    
+  
+  if(is.numeric(w_size) && is.numeric(s_size)){
+    w_fst <- fst %>%
+      split(.$ref_id) %>%
+      purrr::map_dfr(ref_window_fst, w_size = 1000, s_size = 300, sorted = sorted) 
+  }
 }
-end_time <- date()
-end_time
-fst
-fst <- fst %>%
-  mutate(Fst = a / (a + b + c)) %>%
-  mutate(Fst = replace(Fst, Fst < 0, 0))
-fst
+
+
+
+
 summary(fst$Fst)
 hist(fst$Fst)
 
