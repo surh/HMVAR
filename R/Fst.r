@@ -152,14 +152,18 @@ site_fst <- function(freq, support, info,
 #' 
 #' @importFrom magrittr %>%
 window_fst <- function(dat, w_size = 1000, s_size = 300, sorted = FALSE){
-  if(length(unique(dat$ref_id)))
-    stop("ERROR: dat must have only one value in ref_id")
+  # dat <- fst_pool$fst
+  if(length(unique(dat$ref_id)) > 1){
+    Res <- dat %>%
+      split(.$ref_id) %>%
+      purrr::map_dfr(window_fst, w_size = 1000, s_size = 300, sorted = sorted) 
+    return(Res)
+  }
   
   if(!sorted){
     dat <- dat %>%
       dplyr::arrange(ref_pos)
   }
-  
   
   Res <- NULL
   left_ii <- 1
@@ -180,20 +184,23 @@ window_fst <- function(dat, w_size = 1000, s_size = 300, sorted = FALSE){
     }
     
     window <- dat[(curr_left):(curr_right - 1), ] %>%
-      dplyr::filter(!is.na(Fst))
+      tidyr::drop_na()
+    # dplyr::filter(!is.na(Fst))
     # window %>% print(n = w_size)
     
     res <- tibble::tibble(start = start, end = end,
                           ref_id = unique(window$ref_id),
                           n_sites = nrow(window))
     
-    if(is.numeric(window$a) && is.numeric(window$b) && is.numeric(window$c)){
-      res <- res %>%
-        dplyr::mutate(Fst = sum(window$a / sum(window$a + window$b + window$c)))
+    if(all(c("a", "b", "c") %in% colnames(window))){
+      
+      fst <- sum(window$a) / sum(window$a + window$b + window$c)
+      res$Fst <- max(0, fst)
     }
-    if(is.numeric(window$n_c) && is.numeric(window$MSI && is.numeric(window$MSP))){
-      res <- res %>%
-        dplyr::mutate(Fst_pool = sum(window$MSP - window$MSI) / sum(window$MSP + ((window$n_c - 1) * window$MSI)))
+
+    if(all(c("n_c", "MSI", "MSP") %in% colnames(window))){
+      fst_pool <- sum(window$MSP - window$MSI) / sum(window$MSP + ((window$n_c - 1) * window$MSI))
+      res$Fst_pool <- max(0, fst_pool)
     }
     
     Res <- Res %>%
@@ -201,8 +208,8 @@ window_fst <- function(dat, w_size = 1000, s_size = 300, sorted = FALSE){
     left_ii <- curr_left
     right_ii <- curr_right - 1
   }
-  Res <- Res %>%
-    dplyr::mutate(Fst = replace(Fst, Fst < 0, 0))
+  # Res <- Res %>%
+  #   dplyr::mutate(Fst = replace(Fst, Fst < 0, 0))
   # Res
   # dat %>% filter(ref_pos >= 901 & ref_pos < 1901) %>% filter(!is.na(Fst)) %>% nrow
   
