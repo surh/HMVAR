@@ -26,7 +26,7 @@ for Fst calculations.}
 for this site}
 
 \item{method}{The method to calculate Fst. Currently only the
-Weir-Cockerham method from 1984 is implemented.}
+'Weir-Cockerham' method from 1984, and the 'Fstpool' methods are implemented.}
 }
 \value{
 A tibble

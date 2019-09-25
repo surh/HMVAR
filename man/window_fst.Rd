@@ -8,17 +8,22 @@ window_fst(dat, w_size = 1000, s_size = 300, sorted = FALSE)
 }
 \arguments{
 \item{dat}{A tibble with columns 'ref_id', 
-'ref_pos', 'a', 'b' and 'c'.}
+'ref_pos', and at leat one complete set of 
+c('a', 'b','c') and/or c("n_c", "MSI", "MSP"). The first
+set is used to calculate traditiona Fst according to
+Weirr & Cockerham 1984 and the second calculates
+Fst^{pool}.}
 
 \item{w_size}{Window size in bp.}
 
 \item{s_size}{Step size in bp.}
 
 \item{sorted}{logical indicating if the sites in dat.
-are already in sorted ascending order by ref_pos.}
+are already in sorted ascending order by ref_pos within each ref_id.}
 }
 \value{
-A tibble
+A tibble with columns start, end, ref_id, nsites, and
+Fst and/or Fst_pool columns depending on which estimators were calculated.
 }
 \description{
 Takes a tibble that has the a, b, and c parameters of

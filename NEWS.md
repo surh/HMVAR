@@ -54,8 +54,8 @@ or closest files than input files. Also dealing with different order of files.
 33. Bug fixed in `dos.r` when directory is passed. Print the combined results
 instead of last species only.
 34. Added `verbose` option to `match_freq_and_depth`
-35. Added `site_fst` function. (Issue https://github.com/surh/HMVAR/issues/33)
-36. Added `window_fst` function. (Issue https://github.com/surh/HMVAR/issues/33)
+35. Added `window_fst` & `calculate_fst` functions for various Fst 
+calculations (Issue https://github.com/surh/HMVAR/issues/33).
 
 # 0.1-0
 1. Added exectuable script to perform mktest.

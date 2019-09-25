@@ -2,7 +2,7 @@ library(HMVAR)
 library(tidyverse)
 library(poolfstat)
 setwd("~/micropopgen/exp/2019/today")
-# devtools::document(pkg = "~/micropopgen/src/HMVAR/")
+devtools::document(pkg = "~/micropopgen/src/HMVAR/")
 
 map <- read_tsv("midas/map.txt")
 map <- map %>% select(sample=ID, Group)
