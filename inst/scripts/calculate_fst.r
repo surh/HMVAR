@@ -155,6 +155,8 @@ p1 <- ggplot(fst_pool$fst, aes(x = ref_pos, y = Fst)) +
   AMOR::theme_blackbox()
 p1
 
+summary(fst_pool$fst$FSTpool)
+hist(log10(fst_pool$fst$FSTpool))
 
 # summary(fst$Fst)
 # hist(fst$Fst)

@@ -141,77 +141,83 @@ site_fst <- function(freq, support, info,
 #' contig.
 #'
 #' @param dat A tibble with columns 'ref_id', 
-#' 'ref_pos', 'a', 'b' and 'c'.
+#' 'ref_pos', and at leat one complete set of 
+#' c('a', 'b','c') and/or c("n_c", "MSI", "MSP"). The first
+#' set is used to calculate traditiona Fst according to
+#' Weirr & Cockerham 1984 and the second calculates
+#' Fst^{pool}.
 #' @param w_size Window size in bp.
 #' @param s_size Step size in bp.
 #' @param sorted logical indicating if the sites in dat.
-#' are already in sorted ascending order by ref_pos.
+#' are already in sorted ascending order by ref_pos within each ref_id.
 #'
-#' @return A tibble
+#' @return A tibble with columns start, end, ref_id, nsites, and
+#' Fst and/or Fst_pool columns depending on which estimators were calculated.
 #' @export
 #' 
 #' @importFrom magrittr %>%
 window_fst <- function(dat, w_size = 1000, s_size = 300, sorted = FALSE){
   # dat <- fst_pool$fst
   if(length(unique(dat$ref_id)) > 1){
+    # If more than one contig/chromosome, recursively process each one
     Res <- dat %>%
       split(.$ref_id) %>%
-      purrr::map_dfr(window_fst, w_size = 1000, s_size = 300, sorted = sorted) 
-    return(Res)
-  }
-  
-  if(!sorted){
-    dat <- dat %>%
-      dplyr::arrange(ref_pos)
-  }
-  
-  Res <- NULL
-  left_ii <- 1
-  right_ii <- 2
-  for(start in seq(from = 1,
-                   to = max(dat$ref_pos) - s_size + 1,
-                   by = s_size)){
-    end <- start + w_size
-    
-    for(curr_left in left_ii:nrow(dat)){
-      if(dat$ref_pos[curr_left] >= start)
-        break
+      purrr::map_dfr(window_fst,
+                     w_size = w_size,
+                     s_size = s_size,
+                     sorted = sorted) 
+    # return(Res)
+  }else{
+    # If only one contig/chr
+    if(!sorted){
+      dat <- dat %>%
+        dplyr::arrange(ref_pos)
     }
     
-    for(curr_right in right_ii:nrow(dat)){
-      if(dat$ref_pos[curr_right] > end - 1)
-        break
-    }
-    
-    window <- dat[(curr_left):(curr_right - 1), ] %>%
-      tidyr::drop_na()
-    # dplyr::filter(!is.na(Fst))
-    # window %>% print(n = w_size)
-    
-    res <- tibble::tibble(start = start, end = end,
-                          ref_id = unique(window$ref_id),
-                          n_sites = nrow(window))
-    
-    if(all(c("a", "b", "c") %in% colnames(window))){
+    Res <- NULL
+    left_ii <- 1
+    right_ii <- 2
+    for(start in seq(from = 1,
+                     to = max(dat$ref_pos) - s_size + 1,
+                     by = s_size)){
+      end <- start + w_size
       
-      fst <- sum(window$a) / sum(window$a + window$b + window$c)
-      res$Fst <- max(0, fst)
+      for(curr_left in left_ii:nrow(dat)){
+        if(dat$ref_pos[curr_left] >= start)
+          break
+      }
+      
+      for(curr_right in right_ii:nrow(dat)){
+        if(dat$ref_pos[curr_right] > end - 1)
+          break
+      }
+      
+      window <- dat[(curr_left):(curr_right - 1), ] %>%
+        tidyr::drop_na()
+      # dplyr::filter(!is.na(Fst))
+      # window %>% print(n = w_size)
+      
+      res <- tibble::tibble(start = start, end = end,
+                            ref_id = unique(window$ref_id),
+                            n_sites = nrow(window))
+      
+      if(all(c("a", "b", "c") %in% colnames(window))){
+        
+        fst <- sum(window$a) / sum(window$a + window$b + window$c)
+        res$Fst <- max(0, fst)
+      }
+      
+      if(all(c("n_c", "MSI", "MSP") %in% colnames(window))){
+        fst_pool <- sum(window$MSP - window$MSI) / sum(window$MSP + ((window$n_c - 1) * window$MSI))
+        res$Fst_pool <- max(0, fst_pool)
+      }
+      
+      Res <- Res %>%
+        dplyr::bind_rows(res)
+      left_ii <- curr_left
+      right_ii <- curr_right - 1
     }
-
-    if(all(c("n_c", "MSI", "MSP") %in% colnames(window))){
-      fst_pool <- sum(window$MSP - window$MSI) / sum(window$MSP + ((window$n_c - 1) * window$MSI))
-      res$Fst_pool <- max(0, fst_pool)
-    }
-    
-    Res <- Res %>%
-      dplyr::bind_rows(res)
-    left_ii <- curr_left
-    right_ii <- curr_right - 1
   }
-  # Res <- Res %>%
-  #   dplyr::mutate(Fst = replace(Fst, Fst < 0, 0))
-  # Res
-  # dat %>% filter(ref_pos >= 901 & ref_pos < 1901) %>% filter(!is.na(Fst)) %>% nrow
   
   return(Res)
 }
