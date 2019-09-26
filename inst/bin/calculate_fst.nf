@@ -45,8 +45,8 @@ process fst{
   ${workflow.projectDir}/calculate_fst.r \
     $indir \
     --map_file $map \
-    --outdir out/
-    --type single
+    --outdir out/ \
+    --type single \
     --method $method
   """
 }
