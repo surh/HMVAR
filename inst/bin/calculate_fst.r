@@ -80,7 +80,7 @@ library(tidyverse)
 library(HMVAR)
 
 # Read map
-map <- read_tsv("midas/map.txt") %>% select(sample=ID, Group)
+map <- read_tsv(args$map_file) %>% select(sample=ID, Group)
 
 # Get list of midas_dirs
 if(args$type == 'multi'){
