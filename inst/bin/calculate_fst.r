@@ -95,7 +95,7 @@ if(!dir.exists(args$outdir)){
 }
 
 # Calculate for each midas dir
-args$midas_dir %>%
+res <- args$midas_dir %>%
   purrr::map(function(midas_dir, method,
                       support_thres = 1,
                       map, sorted, outdir){
