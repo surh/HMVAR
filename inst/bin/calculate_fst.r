@@ -60,7 +60,7 @@ process_arguments <- function(){
   
   # Process arguments
   # Check type
-  if(!(args$type %in% c('sinlge', 'multi')))
+  if(!(args$type %in% c('single', 'multi')))
     stop("ERROR: --type must be one of 'single' or 'multi'")
   
   # Check method
@@ -122,6 +122,7 @@ args$midas_dir %>%
     filename <- file.path(outdir, paste0(spec, ".fst.txt"))
     readr::write_tsv(fst$fst, filename)
     
+    return(1)
   }, method = args$method,
   support_thres = 1,
   map = map,
