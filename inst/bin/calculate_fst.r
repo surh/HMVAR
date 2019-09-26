@@ -17,9 +17,6 @@
 # You should have received a copy of the GNU General Public License
 # along with HMVAR.  If not, see <http://www.gnu.org/licenses/>.
 
-# setwd("~/micropopgen/exp/2019/today")
-# devtools::document(pkg = "~/micropopgen/src/HMVAR/")
-
 library(argparser)
 
 process_arguments <- function(){
@@ -104,12 +101,9 @@ res <- args$midas_dir %>%
     
     # Read data
     Dat <- read_midas_data(midas_dir = midas_dir, map = map, cds_only = FALSE)
-    Dat <- list(info = Dat$info[1:1000, ],
-                depth = Dat$depth[1:1000,],
-                freq = Dat$freq[1:1000,])
-    
-    # map <- map %>% filter(sample %in% colnames(Dat$freq))
-    # map$Group %>% table
+    # Dat <- list(info = Dat$info[1:1000, ],
+    #             depth = Dat$depth[1:1000,],
+    #             freq = Dat$freq[1:1000,])
     
     # Calculate Fst
     fst <- calculate_fst(Dat = Dat,
