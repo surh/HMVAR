@@ -20,8 +20,6 @@
 # setwd("~/micropopgen/exp/2019/today")
 # devtools::document(pkg = "~/micropopgen/src/HMVAR/")
 
-library(tidyverse)
-library(HMVAR)
 library(argparser)
 
 process_arguments <- function(){
@@ -79,6 +77,10 @@ process_arguments <- function(){
 
 # Read arguments
 args <- process_arguments()
+
+# Dependencies for script
+library(tidyverse)
+library(HMVAR)
 
 # Read map
 map <- read_tsv("midas/map.txt") %>% select(sample=ID, Group)
