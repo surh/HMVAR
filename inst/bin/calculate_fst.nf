@@ -33,7 +33,7 @@ process fst{
   input:
   file indir from INDIRS
   val method from params.method
-  file map from params.file
+  file map from params.map
 
   output:
   file "out/*.fst.txt"
