@@ -23,8 +23,9 @@ params.map = "map.txt"
 params.method = "Fstpool"
 params.outdir = "output"
 
-println params.indir
+// println params.indir
 INDIRS = Channel.fromPath("${params.indir}/*", type: 'dir')
+map = file(params.map)
 
 process fst{
   label 'r'
@@ -33,7 +34,7 @@ process fst{
   input:
   file indir from INDIRS
   val method from params.method
-  file map from params.map
+  file map
 
   output:
   file "out/*.fst.txt"
