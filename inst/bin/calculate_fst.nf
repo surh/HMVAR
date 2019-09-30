@@ -29,7 +29,7 @@ map = file(params.map)
 
 process fst{
   label 'r'
-  publishDir params.outdir, mode: 'rellink'
+  publishDir params.outdir, mode: 'rellink', saveAs{"out/${indir}.fst.txt" : "${indir}.fst.txt"}
 
   input:
   file indir from INDIRS
@@ -37,7 +37,7 @@ process fst{
   file map
 
   output:
-  file "out/*.fst.txt"
+  file "out/${imdir}.fst.txt" optional true
 
   // exec:
   // printn indir
