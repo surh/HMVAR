@@ -120,5 +120,5 @@ res <- args$midas_dir %>%
   }, method = args$method,
   support_thres = 1,
   map = map,
-  sorted = args$sorted,
+  sorted = TRUE,
   outdir = args$outdir)
