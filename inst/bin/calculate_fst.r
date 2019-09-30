@@ -105,16 +105,20 @@ res <- args$midas_dir %>%
     #             depth = Dat$depth[1:1000,],
     #             freq = Dat$freq[1:1000,])
     
-    # Calculate Fst
-    fst <- calculate_fst(Dat = Dat,
-                         method = method,
-                         support_thres = support_thres,
-                         map = map %>% filter(sample %in% colnames(Dat$freq)),
-                         sorted = sorted,
-                         verbose = TRUE)
-    
-    filename <- file.path(outdir, paste0(spec, ".fst.txt"))
-    readr::write_tsv(fst$fst, filename)
+    if(ncol(Dat$freq) > 1){
+      # Calculate Fst
+      fst <- calculate_fst(Dat = Dat,
+                           method = method,
+                           support_thres = support_thres,
+                           map = map %>% filter(sample %in% colnames(Dat$freq)),
+                           sorted = sorted,
+                           verbose = TRUE)
+      
+      filename <- file.path(outdir, paste0(spec, ".fst.txt"))
+      readr::write_tsv(fst$fst, filename)
+    }else{
+      cat("No samples for species ", spec, "\n")
+    }
     
     return(1)
   }, method = args$method,
