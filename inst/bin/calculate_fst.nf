@@ -37,7 +37,7 @@ process fst{
   file map
 
   output:
-  file "out/${imdir}.fst.txt" optional true
+  file "out/${indir}.fst.txt" optional true
 
   // exec:
   // printn indir
