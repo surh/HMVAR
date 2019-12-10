@@ -18,7 +18,7 @@
 #' Benchmark mice imputation
 #' 
 #' Hide a percent of the observations and compare
-#' the results of imputation via \link{mice::mice}
+#' the results of imputation via \link[mice]{mice}
 #' with the original observations.
 #'
 #' @param geno A data table in BIMBAM format. Must contain
@@ -30,18 +30,20 @@
 #' Column ID must correspond to column site_id in geno.
 #' @param outdir Output directory to write the results.
 #' @param p Fraction of observations to hide.
-#' @param m Number of imputations performed. See \link{mice::mice}
+#' @param m Number of imputations performed. See \link[mice]{mice}
 #' documentation.
 #' @param verbose Whether to print progress on imputation. 
 #' @param seed Seed for random sambling of data and for imputation
 #' if needed.
+#' @param block_size Number of markers to use to impute each marker.
 #'
 #' @return A list with elements r, p.imputed, res, and imputed_geno_file.
 #' @export
 #' 
 #' @importFrom magrittr %>%
 benchmark_imputation <- function(geno, snp, outdir, p = 0.1 ,
-                                 m = 5, verbose = FALSE, seed = NA){
+                                 m = 5, verbose = FALSE, seed = NA,
+                                 block_size = 100){
   dir.create(outdir)
   
   # Select positions to impute
@@ -79,7 +81,8 @@ benchmark_imputation <- function(geno, snp, outdir, p = 0.1 ,
                                       verbose = verbose,
                                       prefix = "imputed",
                                       return_table = TRUE,
-                                      seed = seed))
+                                      seed = seed,
+                                      block_size = block_size))
   
   # Check imputation output
   if( any(imp$imp$site_id != geno_hidden$site_id)){
@@ -91,7 +94,7 @@ benchmark_imputation <- function(geno, snp, outdir, p = 0.1 ,
   
   # Collect imputed values
   res$imputed <- (imp$imp %>%
-                    select(-site_id, -minor_allele, -major_allele) %>%
+                    dplyr::select(-site_id, -minor_allele, -major_allele) %>%
                     as.matrix)[ii]
   res$path <- outdir
   
@@ -234,6 +237,8 @@ gemma_kinship <- function(geno_file, pheno_file, snp_file,
 #' manual for details.
 #' @param kinship_file Kinship file in GEMMA format. See GEMMA
 #' manual for details.
+#' @param cov_file Covariates file in BIMBAM format. See GEMMA
+#' manual for details.
 #' @param gemma GEMMA executable.
 #' @param outdir directory to write output.
 #' @param maf Minor allele frequency threshold for SNPs to test.
@@ -303,6 +308,7 @@ gemma_lmm <- function(geno_file, pheno_file, snp_file, kinship_file,
 #' the output file path and the imputed table. If FALSE, only the file path
 #' will be returned.
 #' @param seed Seed for imputation. See \link{mice} documentation.
+#' @param block_size Number of markers to use to impute each marker.
 #'
 #' @return Either the output file path, or a list containing the file path
 #' and the imputed table.
@@ -316,7 +322,8 @@ mice_impute <- function(geno, snp,
                         verbose = FALSE,
                         prefix = "imputed",
                         return_table = FALSE,
-                        seed = NA){
+                        seed = NA,
+                        block_size = 100){
   
   if(any(geno$site_id != snp$ID)){
     stop("ERROR: geno and snp tables do not match", call. = TRUE)
@@ -324,7 +331,7 @@ mice_impute <- function(geno, snp,
   
   imp <- geno %>%
     split(snp$chr) %>%
-    purrr::map_dfr(~tidy_mice(.), m1 = m, verbose = verbose, seed = seed) %>%
+    purrr::map_dfr(~tidy_mice(.), m1 = m, verbose = verbose, seed = seed, block_size = block_size) %>%
     dplyr::arrange(match(site_id, snp$ID))
   
   # Write results
@@ -347,14 +354,17 @@ mice_impute <- function(geno, snp,
 #' 
 #' Calls mice on data table
 #'
-#' @param d 
-#' @param m 
-#' @param verbose 
+#' @param d A tibble
+#' @param m Number of imputations
+#' @param verbose Print info while running
+#' @param seed Seed for mice
+#' @param block_size Number of markers to use to impute each marker.
 #'
 #' @return A tibble with imputed results
 #' 
 #' @importFrom magrittr %>%
-tidy_mice <- function(d, m = 5, verbose = FALSE, seed = NA){
+tidy_mice <- function(d, m = 5, verbose = FALSE, seed = NA, block_size = 100){
+  cat("Welcome to tidy...\n")
   res <- d %>%
     dplyr::select(site_id, minor_allele, major_allele)
   
@@ -366,11 +376,41 @@ tidy_mice <- function(d, m = 5, verbose = FALSE, seed = NA){
     return(res %>% dplyr::left_join(d, by = "site_id"))
   }
   
+  if(block_size > 0){
+    pred <- sapply(1:nrow(d), create_blocks, block_size = block_size, total_pos = nrow(d))
+    diag(pred) <- 0
+  }else{
+    pred <- matrix(1, nrow = nrow(d), ncol = nrow(10))
+    diag(pred) <- 0
+  }
+  
+  ids <- d$site_id
+  samples <- colnames(d)[-(1:3)]
   d <- d %>%
-    dplyr::select(-minor_allele, -major_allele) %>%
-    mice::mice(m = m, printFlag = verbose, seed = seed) %>% 
+    dplyr::select(-site_id, -minor_allele, -major_allele) %>%
+    t %>% mice::mice(m = m, printFlag = verbose, seed = seed, method = "pmm", predictorMatrix = pred) %>%
     mice::complete() %>%
-    dplyr::as_tibble()
+    t
+  colnames(d) <- samples
+  d <- bind_cols(tibble(site_id = ids), as_tibble(d))
+  # d <- d %>%
+  #   dplyr::select(-minor_allele, -major_allele) %>%
+  #   mice::mice(m = m, printFlag = verbose, seed = seed) %>% 
+  #   mice::complete() %>%
+  #   dplyr::as_tibble()
   
   res %>% dplyr::left_join(d, by = "site_id")
+}
+
+
+create_blocks <- function(i, block_size=3, total_pos=10){
+  start <- i - ceiling(block_size / 2) + 1
+  end <- start + block_size - 1
+  start <- max(start, 1)
+  end <- min(total_pos, end)
+  
+  v <- rep(0, length.out = total_pos)
+  v[start:end] <- 1
+  
+  v
 }

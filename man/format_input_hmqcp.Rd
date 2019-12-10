@@ -7,7 +7,7 @@
 format_input_hmqcp(name, counts_file, map_file, collapse_level = 6)
 }
 \arguments{
-\item{name}{name}
+\item{name}{name (not used anymore?)}
 
 \item{counts_file}{counts file}
 

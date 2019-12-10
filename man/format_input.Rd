@@ -8,6 +8,17 @@
 format_input(name, counts_file, taxonomy_file, Map = Map,
   collapse_level = NULL)
 }
+\arguments{
+\item{name}{name(not used anymore?)}
+
+\item{counts_file}{A file with counts}
+
+\item{taxonomy_file}{A file with taxonomy}
+
+\item{Map}{A mapping data.frame}
+
+\item{collapse_level}{Level to collapse taxonomy}
+}
 \value{
 A Dataset object
 }

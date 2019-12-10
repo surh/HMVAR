@@ -20,6 +20,9 @@ manual for details.}
 \item{kinship_file}{Kinship file in GEMMA format. See GEMMA
 manual for details.}
 
+\item{cov_file}{Covariates file in BIMBAM format. See GEMMA
+manual for details.}
+
 \item{gemma}{GEMMA executable.}
 
 \item{outdir}{directory to write output.}

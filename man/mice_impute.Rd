@@ -5,7 +5,8 @@
 \title{Imputation via mice}
 \usage{
 mice_impute(geno, snp, outdir = "imputed/", m = 5, verbose = FALSE,
-  prefix = "imputed", return_table = FALSE, seed = NA)
+  prefix = "imputed", return_table = FALSE, seed = NA,
+  block_size = 100)
 }
 \arguments{
 \item{geno}{A data table with genotype information. First three columns
@@ -31,6 +32,8 @@ the output file path and the imputed table. If FALSE, only the file path
 will be returned.}
 
 \item{seed}{Seed for imputation. See \link{mice} documentation.}
+
+\item{block_size}{Number of markers to use to impute each marker.}
 }
 \value{
 Either the output file path, or a list containing the file path

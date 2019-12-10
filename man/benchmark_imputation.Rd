@@ -5,7 +5,7 @@
 \title{Benchmark mice imputation}
 \usage{
 benchmark_imputation(geno, snp, outdir, p = 0.1, m = 5,
-  verbose = FALSE, seed = NA)
+  verbose = FALSE, seed = NA, block_size = 100)
 }
 \arguments{
 \item{geno}{A data table in BIMBAM format. Must contain
@@ -21,19 +21,21 @@ Column ID must correspond to column site_id in geno.}
 
 \item{p}{Fraction of observations to hide.}
 
-\item{m}{Number of imputations performed. See \link{mice::mice}
+\item{m}{Number of imputations performed. See \link[mice]{mice}
 documentation.}
 
 \item{verbose}{Whether to print progress on imputation.}
 
 \item{seed}{Seed for random sambling of data and for imputation
 if needed.}
+
+\item{block_size}{Number of markers to use to impute each marker.}
 }
 \value{
 A list with elements r, p.imputed, res, and imputed_geno_file.
 }
 \description{
 Hide a percent of the observations and compare
-the results of imputation via \link{mice::mice}
+the results of imputation via \link[mice]{mice}
 with the original observations.
 }

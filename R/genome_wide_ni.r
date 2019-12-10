@@ -30,7 +30,6 @@
 #' 
 #' @param file File to a tab-delimited file. Should have Dn,
 #' Ds, Pn, and Ps columns, and one row per gene.
-#' @param col_types Column definitions for \link{read_tsv}.
 #' @param na Vector corresponding to NaN values.
 #' 
 #' @return vector with NI and alpha
@@ -40,8 +39,11 @@
 #' @importFrom magrittr %>%
 #' 
 #' @export
-genome_wide_ni <- function(file, col_types = 'ccnnnnnnnnn', na = 'nan'){
-  mkres <- readr::read_tsv(file, col_types = col_types, na = na)
+genome_wide_ni <- function(file, na = c('nan',"NA","")){
+  mkres <- readr::read_tsv(file,
+                           col_types = readr::cols(.default = readr::col_double(),
+                                                   gene_id = readr::col_character()),
+                           na = na)
 
   # Cases where there were no genes that could be tested
   if(nrow(mkres) == 0)

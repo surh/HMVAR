@@ -37,6 +37,10 @@ phylotype2rdp <- function(x, split.char = ';'){
 #' Phylotype to RDP version 2
 #' 
 #' Slow version
+#' 
+#' @param x A character vector, one element per taxa
+#' @param split.char A character string indicating the field
+#' delimiter character
 phylotype2rdp2 <- function(x, split.char = ';'){
   sapply(strsplit(x, split = split.char), function(x){
     

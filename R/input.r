@@ -21,6 +21,12 @@
 #' pipeline of HMP (HMMCP). Count files must be pre-edited
 #' to remove trailing tab
 #' 
+#' @param name name(not used anymore?)
+#' @param counts_file A file with counts
+#' @param taxonomy_file A file with taxonomy
+#' @param Map A mapping data.frame
+#' @param collapse_level Level to collapse taxonomy
+#' 
 #' @return A Dataset object
 #' 
 #' @author Sur Herrera Paredes
@@ -79,7 +85,7 @@ format_input <- function(name, counts_file, taxonomy_file, Map = Map,
 #' and produces a genus level dataset for the fgour body sites
 #' of interest.
 #' 
-#' @param name name
+#' @param name name (not used anymore?)
 #' @param counts_file counts file
 #' @param map_file map file
 #' @param collapse_level collapse level
