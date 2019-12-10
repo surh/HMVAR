@@ -139,7 +139,7 @@ write_outputs <- function(dat, infile, suffix, outdir, pval_col){
   # Write table
   filename <- paste0(c(prefix, "DoS.table.txt"), collapse = ".")
   filename <- file.path(outdir, filename)
-  write_tsv(dos, filename)
+  write_tsv(dat, filename)
   
   # Produce plots
   if(sum(!is.na(dat$DoS)) > 1){
@@ -207,6 +207,8 @@ if(dir.exists(args$input)){
                                        Ds = col_integer(),
                                        Pn = col_integer(),
                                        Ps = col_integer()))
+      dat <- dat %>%
+        select(gene_id, Dn, Ds, Pn, Ps)
       
       if(!is.null(args$genes)){
         dat <- dat %>%
@@ -219,8 +221,14 @@ if(dir.exists(args$input)){
         pval_col <- 'p.value'
       }
       
-      dos <- calculate_dos(dat = dat, test = TRUE, clean = FALSE)
-      write_outputs(dat = dos, infile = input, suffix = args$suffix, outdir = args$outdir, pval_col = pval_col)
+      if(nrow(dat) > 0){
+        cat("\tCalculating DoS.\n")
+        dos <- calculate_dos(dat = dat, test = TRUE, clean = FALSE)
+        write_outputs(dat = dos, infile = input, suffix = args$suffix, outdir = args$outdir, pval_col = pval_col)
+      }else{
+        cat("\t", input, " did not have enough lines.\n")
+        dos <- tibble()
+      }
     }else if(args$dir_type == 'midas'){
       # Each input is a midas merge dir
       dos <- midas_dos(midas_dir = input,
@@ -234,10 +242,17 @@ if(dir.exists(args$input)){
     }else{
       stop("ERROR: --dir_type must be tabs or midas.")
     }
-    dos$input <- input
-    Res <- Res %>% bind_rows(dos)
+    if(nrow(dos) > 0){
+      cat("\tbinding...\n")
+      dos$input <- input
+      cat("dim dos:", dim(dos), "\n")
+      Res <- Res %>% bind_rows(dos)
+      cat("dim Res:", dim(Res), "\n")
+    }
   }
   # Write combined
+  cat("Writing combined...\n")
+  cat("===", dim(Res), "===\n")
   write_outputs(dat = Res, infile = "summary", suffix = '$', outdir = args$outdir, pval_col = pval_col)
 }else if(file.exists(args$input)){
     # Input is file
@@ -247,6 +262,9 @@ if(dir.exists(args$input)){
                                      Ds = col_integer(),
                                      Pn = col_integer(),
                                      Ps = col_integer()))
+    dat <- dat %>%
+      select(gene_id, Dn, Ds, Pn, Ps)
+    
     
     if(!is.null(args$genes)){
       dat <- dat %>%
@@ -259,8 +277,15 @@ if(dir.exists(args$input)){
       pval_col <- 'p.value'
     }
      
-    dos <- calculate_dos(dat = dat, test = TRUE, clean = FALSE)
-    write_outputs(dat = dos, infile = args$input, suffix = args$suffix, outdir = args$outdir, pval_col = pval_col)
+    if(nrow(dat) > 0){
+      cat("\tcaluclating DoS.\n")
+      dos <- calculate_dos(dat = dat, test = TRUE, clean = FALSE)
+      write_outputs(dat = dos, infile = args$input, suffix = args$suffix, outdir = args$outdir, pval_col = pval_col)
+    }else{
+      cat("\t",input, " did not have enough lines.\n")
+    }
 }else{
   stop("ERROR: input doesn't exist")
 }
+
+warnings()

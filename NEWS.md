@@ -1,3 +1,7 @@
+# 0.1-2
+1. Discard rows in closest files that have a dot (.) in the gene id column.
+2. Added background values for `gsea`.
+
 # 0.1-1
 1. Overall cleaning and NAMESPACE update
 2. Adding focal group map pre-processing option for
@@ -51,8 +55,11 @@ output file.
 31. Giving command line options to `manhattan_type.r` via `stitch_file,r`
 32. Glitches in `annotation_enrichments.r` executable. Allowing for more annotation
 or closest files than input files. Also dealing with different order of files.
-Discard rows in closest files that have a dot (.) in the gene id column.
-33. Added background values for `gsea`.
+33. Bug fixed in `dos.r` when directory is passed. Print the combined results
+instead of last species only.
+34. Added `verbose` option to `match_freq_and_depth`
+35. Added `window_fst` & `calculate_fst` functions for various Fst 
+calculations (Issue https://github.com/surh/HMVAR/issues/33).
 
 # 0.1-0
 1. Added exectuable script to perform mktest.
