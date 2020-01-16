@@ -21,9 +21,50 @@ library(tidyverse)
 library(HMVAR)
 
 # setwd("/cashew/users/sur/exp/fraserv/2020/today/gut")
-args <- list(input = "rerperms/Bacteroides_ovatus_58035.rer.fdr.txt",
-             annots = "annots/Bacteroides_ovatus_58035.emapper.annotations",
-             outdir = "output/")
+# args <- list(input = "rerperms/Bacteroides_ovatus_58035.rer.fdr.txt",
+#              annots = "annots/Bacteroides_ovatus_58035.emapper.annotations",
+#              outdir = "output/",
+#              plot = TRUE)
+# args <- list(input = "rerperms/Bacteroides_ovatus_58035.rer.fdr.txt",
+#              annots = "annots/",
+#              outdir = "output/",
+#              plot = TRUE)
+args <- list(input = "rerperms/",
+             annots = "annots/",
+             outdir = "output/",
+             plot = TRUE)
+# args <- list(input = "rerperms/",
+#              annots = "annots/Bacteroides_coprocola_61586.emapper.annotations",
+#              outdir = "output/",
+#              plot = TRUE)
+
+
+if(dir.exists(args$input)){
+  if(!dir.exists(args$annots)){
+    stop("ERROR: annots must be a direcotry if input is a directory", call. = TRUE)
+  }
+  args$input <- list.files(args$input, full.names = TRUE)
+  spec <- stringr::str_remove(basename(args$input), pattern = "\\.rer\\.fdr\\.txt$")
+  args$annots <- file.path(args$annots,paste0(spec, ".emapper.annotations"))
+  if(!all(file.exists(args$annots))){
+    cat(args$annots[ !file.exists(args$annots) ], "not found\n")
+    stop("ERROR: There must be annotation files for all genomes tested", call. = TRUE)
+  }
+}else if(file.exists(args$input)){
+  if(dir.exists(args$annots)){
+    spec <- stringr::str_remove(basename(args$input), pattern = "\\.rer\\.fdr\\.txt$")
+    args$annots <- file.path(args$annots, paste0(spec, ".emapper.annotations"))
+  }
+  if(!file.exists(args$annots)){
+    stop("ERROR: annots must be an existing file or a dir containing <spec>.emapper.annotations", call. = TRUE)
+  }
+}else{
+  stop("ERROR: input must be either an existing file or directory.", call. = TRUE)
+}
+
+args
+
+
 
 
 # Read data
@@ -72,9 +113,76 @@ RER %>%
          -"bestOG|evalue|score") %>%
   print(n = 30)
 
-RER 
+RER %>%
+  filter(!is.na(BiGG_reactions))
   
 
 
-terms_enrichment(dat = RE)
+go_enrichments <- terms_enrichment(dat = RER %>% select(gene_id, terms = GO_terms, score = FDR),
+                                  method = "gsea",
+                                  test = "ks",
+                                  alternative = "greater",
+                                  min_size = 10)
+ko_enrichments <- terms_enrichment(dat = RER %>% select(gene_id, terms = KEGG_KOs, score = FDR),
+                                   method = "gsea",
+                                   test = "ks",
+                                   alternative = "greater",
+                                   min_size = 10)
+og_enrichments <- terms_enrichment(dat = RER %>% select(gene_id, terms = OGs, score = FDR),
+                                   method = "gsea",
+                                   test = "ks",
+                                   alternative = "greater",
+                                   min_size = 10)
+bigg_enrichments <- terms_enrichment(dat = RER %>% select(gene_id, terms = BiGG_reactions, score = FDR),
+                                   method = "gsea",
+                                   test = "ks",
+                                   alternative = "greater",
+                                   min_size = 10)
+cog_enrichments <- terms_enrichment(dat = RER %>% select(gene_id, terms = COG_cat, score = FDR),
+                                     method = "gsea",
+                                     test = "ks",
+                                     alternative = "greater",
+                                     min_size = 10)
+
+# Try Rho GSEA
+RER %>%
+  filter(FDR <= 0.01) %>%
+  select(gene_id, terms = BiGG_reactions, score = Rho) %>%
+  filter(!is.na(terms))
+terms_enrichment(dat = RER %>%
+                   filter(FDR <= 0.01) %>%
+                   select(gene_id, terms = GO_terms, score = Rho),
+                 method = "gsea",
+                 test = "ks",
+                 alternative = "two.sided",
+                 min_size = 2)
+terms_enrichment(dat = RER %>%
+                   filter(FDR <= 0.01) %>%
+                   select(gene_id, terms = KEGG_KOs, score = Rho),
+                 method = "gsea",
+                 test = "ks",
+                 alternative = "two.sided",
+                 min_size = 2)
+terms_enrichment(dat = RER %>%
+                   filter(FDR <= 0.01) %>%
+                   select(gene_id, terms = OGs, score = Rho),
+                 method = "gsea",
+                 test = "ks",
+                 alternative = "two.sided",
+                 min_size = 2)
+terms_enrichment(dat = RER %>%
+                   filter(FDR <= 0.01) %>%
+                   select(gene_id, terms = BiGG_reactions, score = Rho),
+                 method = "gsea",
+                 test = "ks",
+                 alternative = "two.sided",
+                 min_size = 2)
+terms_enrichment(dat = RER %>%
+                   filter(FDR <= 0.01) %>%
+                   select(gene_id, terms = COG_cat, score = Rho),
+                 method = "gsea",
+                 test = "ks",
+                 alternative = "two.sided",
+                 min_size = 2)
+
 
