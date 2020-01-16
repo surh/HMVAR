@@ -1,3 +1,7 @@
+# 0.1-2
+1. Discard rows in closest files that have a dot (.) in the gene id column.
+2. Added background values for `gsea`.
+
 # 0.1-1
 1. Overall cleaning and NAMESPACE update
 2. Adding focal group map pre-processing option for

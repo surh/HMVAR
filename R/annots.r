@@ -282,10 +282,22 @@ term_gsea <- function(genes, scores, test = "wilcoxon",
   ii <- names(scores) %in% genes
   
   if(sum(ii) < min_size){
-    return(tibble::tibble(size = sum(ii), statistic = NA, p.value = NA))
+    return(tibble::tibble(size = sum(ii),
+                          median = NA,
+                          mean = NA,
+                          bg.median = NA,
+                          bg.mean = NA,
+                          statistic = NA,
+                          p.value = NA))
   }
   if(sum(!ii) < 1){
-    return(tibble::tibble(size = sum(ii), statistic = NA, p.value = NA))
+    return(tibble::tibble(size = sum(ii),
+                          median = NA,
+                          mean = NA,
+                          bg.median = NA,
+                          bg.mean = NA,
+                          statistic = NA,
+                          p.value = NA))
   }
   
   if(test == 'wilcoxon'){
@@ -296,7 +308,13 @@ term_gsea <- function(genes, scores, test = "wilcoxon",
     stop("ERROR: Invalid test", call. = TRUE)
   }
   
-  tibble::tibble(size = sum(ii), statistic = res$statistic, p.value = res$p.value)
+  tibble::tibble(size = sum(ii),
+                 median = median(scores[ii]),
+                 mean = mean(scores[ii]),
+                 bg.median = median(scores),
+                 bg.mean = mean(scores),
+                 statistic = res$statistic,
+                 p.value = res$p.value)
 }
 
 #' Gene-set enrichment analysis
