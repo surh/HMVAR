@@ -72,16 +72,15 @@ process_arguments <- function(){
   return(args)
 }
 
-
 # setwd("/cashew/users/sur/exp/fraserv/2020/today/gut")
 # args <- list(input = "rerperms/Bacteroides_ovatus_58035.rer.fdr.txt",
 #              annots = "annots/Bacteroides_ovatus_58035.emapper.annotations",
 #              outdir = "output/",
 #              plot = TRUE)
-args <- list(input = "rerperms/Bacteroides_ovatus_58035.rer.fdr.txt",
-             annots = "annots/",
-             outdir = "output/",
-             plot = TRUE)
+# args <- list(input = "rerperms/Bacteroides_ovatus_58035.rer.fdr.txt",
+#              annots = "annots/",
+#              outdir = "output/",
+#              plot = TRUE)
 # args <- list(input = "rerperms/",
 #              annots = "annots/",
 #              outdir = "output/",
@@ -90,28 +89,28 @@ args <- list(input = "rerperms/Bacteroides_ovatus_58035.rer.fdr.txt",
 #              annots = "annots/Bacteroides_coprocola_61586.emapper.annotations",
 #              outdir = "output/",
 #              plot = TRUE)
-if(dir.exists(args$input)){
-  if(!dir.exists(args$annots)){
-    stop("ERROR: annots must be a direcotry if input is a directory", call. = TRUE)
-  }
-  args$input <- list.files(args$input, full.names = TRUE)
-  spec <- stringr::str_remove(basename(args$input), pattern = "\\.rer\\.fdr\\.txt$")
-  args$annots <- file.path(args$annots,paste0(spec, ".emapper.annotations"))
-  if(!all(file.exists(args$annots))){
-    cat(args$annots[ !file.exists(args$annots) ], "not found\n")
-    stop("ERROR: There must be annotation files for all genomes tested", call. = TRUE)
-  }
-}else if(file.exists(args$input)){
-  if(dir.exists(args$annots)){
-    spec <- stringr::str_remove(basename(args$input), pattern = "\\.rer\\.fdr\\.txt$")
-    args$annots <- file.path(args$annots, paste0(spec, ".emapper.annotations"))
-  }
-  if(!file.exists(args$annots)){
-    stop("ERROR: annots must be an existing file or a dir containing <spec>.emapper.annotations", call. = TRUE)
-  }
-}else{
-  stop("ERROR: input must be either an existing file or directory.", call. = TRUE)
-}
+# if(dir.exists(args$input)){
+#   if(!dir.exists(args$annots)){
+#     stop("ERROR: annots must be a direcotry if input is a directory", call. = TRUE)
+#   }
+#   args$input <- list.files(args$input, full.names = TRUE)
+#   spec <- stringr::str_remove(basename(args$input), pattern = "\\.rer\\.fdr\\.txt$")
+#   args$annots <- file.path(args$annots,paste0(spec, ".emapper.annotations"))
+#   if(!all(file.exists(args$annots))){
+#     cat(args$annots[ !file.exists(args$annots) ], "not found\n")
+#     stop("ERROR: There must be annotation files for all genomes tested", call. = TRUE)
+#   }
+# }else if(file.exists(args$input)){
+#   if(dir.exists(args$annots)){
+#     spec <- stringr::str_remove(basename(args$input), pattern = "\\.rer\\.fdr\\.txt$")
+#     args$annots <- file.path(args$annots, paste0(spec, ".emapper.annotations"))
+#   }
+#   if(!file.exists(args$annots)){
+#     stop("ERROR: annots must be an existing file or a dir containing <spec>.emapper.annotations", call. = TRUE)
+#   }
+# }else{
+#   stop("ERROR: input must be either an existing file or directory.", call. = TRUE)
+# }
 
 args <- process_arguments()
 
@@ -122,8 +121,8 @@ if(!dir.exists(args$outdir)){
   dir.create(args$outdir)
 }
 
-
 GO <- KO <- OG <- COG <- BIGG <- NULL
+# for(i in 1:3){
 for(i in 1:length(args$input)){
   rertest_file <- args$input[i]
   annots_file <- args$annots[i]
@@ -131,6 +130,7 @@ for(i in 1:length(args$input)){
   # Get species name
   spec <- stringr::str_remove(basename(rertest_file),
                               pattern = "\\.rer\\.fdr\\.txt$")
+  cat(spec, "\n")
   
   # Read data
   RER <- read_tsv(rertest_file,
@@ -185,7 +185,7 @@ for(i in 1:length(args$input)){
                            test = "ks",
                            alternative = "greater",
                            min_size = 10)
-  filename <-  file.path(args$outdir, paste0(spec, ".go.enrichments.png"))
+  filename <-  file.path(args$outdir, paste0(spec, ".go.enrichments.txt"))
   write_tsv(res, filename)
   GO <- GO %>%
     bind_rows(terms %>% mutate(spec = spec))
@@ -196,7 +196,7 @@ for(i in 1:length(args$input)){
                            test = "ks",
                            alternative = "greater",
                            min_size = 10)
-  filename <-  file.path(args$outdir, paste0(spec, ".ko.enrichments.png"))
+  filename <-  file.path(args$outdir, paste0(spec, ".ko.enrichments.txt"))
   write_tsv(res, filename)
   KO <- KO %>%
     bind_rows(terms %>% mutate(spec = spec))
@@ -207,7 +207,7 @@ for(i in 1:length(args$input)){
                            test = "ks",
                            alternative = "greater",
                            min_size = 10)
-  filename <-  file.path(args$outdir, paste0(spec, ".og.enrichments.png"))
+  filename <-  file.path(args$outdir, paste0(spec, ".og.enrichments.txt"))
   write_tsv(res, filename)
   OG <- OG %>%
     bind_rows(terms %>% mutate(spec = spec))
@@ -218,7 +218,7 @@ for(i in 1:length(args$input)){
                            test = "ks",
                            alternative = "greater",
                            min_size = 10)
-  filename <-  file.path(args$outdir, paste0(spec, ".bigg.enrichments.png"))
+  filename <-  file.path(args$outdir, paste0(spec, ".bigg.enrichments.txt"))
   write_tsv(res, filename)
   BIGG <- BIGG %>%
     bind_rows(terms %>% mutate(spec = spec))
@@ -229,58 +229,93 @@ for(i in 1:length(args$input)){
                            test = "ks",
                            alternative = "greater",
                            min_size = 10)
-  filename <-  file.path(args$outdir, paste0(spec, ".cog.enrichments.png"))
+  filename <-  file.path(args$outdir, paste0(spec, ".cog.enrichments.txt"))
   write_tsv(res, filename)
   COG <- COG %>%
     bind_rows(terms %>% mutate(spec = spec))
 }
 
 
+# Overall Enrichments
+res  <- terms_enrichment(dat = GO %>% select(-spec),
+                         method = "gsea",
+                         test = "ks",
+                         alternative = "greater",
+                         min_size = 10)
+filename <-  file.path(args$outdir, paste0("overall", ".go.enrichments.txt"))
+write_tsv(res, filename)
 
+res  <- terms_enrichment(dat = KO %>% select(-spec),
+                         method = "gsea",
+                         test = "ks",
+                         alternative = "greater",
+                         min_size = 10)
+filename <-  file.path(args$outdir, paste0("overall", ".ko.enrichments.txt"))
+write_tsv(res, filename)
 
-  
+res  <- terms_enrichment(dat = OG %>% select(-spec),
+                         method = "gsea",
+                         test = "ks",
+                         alternative = "greater",
+                         min_size = 10)
+filename <-  file.path(args$outdir, paste0("overall", ".og.enrichments.txt"))
+write_tsv(res, filename)
 
+res  <- terms_enrichment(dat = BIGG %>% select(-spec),
+                         method = "gsea",
+                         test = "ks",
+                         alternative = "greater",
+                         min_size = 10)
+filename <-  file.path(args$outdir, paste0("overall", ".bigg.enrichments.txt"))
+write_tsv(res, filename)
 
+res  <- terms_enrichment(dat = COG %>% select(-spec),
+                         method = "gsea",
+                         test = "ks",
+                         alternative = "greater",
+                         min_size = 10)
+filename <-  file.path(args$outdir, paste0("overall", ".cog.enrichments.txt"))
+write_tsv(res, filename)
 
-# Try Rho GSEA
-RER %>%
-  filter(FDR <= 0.01) %>%
-  select(gene_id, terms = BiGG_reactions, score = Rho) %>%
-  filter(!is.na(terms))
-terms_enrichment(dat = RER %>%
-                   filter(FDR <= 0.01) %>%
-                   select(gene_id, terms = GO_terms, score = Rho),
-                 method = "gsea",
-                 test = "ks",
-                 alternative = "two.sided",
-                 min_size = 2)
-terms_enrichment(dat = RER %>%
-                   filter(FDR <= 0.01) %>%
-                   select(gene_id, terms = KEGG_KOs, score = Rho),
-                 method = "gsea",
-                 test = "ks",
-                 alternative = "two.sided",
-                 min_size = 2)
-terms_enrichment(dat = RER %>%
-                   filter(FDR <= 0.01) %>%
-                   select(gene_id, terms = OGs, score = Rho),
-                 method = "gsea",
-                 test = "ks",
-                 alternative = "two.sided",
-                 min_size = 2)
-terms_enrichment(dat = RER %>%
-                   filter(FDR <= 0.01) %>%
-                   select(gene_id, terms = BiGG_reactions, score = Rho),
-                 method = "gsea",
-                 test = "ks",
-                 alternative = "two.sided",
-                 min_size = 2)
-terms_enrichment(dat = RER %>%
-                   filter(FDR <= 0.01) %>%
-                   select(gene_id, terms = COG_cat, score = Rho),
-                 method = "gsea",
-                 test = "ks",
-                 alternative = "two.sided",
-                 min_size = 2)
+# # Try Rho GSEA
+# RER %>%
+#   filter(FDR <= 0.01) %>%
+#   select(gene_id, terms = BiGG_reactions, score = Rho) %>%
+#   filter(!is.na(terms))
+# terms_enrichment(dat = RER %>%
+#                    filter(FDR <= 0.01) %>%
+#                    select(gene_id, terms = GO_terms, score = Rho),
+#                  method = "gsea",
+#                  test = "ks",
+#                  alternative = "two.sided",
+#                  min_size = 2)
+# terms_enrichment(dat = RER %>%
+#                    filter(FDR <= 0.01) %>%
+#                    select(gene_id, terms = KEGG_KOs, score = Rho),
+#                  method = "gsea",
+#                  test = "ks",
+#                  alternative = "two.sided",
+#                  min_size = 2)
+# terms_enrichment(dat = RER %>%
+#                    filter(FDR <= 0.01) %>%
+#                    select(gene_id, terms = OGs, score = Rho),
+#                  method = "gsea",
+#                  test = "ks",
+#                  alternative = "two.sided",
+#                  min_size = 2)
+# terms_enrichment(dat = RER %>%
+#                    filter(FDR <= 0.01) %>%
+#                    select(gene_id, terms = BiGG_reactions, score = Rho),
+#                  method = "gsea",
+#                  test = "ks",
+#                  alternative = "two.sided",
+#                  min_size = 2)
+# terms_enrichment(dat = RER %>%
+#                    filter(FDR <= 0.01) %>%
+#                    select(gene_id, terms = COG_cat, score = Rho),
+#                  method = "gsea",
+#                  test = "ks",
+#                  alternative = "two.sided",
+#                  min_size = 2)
 
 
