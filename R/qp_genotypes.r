@@ -81,8 +81,8 @@ qp_genotypes <- function(midas_dir, midas_dat,
     dplyr::left_join(midas_dat$info %>%
                 dplyr::select(site_id, major_allele, minor_allele),
               by = "site_id") %>%
-    mutate(allele = replace(allele, allele == 1, minor_allele[allele == 1])) %>%
-    mutate(allele = replace(allele, allele == "2", major_allele[allele == "2"])) %>%
+    dplyr::mutate(allele = replace(allele, allele == 1, minor_allele[allele == 1])) %>%
+    dplyr::mutate(allele = replace(allele, allele == "2", major_allele[allele == "2"])) %>%
     dplyr::select(-major_allele, -minor_allele) %>%
     tidyr::pivot_wider(names_from = "sample", values_from = "allele")
   
