@@ -126,22 +126,6 @@ check_pvalues <- function(estimates, pvals, plot = TRUE){
 ############# MIDAS MKTEST ###################
 # Code for obtaining MKtest from midas merge output
 
-#' Select samples that are present in mapping file
-#'
-#' @param abun A data table where the first column is called 'site_id', and all
-#' the other columns correspond to sample names
-#' @param map A data table where there is a column called 'sample' which
-#' corresponds to the column names of 'abun'.
-#'
-#' @return A data table
-#'
-#' @importFrom magrittr %>%
-select_samples_from_abun <- function(abun, map){
-  abun <- abun %>% dplyr::select(site_id, dplyr::intersect(map$sample, colnames(abun)) )
-  
-  return(abun)
-}
-
 #' Determine the effect of a coding variant on the aminoacid sequence
 #' 
 #' Takes an table corresponding to the contents of the snp_info.txt
