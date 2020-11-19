@@ -78,7 +78,7 @@ qp_genotypes <- function(midas_dir, midas_dat,
       return(d)
     }, maf_thres = min(maf_thres, 1 - maf_thres),
     min_snv_prop = min_snv_prop, .id = "sample") %>%
-    left_join(midas_dat$info %>%
+    dplyr::left_join(midas_dat$info %>%
                 dplyr::select(site_id, major_allele, minor_allele),
               by = "site_id") %>%
     mutate(allele = replace(allele, allele == 1, minor_allele[allele == 1])) %>%
