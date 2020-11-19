@@ -4,8 +4,7 @@
 \alias{calculate_mktable}
 \title{Calculate McDonald-Kreitman contingency table}
 \usage{
-calculate_mktable(info, freq, depth, map, depth_thres = 1,
-  freq_thres = 0.5)
+calculate_mktable(info, freq, depth, map, depth_thres = 1, freq_thres = 0.5)
 }
 \arguments{
 \item{info}{A snv x variable data frame or table. Must have columns

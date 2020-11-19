@@ -4,8 +4,13 @@
 \alias{gene_snv_aln}
 \title{Get gene SNV alignment}
 \usage{
-gene_snv_aln(snps, seq, missing_as = "major", strand = "+",
-  keep_last_codon = TRUE)
+gene_snv_aln(
+  snps,
+  seq,
+  missing_as = "major",
+  strand = "+",
+  keep_last_codon = TRUE
+)
 }
 \arguments{
 \item{snps}{A tibble or data.frame. It must have columns

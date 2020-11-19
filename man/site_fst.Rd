@@ -4,8 +4,14 @@
 \alias{site_fst}
 \title{Fixation Index (Fst) for one site}
 \usage{
-site_fst(freq, support, info, map, support_thres = 1,
-  method = "Weir-Cockerham")
+site_fst(
+  freq,
+  support,
+  info,
+  map,
+  support_thres = 1,
+  method = "Weir-Cockerham"
+)
 }
 \arguments{
 \item{freq}{A 1 x (n+1) tibble. One of the columns must correspond

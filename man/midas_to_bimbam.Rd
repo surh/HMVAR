@@ -4,8 +4,7 @@
 \alias{midas_to_bimbam}
 \title{Convert MIDAS merge output to BIMBAM input}
 \usage{
-midas_to_bimbam(midas_dir, map, outdir, focal_group = NULL,
-  prefix = NULL)
+midas_to_bimbam(midas_dir, map, outdir, focal_group = NULL, prefix = NULL)
 }
 \arguments{
 \item{midas_dir}{Directory where midas merge output for one genome

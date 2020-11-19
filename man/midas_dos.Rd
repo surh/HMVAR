@@ -4,8 +4,15 @@
 \alias{midas_dos}
 \title{Direction of Selection statistics on MIDAS output}
 \usage{
-midas_dos(midas_dir, map, map_file, genes = NULL, depth_thres = 1,
-  freq_thres = 0.5, focal_group = NA)
+midas_dos(
+  midas_dir,
+  map,
+  map_file,
+  genes = NULL,
+  depth_thres = 1,
+  freq_thres = 0.5,
+  focal_group = NA
+)
 }
 \arguments{
 \item{midas_dir}{Directory where the output from

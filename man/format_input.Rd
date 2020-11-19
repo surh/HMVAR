@@ -5,8 +5,13 @@
 \alias{format_input_hmmcp}
 \title{Formats input form HMMCP 16S files}
 \usage{
-format_input(name, counts_file, taxonomy_file, Map = Map,
-  collapse_level = NULL)
+format_input(
+  name,
+  counts_file,
+  taxonomy_file,
+  Map = Map,
+  collapse_level = NULL
+)
 }
 \arguments{
 \item{name}{name(not used anymore?)}

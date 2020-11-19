@@ -4,8 +4,13 @@
 \alias{term_gsea}
 \title{Gene-set Enrichment analysis on one term.}
 \usage{
-term_gsea(genes, scores, test = "wilcoxon", alternative = "greater",
-  min_size = 3)
+term_gsea(
+  genes,
+  scores,
+  test = "wilcoxon",
+  alternative = "greater",
+  min_size = 3
+)
 }
 \arguments{
 \item{genes}{Character vector of gene IDs that belong to

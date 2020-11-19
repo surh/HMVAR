@@ -4,8 +4,16 @@
 \alias{dos}
 \title{Calculate Direction of Selection from SNV data}
 \usage{
-dos(info, freq, depth, map, depth_thres = 1, freq_thres = 0.5,
-  test = TRUE, clean = TRUE)
+dos(
+  info,
+  freq,
+  depth,
+  map,
+  depth_thres = 1,
+  freq_thres = 0.5,
+  test = TRUE,
+  clean = TRUE
+)
 }
 \arguments{
 \item{info}{Data table corresponding to the 'snps_info.txt'

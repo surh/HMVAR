@@ -4,8 +4,16 @@
 \alias{calculate_fst}
 \title{Calculate Fixation Index (Fst)}
 \usage{
-calculate_fst(Dat, map, method = "Weir-Cockerham", support_thres = 1,
-  w_size = NULL, s_size = NULL, sorted = FALSE, verbose = TRUE)
+calculate_fst(
+  Dat,
+  map,
+  method = "Weir-Cockerham",
+  support_thres = 1,
+  w_size = NULL,
+  s_size = NULL,
+  sorted = FALSE,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{Dat}{A MIDAS dataset. Imported into R with \link{read_midas_data}}

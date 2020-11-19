@@ -6,16 +6,39 @@
 \alias{test_go.numeric}
 \title{Gene Ontology enrichment via topGO}
 \usage{
-test_go(genes, annots, ontology, description, algorithm, statistic,
-  node_size, ...)
+test_go(
+  genes,
+  annots,
+  ontology,
+  description,
+  algorithm,
+  statistic,
+  node_size,
+  ...
+)
 
-\method{test_go}{character}(genes, annots, ontology = "BP",
-  description = "", algorithm = "classic", statistic = "fisher",
-  node_size = 3, ...)
+\method{test_go}{character}(
+  genes,
+  annots,
+  ontology = "BP",
+  description = "",
+  algorithm = "classic",
+  statistic = "fisher",
+  node_size = 3,
+  ...
+)
 
-\method{test_go}{numeric}(genes, annots, ontology = "BP",
-  description = "", algorithm = "classic", statistic = "fisher",
-  node_size = 3, score_threshold = 0.05, ...)
+\method{test_go}{numeric}(
+  genes,
+  annots,
+  ontology = "BP",
+  description = "",
+  algorithm = "classic",
+  statistic = "fisher",
+  node_size = 3,
+  score_threshold = 0.05,
+  ...
+)
 }
 \arguments{
 \item{genes}{Either a character vector with the gene

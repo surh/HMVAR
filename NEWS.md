@@ -2,6 +2,8 @@
 1. Discard rows in closest files that have a dot (.) in the gene id column.
 2. Added background values for `gsea`.
 3. Added `rer_functional_enrichments.r` executable script.
+4. Made map optional in `read_midas_data`.
+5. Added `qp_genotypes` function.
 
 # 0.1-1
 1. Overall cleaning and NAMESPACE update

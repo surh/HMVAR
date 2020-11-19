@@ -4,13 +4,20 @@
 \alias{plotgg_manhattan}
 \title{Manhattan plot with ggplot2}
 \usage{
-plotgg_manhattan(dat, refs = NULL, pval_thres = 1e-06,
-  pval_column = "p.value", log_transform = TRUE, color_refs = TRUE,
-  alpha = 0.2, custom_theme = ggplot2::theme(panel.background =
-  ggplot2::element_blank(), panel.grid = ggplot2::element_blank(),
-  axis.text = ggplot2::element_text(color = "black"), axis.title =
-  ggplot2::element_text(color = "black", face = "bold"), axis.line.x.bottom
-  = ggplot2::element_line(), axis.line.y.left = ggplot2::element_line()))
+plotgg_manhattan(
+  dat,
+  refs = NULL,
+  pval_thres = 1e-06,
+  pval_column = "p.value",
+  log_transform = TRUE,
+  color_refs = TRUE,
+  alpha = 0.2,
+  custom_theme = ggplot2::theme(panel.background = ggplot2::element_blank(), panel.grid
+    = ggplot2::element_blank(), axis.text = ggplot2::element_text(color = "black"),
+    axis.title = ggplot2::element_text(color = "black", face = "bold"),
+    axis.line.x.bottom = ggplot2::element_line(), axis.line.y.left =
+    ggplot2::element_line())
+)
 }
 \arguments{
 \item{dat}{A data.frame or tibble with columns 'ref_id', 'ref_pos'
