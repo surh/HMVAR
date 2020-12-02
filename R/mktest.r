@@ -225,6 +225,8 @@ determine_snp_effect <- function(info, nucleotides=c(A = 1, C = 2, G = 3, T = 4)
 #' 'Fixed', 'Polymorphic', 'Invariant' or NA.
 get_site_dist <- function(d, group_thres = 2){
   groups <- split(d$allele, d$group)
+  n1 <- NA
+  n2 <- NA
   if(length(groups) == 1){
     dist <- NA
   }else{
@@ -233,6 +235,9 @@ get_site_dist <- function(d, group_thres = 2){
     }else{
       g1 <- unique(groups[[1]])
       g2 <- unique(groups[[2]])
+      
+      n1 <- length(groups[[1]])
+      n2 <- length(groups[[2]])
       
       if(length(g1) > 1 || length(g2) > 1){
         dist <- 'Polymorphic'
@@ -245,7 +250,10 @@ get_site_dist <- function(d, group_thres = 2){
       }
     }
   }
-  return(dist)
+  # return(dist)
+  tibble::tibble(snp_dist = dist,
+                 n1 = n1,
+                 n2 = n2)
 }
 
 
@@ -650,27 +658,36 @@ mktest <- function(alleles, info, map){
                            dplyr::select(sample, group),
                          by = "sample") %>%
         split(.$site_id) %>%
-        purrr::map_chr(HMVAR:::get_site_dist)
+        # purrr::map_chr(HMVAR:::get_site_dist)
+        purrr::map_dfr(HMVAR:::get_site_dist,
+                       .id = "site_id")
+        
       
       # Combine results
       d <- d %>%
         dplyr::select(site_id, snp_effect) %>%
-        dplyr::left_join(tibble::tibble(site_id = names(snv_dist),
-                                        snp_dist = as.character(snv_dist)),
+        # dplyr::left_join(tibble::tibble(site_id = names(snv_dist),
+        #                                 snp_dist = as.character(snv_dist)),
+        #           by = "site_id") %>%
+        dplyr::left_join(snv_dist,
                   by = "site_id") %>%
         dplyr::filter(!is.na(snp_dist))
       
       # Fill MK table
-      tibble::tibble(Dn = sum(d$snp_effect == "non-synonymous" & d$snp_dist == "Fixed"),
+      tibble::tibble(med.n1 = median(d$n1),
+                     med.n2 = median(d$n2),
+                     Dn = sum(d$snp_effect == "non-synonymous" & d$snp_dist == "Fixed"),
                      Ds = sum(d$snp_effect == "synonymous" & d$snp_dist == "Fixed"),
                      Pn = sum(d$snp_effect == "non-synonymous" & d$snp_dist == "Polymorphic"),
                      Ps = sum(d$snp_effect == "synonymous" & d$snp_dist == "Polymorphic"))
     }, meta = meta, .id = "gene_id") %>%
     dplyr::filter(Ds > 0 & Pn > 0) %>%
-    purrr::pmap_dfr(function(gene_id, Dn, Ds, Pn, Ps){
+    purrr::pmap_dfr(function(gene_id, med.n1, med.n2, Dn, Ds, Pn, Ps){
       # Make test
       test <- fisher.test(matrix(c(Dn, Ds, Pn, Ps), ncol = 2))
       tibble::tibble(gene_id = gene_id,
+                     med.n1 = med.n1,
+                     med.n2 = med.n2,
                      Dn = Dn,
                      Ds = Ds,
                      Pn = Pn,
