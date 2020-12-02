@@ -224,7 +224,7 @@ determine_snp_effect <- function(info, nucleotides=c(A = 1, C = 2, G = 3, T = 4)
 #' @return A character string indicating the type of site:
 #' 'Fixed', 'Polymorphic', 'Invariant' or NA.
 get_site_dist <- function(d, group_thres = 2){
-  groups <- split(d$allele, d$Group)
+  groups <- split(d$allele, d$group)
   if(length(groups) == 1){
     dist <- NA
   }else{
@@ -595,3 +595,92 @@ calculate_mktable <- function(info, freq, depth, map, depth_thres = 1, freq_thre
   
   return(Res)
 }
+
+#' McDonald-Kreitman test
+#'
+#' @param alleles site x sample alleles table. First column must be
+#' "site_id"
+#' @param info Table with information about SNVs. Must include columns
+#' "site_id", "locus_type", "gene_id" and "snp_effect".
+#' @param map Mapping file. must have columns "sample" and "group"
+#'
+#' @return A tibble
+#' @export
+#' @importFrom magrittr %>%
+#' 
+mktest <- function(alleles, info, map){
+  if(!("site_id" %in% colnames(alleles))){
+    stop("ERROR: alleles table needs column site_id", call. = TRUE)
+  }
+  if(!all(c("site_id", "locus_type", "gene_id", "snp_effect") %in% colnames(info))){
+    stop("ERROR: info table needs columns 'site_id', 'locus_type', 'gene_id', and 'snp_effect'",
+         call. = TRUE)
+  }
+  if(!all(c("sample", "group") %in% colnames(map))){
+    stop("ERROR: map must have columns sample and group.", call. = TRUE)
+  }
+  if(any(alleles$site_id != info$site_id)){
+    stop("ERROR: there are inconsistent entries between alleles and info tables",
+         call. = TRUE)
+  }
+  
+  # Get group variable per sample
+  sample_ids <- colnames(alleles)[-1]
+  meta <- map %>%
+    dplyr::filter(sample %in% sample_ids)
+  
+  if(length(setdiff(sample_ids, meta$sample)) > 0){
+    stop("ERROR: Thera are samples that do not appear in the map", call. = TRUE)
+  }
+  
+  Res <- info %>%
+    dplyr::filter(locus_type == "CDS") %>%
+    dplyr::select(site_id, gene_id, snp_effect) %>%
+    dplyr::inner_join(alleles, by = "site_id") %>%
+    split(.$gene_id) %>%
+    purrr::map_dfr(function(d, meta){
+      # For each gene, determine if each SNV is fixed or
+      # polymorphic
+      snv_dist <- d %>%
+        tidyr::pivot_longer(c(-site_id, -gene_id, -snp_effect),
+                            names_to = "sample",
+                            values_to = "allele") %>%
+        dplyr::filter(!is.na(allele)) %>%
+        dplyr::left_join(meta %>%
+                           dplyr::select(sample, group),
+                         by = "sample") %>%
+        split(.$site_id) %>%
+        purrr::map_chr(HMVAR:::get_site_dist)
+      
+      # Combine results
+      d <- d %>%
+        dplyr::select(site_id, snp_effect) %>%
+        dplyr::left_join(tibble::tibble(site_id = names(snv_dist),
+                                        snp_dist = as.character(snv_dist)),
+                  by = "site_id") %>%
+        dplyr::filter(!is.na(snp_dist))
+      
+      # Fill MK table
+      tibble::tibble(Dn = sum(d$snp_effect == "non-synonymous" & d$snp_dist == "Fixed"),
+                     Ds = sum(d$snp_effect == "synonymous" & d$snp_dist == "Fixed"),
+                     Pn = sum(d$snp_effect == "non-synonymous" & d$snp_dist == "Polymorphic"),
+                     Ps = sum(d$snp_effect == "synonymous" & d$snp_dist == "Polymorphic"))
+    }, meta = meta, .id = "gene_id") %>%
+    dplyr::filter(Ds > 0 & Pn > 0) %>%
+    purrr::pmap_dfr(function(gene_id, Dn, Ds, Pn, Ps){
+      # Make test
+      test <- fisher.test(matrix(c(Dn, Ds, Pn, Ps), ncol = 2))
+      tibble::tibble(gene_id = gene_id,
+                     Dn = Dn,
+                     Ds = Ds,
+                     Pn = Pn,
+                     Ps = Ps,
+                     OR = test$estimate,
+                     p.value = test$p.value)
+    })
+  
+  Res
+}
+
+
+

@@ -4,6 +4,7 @@
 3. Added `rer_functional_enrichments.r` executable script.
 4. Made map optional in `read_midas_data`.
 5. Added `qp_genotypes` function.
+6. Added `mktest` function that works on allele table.
 
 # 0.1-1
 1. Overall cleaning and NAMESPACE update
