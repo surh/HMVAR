@@ -78,14 +78,14 @@ find_singletons <- function(alleles, midas_dir, info,
   
   # combine site and sample metadata
   cat("\tMerging metadata...\n")
-  if(!missing(site)){
+  if(!missing(info)){
     Sing <- Sing %>%
-      left_join(info,
+      dplyr::left_join(info,
                 by = 'site_id')
   }
   if(!missing(meta)){
     Sing <- Sing  %>%
-      left_join(meta, by = "sample")
+      dplyr::left_join(meta, by = "sample")
   }
   
   return(Sing)
@@ -110,7 +110,7 @@ find_singletons <- function(alleles, midas_dir, info,
 #' 
 #' @importFrom magrittr %>%
 test_singleton_enrichment <- function(Dat, info){
-  if(missing(Dat) || missng(info)){
+  if(missing(Dat) || missing(info)){
     stop("ERROR: both Dat and info must be provided")
   }
   
