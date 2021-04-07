@@ -55,7 +55,7 @@ qp_genotypes <- function(midas_dir, midas_dat,
   }
   
   
-  HMVAR:::match_freq_and_depth(freq = midas_dat$freq,
+  Res <- HMVAR:::match_freq_and_depth(freq = midas_dat$freq,
                                depth = midas_dat$depth,
                                depth_thres = min_depth) %>%
     split(.$sample) %>%
@@ -77,13 +77,18 @@ qp_genotypes <- function(midas_dir, midas_dat,
       
       return(d)
     }, maf_thres = min(maf_thres, 1 - maf_thres),
-    min_snv_prop = min_snv_prop, .id = "sample") %>%
-    dplyr::left_join(midas_dat$info %>%
-                dplyr::select(site_id, major_allele, minor_allele),
-              by = "site_id") %>%
-    dplyr::mutate(allele = replace(allele, allele == 1, minor_allele[allele == 1])) %>%
-    dplyr::mutate(allele = replace(allele, allele == "2", major_allele[allele == "2"])) %>%
-    dplyr::select(-major_allele, -minor_allele) %>%
-    tidyr::pivot_wider(names_from = "sample", values_from = "allele")
+    min_snv_prop = min_snv_prop, .id = "sample")
   
+  if(nrow(Res) > 0){
+    Res <- Res %>%
+      dplyr::left_join(midas_dat$info %>%
+                         dplyr::select(site_id, major_allele, minor_allele),
+                       by = "site_id") %>%
+      dplyr::mutate(allele = replace(allele, allele == 1, minor_allele[allele == 1])) %>%
+      dplyr::mutate(allele = replace(allele, allele == "2", major_allele[allele == "2"])) %>%
+      dplyr::select(-major_allele, -minor_allele) %>%
+      tidyr::pivot_wider(names_from = "sample", values_from = "allele")
+  }
+    
+  Res
 }
