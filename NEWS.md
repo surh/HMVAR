@@ -1,3 +1,5 @@
+# 0.1-3
+
 # 0.1-2
 1. Discard rows in closest files that have a dot (.) in the gene id column.
 2. Added background values for `gsea`.

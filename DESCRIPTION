@@ -1,7 +1,7 @@
 Package: HMVAR
 Type: Package
 Title: Human Microbiome Variant Analysis in R
-Version: 0.1-1
+Version: 0.1-2
 Depends: R (>= 3.4),
 Imports:
 	AMOR (>= 0.0-15),
@@ -29,7 +29,7 @@ Recomends:
   svglite
 Suggests: 
     testthat
-Date: 2019-12-10
+Date: 2021-08-17
 Authors@R: c(person("Sur", "Herrera Paredes",
                     role = c("aut", "cre"),
                     email = "surh@stanford.edu",
