@@ -4,9 +4,17 @@
 \alias{mice_impute}
 \title{Imputation via mice}
 \usage{
-mice_impute(geno, snp, outdir = "imputed/", m = 5, verbose = FALSE,
-  prefix = "imputed", return_table = FALSE, seed = NA,
-  block_size = 100)
+mice_impute(
+  geno,
+  snp,
+  outdir = "imputed/",
+  m = 5,
+  verbose = FALSE,
+  prefix = "imputed",
+  return_table = FALSE,
+  seed = NA,
+  block_size = 100
+)
 }
 \arguments{
 \item{geno}{A data table with genotype information. First three columns

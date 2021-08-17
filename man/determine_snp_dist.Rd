@@ -4,8 +4,15 @@
 \alias{determine_snp_dist}
 \title{SNP distribution between sites}
 \usage{
-determine_snp_dist(info, freq, depth, map, depth_thres = 1,
-  freq_thres = 0.5, clean = TRUE)
+determine_snp_dist(
+  info,
+  freq,
+  depth,
+  map,
+  depth_thres = 1,
+  freq_thres = 0.5,
+  clean = TRUE
+)
 }
 \arguments{
 \item{info}{Data table corresponding to the 'snps_info.txt'

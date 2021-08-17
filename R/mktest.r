@@ -126,22 +126,6 @@ check_pvalues <- function(estimates, pvals, plot = TRUE){
 ############# MIDAS MKTEST ###################
 # Code for obtaining MKtest from midas merge output
 
-#' Select samples that are present in mapping file
-#'
-#' @param abun A data table where the first column is called 'site_id', and all
-#' the other columns correspond to sample names
-#' @param map A data table where there is a column called 'sample' which
-#' corresponds to the column names of 'abun'.
-#'
-#' @return A data table
-#'
-#' @importFrom magrittr %>%
-select_samples_from_abun <- function(abun, map){
-  abun <- abun %>% dplyr::select(site_id, dplyr::intersect(map$sample, colnames(abun)) )
-  
-  return(abun)
-}
-
 #' Determine the effect of a coding variant on the aminoacid sequence
 #' 
 #' Takes an table corresponding to the contents of the snp_info.txt
@@ -240,7 +224,9 @@ determine_snp_effect <- function(info, nucleotides=c(A = 1, C = 2, G = 3, T = 4)
 #' @return A character string indicating the type of site:
 #' 'Fixed', 'Polymorphic', 'Invariant' or NA.
 get_site_dist <- function(d, group_thres = 2){
-  groups <- split(d$allele, d$Group)
+  groups <- split(d$allele, d$group)
+  n1 <- NA
+  n2 <- NA
   if(length(groups) == 1){
     dist <- NA
   }else{
@@ -249,6 +235,9 @@ get_site_dist <- function(d, group_thres = 2){
     }else{
       g1 <- unique(groups[[1]])
       g2 <- unique(groups[[2]])
+      
+      n1 <- length(groups[[1]])
+      n2 <- length(groups[[2]])
       
       if(length(g1) > 1 || length(g2) > 1){
         dist <- 'Polymorphic'
@@ -261,7 +250,10 @@ get_site_dist <- function(d, group_thres = 2){
       }
     }
   }
-  return(dist)
+  # return(dist)
+  tibble::tibble(snp_dist = dist,
+                 n1 = n1,
+                 n2 = n2)
 }
 
 
@@ -611,3 +603,101 @@ calculate_mktable <- function(info, freq, depth, map, depth_thres = 1, freq_thre
   
   return(Res)
 }
+
+#' McDonald-Kreitman test
+#'
+#' @param alleles site x sample alleles table. First column must be
+#' "site_id"
+#' @param info Table with information about SNVs. Must include columns
+#' "site_id", "locus_type", "gene_id" and "snp_effect".
+#' @param map Mapping file. must have columns "sample" and "group"
+#'
+#' @return A tibble
+#' @export
+#' @importFrom magrittr %>%
+#' 
+mktest <- function(alleles, info, map){
+  if(!("site_id" %in% colnames(alleles))){
+    stop("ERROR: alleles table needs column site_id", call. = TRUE)
+  }
+  if(!all(c("site_id", "locus_type", "gene_id", "snp_effect") %in% colnames(info))){
+    stop("ERROR: info table needs columns 'site_id', 'locus_type', 'gene_id', and 'snp_effect'",
+         call. = TRUE)
+  }
+  if(!all(c("sample", "group") %in% colnames(map))){
+    stop("ERROR: map must have columns sample and group.", call. = TRUE)
+  }
+  if(any(alleles$site_id != info$site_id)){
+    stop("ERROR: there are inconsistent entries between alleles and info tables",
+         call. = TRUE)
+  }
+  
+  # Get group variable per sample
+  sample_ids <- colnames(alleles)[-1]
+  meta <- map %>%
+    dplyr::filter(sample %in% sample_ids)
+  
+  if(length(setdiff(sample_ids, meta$sample)) > 0){
+    stop("ERROR: Thera are samples that do not appear in the map", call. = TRUE)
+  }
+  
+  Res <- info %>%
+    dplyr::filter(locus_type == "CDS") %>%
+    dplyr::select(site_id, gene_id, snp_effect) %>%
+    dplyr::inner_join(alleles, by = "site_id") %>%
+    split(.$gene_id) %>%
+    purrr::map_dfr(function(d, meta){
+      # For each gene, determine if each SNV is fixed or
+      # polymorphic
+      snv_dist <- d %>%
+        tidyr::pivot_longer(c(-site_id, -gene_id, -snp_effect),
+                            names_to = "sample",
+                            values_to = "allele") %>%
+        dplyr::filter(!is.na(allele)) %>%
+        dplyr::left_join(meta %>%
+                           dplyr::select(sample, group),
+                         by = "sample") %>%
+        split(.$site_id) %>%
+        # purrr::map_chr(HMVAR:::get_site_dist)
+        purrr::map_dfr(HMVAR:::get_site_dist,
+                       .id = "site_id")
+        
+      
+      # Combine results
+      d <- d %>%
+        dplyr::select(site_id, snp_effect) %>%
+        # dplyr::left_join(tibble::tibble(site_id = names(snv_dist),
+        #                                 snp_dist = as.character(snv_dist)),
+        #           by = "site_id") %>%
+        dplyr::left_join(snv_dist,
+                  by = "site_id") %>%
+        dplyr::filter(!is.na(snp_dist))
+      
+      # Fill MK table
+      tibble::tibble(med.n1 = median(d$n1),
+                     med.n2 = median(d$n2),
+                     Dn = sum(d$snp_effect == "non-synonymous" & d$snp_dist == "Fixed"),
+                     Ds = sum(d$snp_effect == "synonymous" & d$snp_dist == "Fixed"),
+                     Pn = sum(d$snp_effect == "non-synonymous" & d$snp_dist == "Polymorphic"),
+                     Ps = sum(d$snp_effect == "synonymous" & d$snp_dist == "Polymorphic"))
+    }, meta = meta, .id = "gene_id") %>%
+    dplyr::filter(Ds > 0 & Pn > 0) %>%
+    purrr::pmap_dfr(function(gene_id, med.n1, med.n2, Dn, Ds, Pn, Ps){
+      # Make test
+      test <- fisher.test(matrix(c(Dn, Ds, Pn, Ps), ncol = 2))
+      tibble::tibble(gene_id = gene_id,
+                     med.n1 = med.n1,
+                     med.n2 = med.n2,
+                     Dn = Dn,
+                     Ds = Ds,
+                     Pn = Pn,
+                     Ps = Ps,
+                     OR = test$estimate,
+                     p.value = test$p.value)
+    })
+  
+  Res
+}
+
+
+

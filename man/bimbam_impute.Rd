@@ -4,9 +4,17 @@
 \alias{bimbam_impute}
 \title{Impute genotypes with BIMBAM}
 \usage{
-bimbam_impute(geno_file, pheno_file, pos_file, bimbam = "bimbam",
-  outdir = "imputed/", em_runs = 10, em_steps = 20,
-  em_clusters = 15, prefix = "imputed")
+bimbam_impute(
+  geno_file,
+  pheno_file,
+  pos_file,
+  bimbam = "bimbam",
+  outdir = "imputed/",
+  em_runs = 10,
+  em_steps = 20,
+  em_clusters = 15,
+  prefix = "imputed"
+)
 }
 \arguments{
 \item{geno_file}{Path to mean genotype file. See BIMBAM docummentation

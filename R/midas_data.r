@@ -68,14 +68,6 @@ read_midas_abun <- function(file){
                           na = 'NA', 
                           col_types = readr::cols(site_id = readr::col_character(),
                                                   .default = readr::col_double()))
-  
-  # abun <- readr::read_tsv(file,
-  #                         na = 'NA', n_max = 10)
-  # abun <- readr::read_tsv(file,
-  #                         na = 'NA',
-  #                         col_types = paste(c('c',rep('n', ncol(abun) - 1)),
-  #                                           collapse = ''))
-  
   return(abun)
 }
 
@@ -160,17 +152,10 @@ gene_midas_data <- function(Dat, gene, depth_thres = 1, freq_thres = 0.5){
 #' # Read data
 #' midas_data <- read_midas_data(midas_dir = midas_dir, map = map, cds_only = TRUE)
 #' midas_data
-read_midas_data <- function(midas_dir, map, genes = NULL, cds_only = TRUE){
+read_midas_data <- function(midas_dir, map = NULL, genes = NULL, cds_only = TRUE){
+  
   # Read data
-  info <- readr::read_tsv(paste0(midas_dir, "/snps_info.txt"),
-                          col_types = readr::cols(.default = readr::col_character(),
-                                                  ref_pos = readr::col_number(),
-                                                  count_samples = readr::col_number(),
-                                                  count_a = readr::col_number(),
-                                                  count_c = readr::col_number(),
-                                                  count_g = readr::col_number(),
-                                                  count_t = readr::col_number()),
-                          na = 'NA')
+  info <- read_midas_info(paste0(midas_dir, "/snps_info.txt"))
   depth <- read_midas_abun(paste0(midas_dir, "/snps_depth.txt"))
   freq <- read_midas_abun(paste0(midas_dir, "/snps_freq.txt"))
   
@@ -178,12 +163,16 @@ read_midas_data <- function(midas_dir, map, genes = NULL, cds_only = TRUE){
   # Clean info
   info <- info %>% 
     dplyr::select(-tidyselect::starts_with("count_"))
-  # Clean depth and freq
-  depth <- select_samples_from_abun(depth, map)
-  freq <- select_samples_from_abun(freq, map)
-  # Clean map
-  map <- map %>% 
-    dplyr::filter(sample %in% colnames(depth))
+  
+  # Select samples if map is passed
+  if(!is.null(map)){
+    # Clean depth and freq
+    depth <- select_samples_from_abun(depth, map$sample)
+    freq <- select_samples_from_abun(freq, map$sample)
+    # Clean map
+    map <- map %>% 
+      dplyr::filter(sample %in% colnames(depth))
+  }
   
   # Select gene data
   if(!is.null(genes)){
@@ -201,6 +190,29 @@ read_midas_data <- function(midas_dir, map, genes = NULL, cds_only = TRUE){
     dplyr::filter(site_id %in% info$site_id)
   
   return(list(info = info, freq = freq, depth = depth))
+}
+
+#' Read MIDAS snps_info.txt file
+#'
+#' @param file Path to file
+#'
+#' @return A tibble with the contents of the 
+#' snps_info.txt file from MIDAS
+#' 
+#' @export
+read_midas_info <- function(file){
+  # Read data
+  info <- readr::read_tsv(file,
+                          col_types = readr::cols(.default = readr::col_character(),
+                                                  ref_pos = readr::col_number(),
+                                                  count_samples = readr::col_number(),
+                                                  count_a = readr::col_number(),
+                                                  count_c = readr::col_number(),
+                                                  count_g = readr::col_number(),
+                                                  count_t = readr::col_number()),
+                          na = 'NA')
+  
+  return(info)
 }
 
 #' Match freq and depth

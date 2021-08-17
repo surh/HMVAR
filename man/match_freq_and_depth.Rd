@@ -4,8 +4,14 @@
 \alias{match_freq_and_depth}
 \title{Match freq and depth}
 \usage{
-match_freq_and_depth(freq, depth, info = NULL, map = NULL,
-  depth_thres = 1, verbose = TRUE)
+match_freq_and_depth(
+  freq,
+  depth,
+  info = NULL,
+  map = NULL,
+  depth_thres = 1,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{freq}{A site by sample data frame or tibble. Must contain a column

@@ -1,3 +1,17 @@
+# 0.1-3
+
+# 0.1-2
+1. Discard rows in closest files that have a dot (.) in the gene id column.
+2. Added background values for `gsea`.
+3. Added `rer_functional_enrichments.r` executable script.
+4. Made map optional in `read_midas_data`.
+5. Added `qp_genotypes` function.
+6. Added `mktest` function that works on allele table.
+7. Added `find_singletons` and `test_singleton_enrichment` functions.
+8. Function `qp_genotypes` returns empty tibble when no sample passes.
+9. Function `read_eggnog` deals with UHGG format.
+10. Adding `read_midas_info` function.
+
 # 0.1-1
 1. Overall cleaning and NAMESPACE update
 2. Adding focal group map pre-processing option for

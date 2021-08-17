@@ -4,8 +4,13 @@
 \alias{assign_allele}
 \title{Assign alleles bases on allele frequency and depth}
 \usage{
-assign_allele(dat, depth_thres = 1, freq_thres = 0.5,
-  sequence = FALSE, na_rm = TRUE)
+assign_allele(
+  dat,
+  depth_thres = 1,
+  freq_thres = 0.5,
+  sequence = FALSE,
+  na_rm = TRUE
+)
 }
 \arguments{
 \item{dat}{A data.frame or tibble}

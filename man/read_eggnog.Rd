@@ -4,10 +4,12 @@
 \alias{read_eggnog}
 \title{Read eggNOG mapper annotations}
 \usage{
-read_eggnog(path)
+read_eggnog(path, format = "emapper1")
 }
 \arguments{
 \item{path}{File path}
+
+\item{format}{}
 }
 \value{
 A tibble

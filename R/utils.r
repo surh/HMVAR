@@ -15,20 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with HMVAR.  If not, see <http://www.gnu.org/licenses/>.
 
-#' Run system command
-#' 
-#' Internal
-#' 
-#' @param cmd System command
-run_command <- function(cmd){
-  cat("Running\n\t>", cmd, "\n")
-  out <- system(cmd)
-  
-  return(out)
-}
-
-
-
 #' Process map
 #' 
 #' Internal
@@ -74,3 +60,32 @@ check_map <- function(map, map_file, focal_group = NA){
   
   return(map)
 }
+
+#' Run system command
+#' 
+#' Internal
+#' 
+#' @param cmd System command
+run_command <- function(cmd){
+  cat("Running\n\t>", cmd, "\n")
+  out <- system(cmd)
+  
+  return(out)
+}
+
+#' Select samples that are present in mapping file
+#'
+#' @param abun A data table where the first column is called 'site_id', and all
+#' the other columns correspond to sample names
+#' @param samples A vector with sample IDs.
+#'
+#' @return A data table
+#'
+#' @importFrom magrittr %>%
+select_samples_from_abun <- function(abun, samples){
+  abun <- abun %>% dplyr::select(site_id,
+                                 dplyr::intersect(samples, colnames(abun)) )
+  
+  return(abun)
+}
+

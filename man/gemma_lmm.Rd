@@ -4,8 +4,17 @@
 \alias{gemma_lmm}
 \title{Run LMM via GEMMA}
 \usage{
-gemma_lmm(geno_file, pheno_file, snp_file, kinship_file, cov_file = NULL,
-  gemma = "gemma", outdir = "lmm/", maf = 0, prefix = "lmm")
+gemma_lmm(
+  geno_file,
+  pheno_file,
+  snp_file,
+  kinship_file,
+  cov_file = NULL,
+  gemma = "gemma",
+  outdir = "lmm/",
+  maf = 0,
+  prefix = "lmm"
+)
 }
 \arguments{
 \item{geno_file}{Mean genotype file in BIMBAM format. See GEMMA

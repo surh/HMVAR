@@ -4,8 +4,14 @@
 \alias{gemma_kinship}
 \title{Calculate kinship matrix with GEMMA}
 \usage{
-gemma_kinship(geno_file, pheno_file, snp_file, gemma = "gemma",
-  outdir = "kinship/", prefix = "kinship")
+gemma_kinship(
+  geno_file,
+  pheno_file,
+  snp_file,
+  gemma = "gemma",
+  outdir = "kinship/",
+  prefix = "kinship"
+)
 }
 \arguments{
 \item{geno_file}{Mean genotype file in BIMBAM format. See GEMMA

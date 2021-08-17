@@ -4,8 +4,15 @@
 \alias{varsites_pipeline}
 \title{Varsites pipeline}
 \usage{
-varsites_pipeline(freq, depth, info, map, depth_thres = 1,
-  freq_thres = 0.5, plot = TRUE)
+varsites_pipeline(
+  freq,
+  depth,
+  info,
+  map,
+  depth_thres = 1,
+  freq_thres = 0.5,
+  plot = TRUE
+)
 }
 \arguments{
 \item{freq}{A site x sample allele frequency table as a data frame or

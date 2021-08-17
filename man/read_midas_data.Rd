@@ -4,7 +4,7 @@
 \alias{read_midas_data}
 \title{Read midas snp merge data}
 \usage{
-read_midas_data(midas_dir, map, genes = NULL, cds_only = TRUE)
+read_midas_data(midas_dir, map = NULL, genes = NULL, cds_only = TRUE)
 }
 \arguments{
 \item{midas_dir}{Directory where the output from
