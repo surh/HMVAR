@@ -153,16 +153,9 @@ gene_midas_data <- function(Dat, gene, depth_thres = 1, freq_thres = 0.5){
 #' midas_data <- read_midas_data(midas_dir = midas_dir, map = map, cds_only = TRUE)
 #' midas_data
 read_midas_data <- function(midas_dir, map = NULL, genes = NULL, cds_only = TRUE){
+  
   # Read data
-  info <- readr::read_tsv(paste0(midas_dir, "/snps_info.txt"),
-                          col_types = readr::cols(.default = readr::col_character(),
-                                                  ref_pos = readr::col_number(),
-                                                  count_samples = readr::col_number(),
-                                                  count_a = readr::col_number(),
-                                                  count_c = readr::col_number(),
-                                                  count_g = readr::col_number(),
-                                                  count_t = readr::col_number()),
-                          na = 'NA')
+  info <- read_midas_info(paste0(midas_dir, "/snps_info.txt"))
   depth <- read_midas_abun(paste0(midas_dir, "/snps_depth.txt"))
   freq <- read_midas_abun(paste0(midas_dir, "/snps_freq.txt"))
   
@@ -197,6 +190,29 @@ read_midas_data <- function(midas_dir, map = NULL, genes = NULL, cds_only = TRUE
     dplyr::filter(site_id %in% info$site_id)
   
   return(list(info = info, freq = freq, depth = depth))
+}
+
+#' Read MIDAS snps_info.txt file
+#'
+#' @param file Path to file
+#'
+#' @return A tibble with the contents of the 
+#' snps_info.txt file from MIDAS
+#' 
+#' @export
+read_midas_info <- function(file){
+  # Read data
+  info <- readr::read_tsv(file,
+                          col_types = readr::cols(.default = readr::col_character(),
+                                                  ref_pos = readr::col_number(),
+                                                  count_samples = readr::col_number(),
+                                                  count_a = readr::col_number(),
+                                                  count_c = readr::col_number(),
+                                                  count_g = readr::col_number(),
+                                                  count_t = readr::col_number()),
+                          na = 'NA')
+  
+  return(info)
 }
 
 #' Match freq and depth

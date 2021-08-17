@@ -8,6 +8,7 @@
 7. Added `find_singletons` and `test_singleton_enrichment` functions.
 8. Function `qp_genotypes` returns empty tibble when no sample passes.
 9. Function `read_eggnog` deals with UHGG format.
+10. Adding `read_midas_info` function.
 
 # 0.1-1
 1. Overall cleaning and NAMESPACE update
