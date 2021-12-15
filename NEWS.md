@@ -1,4 +1,5 @@
 # 0.1-3
+1. Added function `ld_r`.
 
 # 0.1-2
 1. Discard rows in closest files that have a dot (.) in the gene id column.
