@@ -1,6 +1,7 @@
 # 0.1-3
 1. Added function `ld_r`.
-2. Added support `s_coefficient` function. Only works with MAF changes file.
+2. Added `s_coefficient` function. Only works with MAF changes table.
+3. Added `FIT` function. Only works with expanded freqs table.
 
 # 0.1-2
 1. Discard rows in closest files that have a dot (.) in the gene id column.
