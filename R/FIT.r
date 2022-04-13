@@ -58,7 +58,7 @@ FIT.data.frame <- function(Dat, aggregate = TRUE, map, min_depth = 1){
         dplyr::group_by(site_id) %>%
         dplyr::summarise(y.mean = sum(Y.mean/Y.s2) / sum(1/Y.s2),
                          y.var = 1 / sum(1/Y.s2),
-                         npts = length(Y.mean)) %>%
+                         n_pops = length(Y.mean)) %>%
         dplyr::mutate(z.score = y.mean / sqrt(y.var)) %>%
         dplyr::mutate(pval = 2 * pnorm(abs(z.score), mean = 0, sd = 1, lower.tail = FALSE)) %>%
         dplyr::arrange(desc(abs(z.score)))
