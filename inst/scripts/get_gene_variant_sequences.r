@@ -22,6 +22,7 @@
 
 get_gene_variants <- function(x, ref,
                               faa,
+                              sites_info,
                               translate = TRUE,
                               outdir = "output"){
   
@@ -66,6 +67,7 @@ get_gene_variants <- function(x, ref,
   
   gene_nt <- list(gene_seq, gene_var)
   filename <- file.path(outdir, paste0(x$ID, ".fna"))
+  cat("\tWriting ", filename, "\n")
   seqinr::write.fasta(gene_nt,
                       names = paste(x$ID, c("reference", "minor"), sep = "\t"),
                       file.out = filename)
@@ -87,6 +89,7 @@ get_gene_variants <- function(x, ref,
     
     gene_faa <- list(faa[[1]], gene_aa)
     filename <- file.path(outdir, paste0(x$ID, ".faa"))
+    cat("\tWriting ", filename, "\n")
     seqinr::write.fasta(gene_faa,
                         names = paste(x$ID, c("reference", "minor"), sep = "\t"),
                         file.out = filename)
@@ -109,12 +112,9 @@ library(HMVAR)
 #              outdir = "output/")
 args <- list(midas_dir = "snps_merged/",
              pdir = "preHCT_posHCT/",
-             genome = "uhgg_catalogue/",
-             proteins = "uhgg_catalogue/",
+             uhgg = "uhgg_catalogue/",
              hits = "gene_hits/",
-             gff = "uhgg_catalogue/",
              outdir = "output/")
-
 
 # Prepare output dir
 if(!dir.exists(args$outdir)){
@@ -122,66 +122,102 @@ if(!dir.exists(args$outdir)){
 }
 
 
-
-
-
-
-
-
-
-Hits <- read_tsv(args$hits,
-                 col_types = cols(gene_id = col_character(),
-                                  spec = col_character()))
-Hits
-
-
-FAA <- seqinr::read.fasta(args$proteins, seqtype = "AA")
-# FAA
-
-Genome <- seqinr::read.fasta(args$genome)
-
-info <- HMVAR::read_midas_info(file.path(args$midas_dir, "snps_info.txt"))
-info
-
-Pdir <- read_tsv(args$pdir,
-                 col_types = cols(site_id = col_character()))
-Pdir
-
-GFF <- plyranges::read_gff(args$gff)
-
-
-
-
-for(gene in Hits$gene_id){
-  # gene <- Hits$gene_id[1]
-  cat("\t", gene, "\n")
+list.files(args$hits, full.names = TRUE, recursive = FALSE) %>%
+  map(function(hits, uhgg_catalogue, midas_dir, pdir, outdir = "output"){
+    # hits <- list.files(args$hits, full.names = TRUE, recursive = FALSE)[1]
+    # uhgg_catalogue <- args$uhgg
+    # midas_dir <- args$midas_dir
+    # pdir <- args$pdir
+    
+    spec <- basename(hits) %>% str_remove("[.]tsv$")
+    cat(spec, "\n")
+    
+    specdir <- file.path(outdir, spec)
+    dir.create(specdir)
+    
+    # Read data
+    Hits <- read_tsv(hits,
+                     col_types = cols(gene_id = col_character(),
+                                      spec = col_character()))
+    
+    filename <- file.path(uhgg_catalogue, 
+                          str_sub(spec, 1, 13),
+                          spec,
+                          "genome",
+                          paste0(spec, ".faa"))
+    FAA <- seqinr::read.fasta(filename, seqtype = "AA")
+    
+    filename <- file.path(uhgg_catalogue, 
+                          str_sub(spec, 1, 13),
+                          spec,
+                          "genome",
+                          paste0(spec, ".fna"))
+    Genome <- seqinr::read.fasta(filename)
+    
+    filename <- file.path(uhgg_catalogue, 
+                          str_sub(spec, 1, 13),
+                          spec,
+                          "genome",
+                          paste0(spec, ".gff"))
+    GFF <- plyranges::read_gff(filename)
+    
+    info <- HMVAR::read_midas_info(file.path(midas_dir,
+                                             spec,
+                                             "snps_info.txt"))
+    
+    
+    Pdir <- read_tsv(file.path(pdir, paste0(spec, ".tsv.gz")),
+                     col_types = cols(site_id = col_character()))
   
-  # Get infor of p_directional hits in genes with hits
-  sites_info <- info %>%
-    filter(gene_id == gene)
-  sites_info <- sites_info %>%
-    select(site_id, ref_id, ref_pos, ref_allele, major_allele, minor_allele,
-           gene_id, amino_acids) %>%
-    left_join(Pdir %>%
-                select(site_id, p_directional),
-              by = "site_id") %>%
-    filter(p_directional >= 0.8) %>%
-    HMVAR::determine_snp_effect()
-  
-  # Get gene genomic ranges
-  gene.granges <- GFF[ GFF$ID == gene ]
-  
-  # Get AA
-  faa <- FAA[gene]
-  
-  
-  gene_seq <- get_gene_variants(x = gene.granges,
-                                ref = Genome,
-                                faa = faa,
-                                translate = TRUE,
-                                outdir = args$outdir)
-  
-}
+    
+    
+    for(gene in Hits$gene_id){
+      # gene <- Hits$gene_id[1]
+      cat("\t", gene, "\n")
+      
+      # Get infor of p_directional hits in genes with hits
+      sites_info <- info %>%
+        filter(gene_id == gene)
+      sites_info <- sites_info %>%
+        select(site_id, ref_id, ref_pos, ref_allele, major_allele, minor_allele,
+               gene_id, amino_acids) %>%
+        left_join(Pdir %>%
+                    select(site_id, p_directional),
+                  by = "site_id") %>%
+        filter(p_directional >= 0.8) %>%
+        HMVAR::determine_snp_effect()
+      
+      # Get gene genomic ranges
+      gene.granges <- GFF[ GFF$ID == gene ]
+      
+      # Get AA
+      faa <- FAA[gene]
+      
+      
+      gene_seq <- get_gene_variants(x = gene.granges,
+                                    ref = Genome,
+                                    faa = faa,
+                                    sites_info = sites_info,
+                                    translate = TRUE,
+                                    outdir = specdir)
+      
+    }
+    
+    spec
+  }, uhgg_catalogue = args$uhgg, midas_dir = args$midas_dir, pdir = args$pdir,
+  outdir = args$outdir)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
