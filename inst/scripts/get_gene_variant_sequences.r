@@ -46,19 +46,19 @@ get_gene_variants <- function(x, ref,
   
   # Replace snps
   snp_pos <- sites_info$ref_pos - GenomicRanges::start(x) + 1
-  gene_var[snp_pos] <- sites_info$minor_allele
+  gene_var[snp_pos] <- sites_info$alt_allele
   
   # Get nt sequence
   strand <- GenomicRanges::strand(x) %>% as.character()
   if(strand == "+"){
     gene_var <- seqinr::as.SeqFastadna(gene_var, name = x$ID, Annot = "ref_alleles")
-    gene_seq <- seqinr::as.SeqFastadna(gene_seq, name = x$ID, Annot = "minor_alleles")
+    gene_seq <- seqinr::as.SeqFastadna(gene_seq, name = x$ID, Annot = "alt_alleles")
   }else if(strand == "-"){
     gene_var <- seqinr::comp(rev(gene_var))
-    gene_var <- seqinr::as.SeqFastadna(gene_var, name = x$ID, Annot = "minor_alleles")
+    gene_var <- seqinr::as.SeqFastadna(gene_var, name = x$ID, Annot = "alt_alleles")
     
     gene_seq <- seqinr::comp(rev(gene_seq))
-    gene_seq <- seqinr::as.SeqFastadna(gene_seq, name = x$ID, Annot = "minor_alleles")
+    gene_seq <- seqinr::as.SeqFastadna(gene_seq, name = x$ID, Annot = "ref_alleles")
   }else{
     stop("ERROR")
   }
@@ -69,7 +69,7 @@ get_gene_variants <- function(x, ref,
   filename <- file.path(outdir, paste0(x$ID, ".fna"))
   cat("\tWriting ", filename, "\n")
   seqinr::write.fasta(gene_nt,
-                      names = paste(x$ID, c("reference", "minor"), sep = "\t"),
+                      names = paste(x$ID, c("reference", "alternative"), sep = "\t"),
                       file.out = filename)
   
   
@@ -81,7 +81,7 @@ get_gene_variants <- function(x, ref,
     #                  ifelse(strand == "+", "F", NA))
     
     gene_aa <- seqinr::translate(gene_var)
-    gene_aa <- seqinr::as.SeqFastadna(gene_aa, name = x$ID, Annot = "minor_alleles")
+    gene_aa <- seqinr::as.SeqFastadna(gene_aa, name = x$ID, Annot = "alt_alleles")
     if( gene_aa[length(gene_aa)] == '*' ){
       gene_aa <- gene_aa[ 1:(length(gene_aa) - 1) ]
     }
@@ -91,7 +91,7 @@ get_gene_variants <- function(x, ref,
     filename <- file.path(outdir, paste0(x$ID, ".faa"))
     cat("\tWriting ", filename, "\n")
     seqinr::write.fasta(gene_faa,
-                        names = paste(x$ID, c("reference", "minor"), sep = "\t"),
+                        names = paste(x$ID, c("reference", "alternative"), sep = "\t"),
                         file.out = filename)
   }
   
@@ -175,7 +175,7 @@ list.files(args$hits, full.names = TRUE, recursive = FALSE) %>%
       # gene <- Hits$gene_id[1]
       cat("\t", gene, "\n")
       
-      # Get infor of p_directional hits in genes with hits
+      # Get info of p_directional hits in genes with hits
       sites_info <- info %>%
         filter(gene_id == gene)
       sites_info <- sites_info %>%
@@ -186,6 +186,9 @@ list.files(args$hits, full.names = TRUE, recursive = FALSE) %>%
                   by = "site_id") %>%
         filter(p_directional >= 0.8) %>%
         HMVAR::determine_snp_effect()
+      # Get alternative allele
+      sites_info <- sites_info %>%
+        mutate(alt_allele = ifelse(ref_allele == major_allele, minor_allele, major_allele))
       
       # Get gene genomic ranges
       gene.granges <- GFF[ GFF$ID == gene ]
